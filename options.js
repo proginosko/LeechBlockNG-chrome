@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const browser = chrome;
+
 const DEFAULT_OPTIONS_FILE = "LeechBlockOptions.txt";
 
 function log(message) { console.log("[LBNG] " + message); }
@@ -129,9 +131,11 @@ function saveOptions() {
 	options["warnSecs"] = getElement("warnSecs").value;
 	options["contextMenu"] = getElement("contextMenu").checked;
 
-	browser.storage.local.set(options).catch(
-		function (error) { warn("Cannot set options: " + error); }
-	);
+	browser.storage.local.set(options, function () {
+		if (browser.runtime.lastError) {
+			warn("Cannot set options: " + browser.runtime.lastError.message);
+		}
+	});
 
 	// Notify extension that options have been updated
 	browser.runtime.sendMessage({ type: "options" });
@@ -161,9 +165,15 @@ function closeOptions() {
 function retrieveOptions() {
 	//log("retrieveOptions");
 
-	browser.storage.local.get().then(onGot, onError);
+	browser.storage.local.get(onGot);
 
 	function onGot(options) {
+		if (browser.runtime.lastError) {
+			warn("Cannot get options: " + browser.runtime.lastError.message);
+			$("#alertRetrieveError").dialog("open");
+			return;
+		}
+
 		cleanOptions(options);
 		cleanTimeData(options);
 
@@ -290,11 +300,6 @@ function retrieveOptions() {
 		getElement("contextMenu").checked = options["contextMenu"];
 
 		confirmAccess(options);
-	}
-
-	function onError(error) {
-		warn("Cannot get options: " + error);
-		$("#alertRetrieveError").dialog("open");
 	}
 }
 

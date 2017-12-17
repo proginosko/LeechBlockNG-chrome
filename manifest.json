@@ -10,12 +10,6 @@
 		"96": "icons/leechblock96.png"
 	},
 
-	"applications": {
-		"gecko": {
-			"id": "leechblockng@proginosko.com"
-		}
-	},
-
 	"options_ui": {
 		"page": "options.html",
 		"open_in_tab": true
@@ -23,7 +17,7 @@
 
 	"permissions": [
 		"downloads",
-		"menus",
+		"contextMenus",
 		"storage",
 		"tabs",
 		"webNavigation"

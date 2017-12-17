@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const browser = chrome;
+
 const TICK_TIME = 1000; // update every second
 
 var gGotOptions = false;
@@ -16,35 +18,35 @@ function warn(message) { console.warn("[LBNG] " + message); }
 // Refresh menus
 //
 function refreshMenus() {
-	if (!browser.menus) {
+	if (!browser.contextMenus) {
 		return; // no support for menus!
 	}
 
-	browser.menus.removeAll();
+	browser.contextMenus.removeAll();
 
 	let context = gOptions["contextMenu"] ? "all" : "browser_action";
 
 	// Options
-	browser.menus.create({
+	browser.contextMenus.create({
 		id: "options",
 		title: "Options",
-		contexts: [context, "tools_menu"]
+		contexts: [context]
 	});
 
 	// Lockdown
-	browser.menus.create({
+	browser.contextMenus.create({
 		id: "lockdown",
 		title: "Lockdown",
-		contexts: [context, "tools_menu"]
+		contexts: [context]
 	});
 
-	browser.menus.create({
+	browser.contextMenus.create({
 		type: "separator",
 		contexts: [context]
 	});
 
 	// Add Site
-	browser.menus.create({
+	browser.contextMenus.create({
 		id: "addSite",
 		title: "Add Site",
 		contexts: [context]
@@ -57,11 +59,11 @@ function refreshMenus() {
 		if (setName) {
 			title += ` (${setName})`;
 		}
-		browser.menus.create({
+		browser.contextMenus.create({
 			id: `addSite-${set}`,
 			parentId: "addSite",
 			title: title,
-			contexts: [context, "tools_menu"]
+			contexts: [context]
 		});
 	}
 }
@@ -71,9 +73,15 @@ function refreshMenus() {
 function retrieveOptions() {
 	//log("retrieveOptions");
 
-	browser.storage.local.get().then(onGot, onError);
+	browser.storage.local.get(onGot);
 
 	function onGot(options) {
+		if (browser.runtime.lastError) {
+			gGotOptions = false;
+			warn("Cannot get options: " + browser.runtime.lastError.message);
+			return;
+		}
+
 		gGotOptions = true;
 		gOptions = Object.assign({}, options); // clone
 		cleanOptions(gOptions);
@@ -81,11 +89,6 @@ function retrieveOptions() {
 		gSetCounted = Array(NUM_SETS).fill(false);
 		refreshMenus();
 		loadSiteLists();
-	}
-
-	function onError(error) {
-		gGotOptions = false;
-		warn("Cannot get options: " + error);
 	}
 }
 
@@ -137,9 +140,11 @@ function loadSiteLists() {
 			options[`blockRE${set}`] = regexps.block;
 			options[`allowRE${set}`] = regexps.allow;
 			options[`keywordRE${set}`] = regexps.keyword;
-			browser.storage.local.set(options).catch(
-				function (error) { warn("Cannot set options: " + error); }
-			);
+			browser.storage.local.set(options, function () {
+				if (browser.runtime.lastError) {
+					warn("Cannot set options: " + browser.runtime.lastError.message);
+				}
+			});
 		}
 	}
 }
@@ -157,9 +162,11 @@ function saveTimeData() {
 	for (let set = 1; set <= NUM_SETS; set++) {
 		options[`timedata${set}`] = gOptions[`timedata${set}`];
 	}
-	browser.storage.local.set(options).catch(
-		function (error) { warn("Cannot set options: " + error); }
-	);
+	browser.storage.local.set(options, function () {
+		if (browser.runtime.lastError) {
+			warn("Cannot set options: " + browser.runtime.lastError.message);
+		}
+	});
 }
 
 // Update ID of focused window
@@ -169,9 +176,14 @@ function updateFocusedWindowId() {
 		return; // no support for windows!
 	}
 
-	browser.windows.getLastFocused().then(
-		function (win) { gFocusWindowId = win.id; },
-		function (error) { warn("Cannot get focused window: " + error); }
+	browser.windows.getLastFocused(
+		function (win) {
+			if (browser.runtime.lastError) {
+				warn("Cannot get focused window: " + browser.runtime.lastError.message);
+			} else {
+				gFocusWindowId = win.id;
+			}
+		}
 	);
 }
 
@@ -182,9 +194,14 @@ function processTabs() {
 
 	gSetCounted.fill(false);
 
-	browser.tabs.query({}).then(onGot, onError);
+	browser.tabs.query({}, onGot);
 
 	function onGot(tabs) {
+		if (browser.runtime.lastError) {
+			warn("Cannot get tabs: " + error);
+			return;
+		}
+
 		// Process all tabs
 		for (let tab of tabs) {
 			let focus = tab.active && (!gFocusWindowId || tab.windowId == gFocusWindowId);
@@ -202,10 +219,6 @@ function processTabs() {
 
 		// Save time data to local storage
 		saveTimeData();
-	}
-
-	function onError(error) {
-		warn("Cannot get tabs: " + error);
 	}
 }
 
@@ -343,14 +356,13 @@ function checkTab(id, url, isRepeat) {
 						type: "keyword",
 						keywordRE: keywordRE
 					};
-					browser.tabs.sendMessage(id, message).then(
+					browser.tabs.sendMessage(id, message,
 						function (keyword) {
 							if (keyword) {
 								// Redirect page
 								browser.tabs.update(id, { url: blockURL });
 							}
-						},
-						function (error) {}
+						}
 					);
 				} else {
 					// Redirect page
@@ -399,9 +411,11 @@ function checkWarning(id) {
 				type: "alert",
 				text: text
 			};
-			browser.tabs.sendMessage(id, message).catch(
-				function (error) { gTabs[id].warned = false; }
-			);
+			browser.tabs.sendMessage(id, message, function () {
+				if (browser.runtime.lastError) {
+					gTabs[id].warned = false;
+				}
+			});
 		}
 	}
 }
@@ -564,7 +578,7 @@ function updateTimer(id) {
 	} else {
 		message.text = formatTime(secsLeft); // show timer with time left
 	}
-	browser.tabs.sendMessage(id, message).catch(function (error) {});
+	browser.tabs.sendMessage(id, message);
 }
 
 // Create info for blocking/delaying page
@@ -781,7 +795,7 @@ function cancelLockdown(set) {
 function openExtensionPage(url) {
 	let fullURL = browser.extension.getURL(url);
 
-	browser.tabs.query({ url: fullURL }).then(onGot, onError);
+	browser.tabs.query({ url: fullURL }, onGot);
 
 	function onGot(tabs) {
 		if (tabs.length > 0) {
@@ -789,10 +803,6 @@ function openExtensionPage(url) {
 		} else {
 			browser.tabs.create({ url: fullURL });
 		}
-	}
-
-	function onError(error) {
-		browser.tabs.create({ url: fullURL });
 	}
 }
 
@@ -856,9 +866,11 @@ function addSiteToSet(url, set) {
 		options[`blockRE${set}`] = regexps.block;
 		options[`allowRE${set}`] = regexps.allow;
 		options[`keywordRE${set}`] = regexps.keyword;
-		browser.storage.local.set(options).catch(
-			function (error) { warn("Cannot set options: " + error); }
-		);
+		browser.storage.local.set(options, function () {
+			if (browser.runtime.lastError) {
+				warn("Cannot set options: " + browser.runtime.lastError.message);
+			}
+		});
 	}	
 }
 
@@ -970,8 +982,8 @@ function onInterval() {
 
 /*** STARTUP CODE BEGINS HERE ***/
 
-if (browser.menus) {
-	browser.menus.onClicked.addListener(handleMenuClick);
+if (browser.contextMenus) {
+	browser.contextMenus.onClicked.addListener(handleMenuClick);
 }
 
 browser.runtime.onMessage.addListener(handleMessage);
@@ -984,7 +996,7 @@ browser.tabs.onRemoved.addListener(handleTabRemoved);
 browser.webNavigation.onBeforeNavigate.addListener(handleBeforeNavigate);
 
 if (browser.windows) {
-	browser.windows.onFocusChanged.addListener(handleWinFocused);
+	//browser.windows.onFocusChanged.addListener(handleWinFocused);
 }
 
 window.setInterval(onInterval, TICK_TIME);

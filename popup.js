@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const browser = chrome;
+
 // Open options page
 //
 function openOptions() {
@@ -20,7 +22,7 @@ function openLockdown() {
 function openExtensionPage(url) {
 	let fullURL = browser.extension.getURL(url);
 
-	browser.tabs.query({ url: fullURL }).then(onGot, onError);
+	browser.tabs.query({ url: fullURL }, onGot);
 
 	function onGot(tabs) {
 		if (tabs.length > 0) {
@@ -28,11 +30,6 @@ function openExtensionPage(url) {
 		} else {
 			browser.tabs.create({ url: fullURL });
 		}
-		window.close();
-	}
-
-	function onError(error) {
-		browser.tabs.create({ url: fullURL });
 		window.close();
 	}
 }

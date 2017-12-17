@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const browser = chrome;
+
 // Processes info for blocking/delaying page
 //
 function processBlockInfo(info) {
@@ -89,4 +91,4 @@ function onCountdownTimer(countdown) {
 }
 
 // Request block info from extension
-browser.runtime.sendMessage({ type: "blocked" }).then(processBlockInfo);
+browser.runtime.sendMessage({ type: "blocked" }, processBlockInfo);

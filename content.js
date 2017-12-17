@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const browser = chrome;
+
 const TIMER_DEFAULT_STYLE =
 	"position: fixed; z-index: 2147483647; " +
 	"top: 0px; left: 0px; margin: 2px; padding: 4px 4px 2px 4px; " +
