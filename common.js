@@ -186,7 +186,7 @@ function getParsedURL(url) {
 // Create regular expressions for matching sites to block/allow
 //
 function getRegExpSites(sites) {
-	if (sites == "") {
+	if (!sites) {
 		return {
 			block: "",
 			allow: "",
@@ -254,8 +254,8 @@ function keywordToRegExp(keyword) {
 // Test URL against block/allow regular expressions
 //
 function testURL(pageURL, blockRE, allowRE) {
-	return (blockRE != "" && (new RegExp(blockRE, "i")).test(pageURL)
-			&& !(allowRE != "" && (new RegExp(allowRE, "i")).test(pageURL)));
+	return (blockRE && (new RegExp(blockRE, "i")).test(pageURL)
+			&& !(allowRE && (new RegExp(allowRE, "i")).test(pageURL)));
 }
 
 // Check time periods format
@@ -274,7 +274,7 @@ function checkPosIntFormat(value) {
 //
 function getMinPeriods(times) {
 	let minPeriods = [];
-	if (times != "") {
+	if (times) {
 		let regexp = /^(\d\d)(\d\d)-(\d\d)(\d\d)$/;
 		let periods = times.split(/[, ]+/);
 		for (let period of periods) {

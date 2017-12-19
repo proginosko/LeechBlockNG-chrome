@@ -206,7 +206,7 @@ function retrieveOptions() {
 
 				// Check time periods
 				let withinTimePeriods = false;
-				if (onSelectedDay && times != "") {
+				if (onSelectedDay && times) {
 					// Get number of minutes elapsed since midnight
 					let mins = timedate.getHours() * 60 + timedate.getMinutes();
 
@@ -220,7 +220,7 @@ function retrieveOptions() {
 
 				// Check time limit
 				let afterTimeLimit = false;
-				if (onSelectedDay && limitMins != "" && limitPeriod != "") {
+				if (onSelectedDay && limitMins && limitPeriod) {
 					// Check time period and time limit
 					if (timedata[2] == periodStart && timedata[3] >= (limitMins * 60)) {
 						afterTimeLimit = true;
@@ -433,7 +433,7 @@ function importOptions() {
 	function processImportFile(event) {
 		let text = event.target.result;
 		if (!text) {
-			warn("Cannot import options from file.");
+			$("#alertImportError").dialog("open");
 			return;
 		}
 
@@ -443,11 +443,18 @@ function importOptions() {
 		let regexp = /^(\w+)=(.*)$/;
 		let lines = text.split(/[\n\r]+/);
 		let options = {};
+		let hasOptions = false;
 		for (let line of lines) {
 			let results = regexp.exec(line);
 			if (results) {
 				options[results[1]] = results[2];
+				hasOptions = true;
 			}
+		}
+
+		if (!hasOptions) {
+			$("#alertImportError").dialog("open");
+			return;
 		}
 
 		for (let set = 1; set <= NUM_SETS; set++) {
@@ -602,6 +609,8 @@ function importOptions() {
 		if (contextMenu != undefined) {
 			getElement("contextMenu").checked = contextMenu;
 		}
+
+		$("#alertImportSuccess").dialog("open");
 	}
 }
 
