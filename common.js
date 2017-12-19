@@ -63,11 +63,8 @@ function cleanOptions(options) {
 		if (typeof options[`prevOpts${set}`] !== "boolean") {
 			options[`prevOpts${set}`] = false;
 		}
-		if (typeof options[`prevAddons${set}`] !== "boolean") {
-			options[`prevAddons${set}`] = false;
-		}
-		if (typeof options[`prevSupport${set}`] !== "boolean") {
-			options[`prevSupport${set}`] = false;
+		if (typeof options[`prevExts${set}`] !== "boolean") {
+			options[`prevExts${set}`] = false;
 		}
 		if (typeof options[`sitesURL${set}`] !== "string") {
 			options[`sitesURL${set}`] = "";

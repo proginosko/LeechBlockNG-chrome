@@ -86,8 +86,7 @@ function saveOptions() {
 		let delayFirst = getElement(`delayFirst${set}`).checked;
 		let delaySecs = getElement(`delaySecs${set}`).value;
 		let prevOpts = getElement(`prevOpts${set}`).checked;
-		let prevAddons = getElement(`prevAddons${set}`).checked;
-		let prevSupport = getElement(`prevSupport${set}`).checked;
+		let prevExts = getElement(`prevExts${set}`).checked;
 		let sitesURL = getElement(`sitesURL${set}`).value;
 
 		// Get regular expressions to match sites
@@ -107,8 +106,7 @@ function saveOptions() {
 		options[`delayFirst${set}`] = delayFirst;
 		options[`delaySecs${set}`] = delaySecs;
 		options[`prevOpts${set}`] = prevOpts;
-		options[`prevAddons${set}`] = prevAddons;
-		options[`prevSupport${set}`] = prevSupport;
+		options[`prevExts${set}`] = prevExts;
 		options[`sitesURL${set}`] = sitesURL;
 		options[`blockRE${set}`] = regexps.block;
 		options[`allowRE${set}`] = regexps.allow;
@@ -257,8 +255,7 @@ function retrieveOptions() {
 			let delayFirst = options[`delayFirst${set}`];
 			let delaySecs = options[`delaySecs${set}`];
 			let prevOpts = options[`prevOpts${set}`];
-			let prevAddons = options[`prevAddons${set}`];
-			let prevSupport = options[`prevSupport${set}`];
+			let prevExts = options[`prevExts${set}`];
 			let sitesURL = options[`sitesURL${set}`];
 			
 			// Apply custom set name to tab (if specified)
@@ -284,8 +281,7 @@ function retrieveOptions() {
 			getElement(`delayFirst${set}`).checked = delayFirst;
 			getElement(`delaySecs${set}`).value = delaySecs;
 			getElement(`prevOpts${set}`).checked = prevOpts;
-			getElement(`prevAddons${set}`).checked = prevAddons;
-			getElement(`prevSupport${set}`).checked = prevSupport;
+			getElement(`prevExts${set}`).checked = prevExts;
 			getElement(`sitesURL${set}`).value = sitesURL;
 		}
 
@@ -377,8 +373,7 @@ function exportOptions() {
 		let delayFirst = getElement(`delayFirst${set}`).checked;
 		let delaySecs = getElement(`delaySecs${set}`).value;
 		let prevOpts = getElement(`prevOpts${set}`).checked;
-		let prevAddons = getElement(`prevAddons${set}`).checked;
-		let prevSupport = getElement(`prevSupport${set}`).checked;
+		let prevExts = getElement(`prevExts${set}`).checked;
 		let sitesURL = getElement(`sitesURL${set}`).value;
 
 		// Set option values
@@ -395,8 +390,7 @@ function exportOptions() {
 		options[`delayFirst${set}`] = delayFirst;
 		options[`delaySecs${set}`] = delaySecs;
 		options[`prevOpts${set}`] = prevOpts;
-		options[`prevAddons${set}`] = prevAddons;
-		options[`prevSupport${set}`] = prevSupport;
+		options[`prevExts${set}`] = prevExts;
 		options[`sitesURL${set}`] = sitesURL;
 	}
 
@@ -471,8 +465,7 @@ function importOptions() {
 			let delayFirst = options[`delayFirst${set}`];
 			let delaySecs = options[`delaySecs${set}`];
 			let prevOpts = options[`prevOpts${set}`];
-			let prevAddons = options[`prevAddons${set}`];
-			let prevSupport = options[`prevSupport${set}`];
+			let prevExts = options[`prevExts${set}`];
 			let sitesURL = options[`sitesURL${set}`];
 
 			// Set component values
@@ -562,16 +555,10 @@ function importOptions() {
 					element.checked = isTrue(prevOpts);
 				}
 			}
-			if (prevAddons != undefined) {
-				let element = getElement(`prevAddons${set}`);
+			if (prevExts != undefined) {
+				let element = getElement(`prevExts${set}`);
 				if (!element.disabled) {
-					element.checked = isTrue(prevAddons);
-				}
-			}
-			if (prevSupport != undefined) {
-				let element = getElement(`prevSupport${set}`);
-				if (!element.disabled) {
-					element.checked = isTrue(prevSupport);
+					element.checked = isTrue(prevExts);
 				}
 			}
 			if (sitesURL != undefined) {
@@ -627,7 +614,7 @@ function disableSetOptions(set) {
 		"day0", "day1", "day2", "day3", "day4", "day5", "day6",
 		"blockURL", "defaultPage", "delayingPage", "blankPage", "homePage",
 		"activeBlock", "countFocus", "delayFirst", "delaySecs",
-		"prevOpts", "prevAddons", "prevSupport", "sitesURL", "cancelLockdown"
+		"prevOpts", "prevExts", "sitesURL", "cancelLockdown"
 	];
 	for (let item of items) {
 		let element = getElement(`${item}${set}`);

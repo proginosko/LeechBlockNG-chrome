@@ -238,7 +238,7 @@ function checkTab(id, url, isRepeat) {
 	}
 
 	// Quick exit for non-blockable URLs
-	if (!/^(http|file|about)/i.test(url)) {
+	if (!/^(http|file|chrome)/i.test(url)) {
 		gTabs[id].blockable = false;
 		return false; // not blocked
 	}
@@ -280,14 +280,12 @@ function checkTab(id, url, isRepeat) {
 		let allowRE = gOptions[`allowRE${set}`];
 		let keywordRE = gOptions[`keywordRE${set}`];
 
-		// Get options for preventing access to about:addons and about:support
-		let prevAddons = gOptions[`prevAddons${set}`];
-		let prevSupport = gOptions[`prevSupport${set}`];
+		// Get options for preventing access to chrome://extensions
+		let prevExts = gOptions[`prevExts${set}`];
 
 		// Test URL against block/allow regular expressions
 		if (testURL(pageURL, blockRE, allowRE)
-				|| (prevAddons && /^about:addons/i.test(pageURL))
-				|| (prevSupport && /^about:support/i.test(pageURL))) {
+				|| (prevExts && /^chrome:\/\/extensions/i.test(pageURL))) {
 			// Get options for this set
 			let timedata = gOptions[`timedata${set}`];
 			let times = gOptions[`times${set}`];
