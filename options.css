@@ -19,6 +19,10 @@ body {
 	border-bottom: 1px solid #888;
 }
 
+.ui-widget fieldset {
+	border: 1px solid #000;
+}
+
 .ui-widget legend {
 	font-weight: bold;
 }
