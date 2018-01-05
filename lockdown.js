@@ -142,4 +142,4 @@ $("div[id^='alert']").dialog({
 
 $("#form").show();
 
-document.addEventListener("DOMContentLoaded", initializeForm);
+window.addEventListener("DOMContentLoaded", initializeForm);

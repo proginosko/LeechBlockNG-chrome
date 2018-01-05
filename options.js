@@ -768,4 +768,4 @@ $("div[id^='alert']").dialog({
 initAccessControlPrompt("promptPassword");
 initAccessControlPrompt("promptAccessCode");
 
-document.addEventListener("DOMContentLoaded", retrieveOptions);
+window.addEventListener("DOMContentLoaded", retrieveOptions);

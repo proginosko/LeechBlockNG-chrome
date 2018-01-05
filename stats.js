@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const browser = chrome;
+
 function log(message) { console.log("[LBNG] " + message); }
 function warn(message) { console.warn("[LBNG] " + message); }
 
@@ -12,9 +14,14 @@ function getElement(id) { return document.getElementById(id); }
 function statsRefresh() {
 	//log("statsRefresh");
 
-	browser.storage.local.get().then(onGot, onError);
+	browser.storage.local.get(onGot);
 
 	function onGot(options) {
+		if (browser.runtime.lastError) {
+			warn("Cannot get options: " + error);
+			return;
+		}
+
 		// Get current time in seconds
 		let now = Math.floor(Date.now() / 1000);
 
@@ -49,10 +56,6 @@ function statsRefresh() {
 
 		$("#form").show();
 	}
-
-	function onError(error) {
-		warn("Cannot get options: " + error);
-	}
 }
 
 // Return formatted times based on time data
@@ -78,11 +81,11 @@ function handleClick(e) {
 	if (id == "restartAll") {
 		// Request restart time data for all sets
 		let message = { type: "restart", set: 0 };
-		browser.runtime.sendMessage(message).then(statsRefresh);
+		browser.runtime.sendMessage(message, statsRefresh);
 	} else if (/restart\d+/.test(id)) {
 		// Request restart time data for specific set
 		let message = { type: "restart", set: +id.substr(7) };
-		browser.runtime.sendMessage(message).then(statsRefresh);
+		browser.runtime.sendMessage(message, statsRefresh);
 	}
 }
 
@@ -99,5 +102,5 @@ for (let set = 2; set <= NUM_SETS; set++) {
 
 $(":button").click(handleClick);
 
-document.addEventListener("DOMContentLoaded", statsRefresh);
-document.addEventListener("focus", statsRefresh);
+window.addEventListener("DOMContentLoaded", statsRefresh);
+window.addEventListener("focus", statsRefresh);
