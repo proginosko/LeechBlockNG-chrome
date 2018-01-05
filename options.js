@@ -88,6 +88,8 @@ function saveOptions() {
 		let prevOpts = getElement(`prevOpts${set}`).checked;
 		let prevExts = getElement(`prevExts${set}`).checked;
 		let sitesURL = getElement(`sitesURL${set}`).value;
+		let regexpBlock = getElement(`regexpBlock${set}`).value;
+		let regexpAllow = getElement(`regexpAllow${set}`).value;
 
 		// Get regular expressions to match sites
 		let regexps = getRegExpSites(sites);
@@ -108,6 +110,8 @@ function saveOptions() {
 		options[`prevOpts${set}`] = prevOpts;
 		options[`prevExts${set}`] = prevExts;
 		options[`sitesURL${set}`] = sitesURL;
+		options[`regexpBlock${set}`] = regexpBlock;
+		options[`regexpAllow${set}`] = regexpAllow;
 		options[`blockRE${set}`] = regexps.block;
 		options[`allowRE${set}`] = regexps.allow;
 		options[`keywordRE${set}`] = regexps.keyword;
@@ -257,6 +261,8 @@ function retrieveOptions() {
 			let prevOpts = options[`prevOpts${set}`];
 			let prevExts = options[`prevExts${set}`];
 			let sitesURL = options[`sitesURL${set}`];
+			let regexpBlock = options[`regexpBlock${set}`];
+			let regexpAllow = options[`regexpAllow${set}`];
 			
 			// Apply custom set name to tab (if specified)
 			if (setName) {
@@ -283,6 +289,8 @@ function retrieveOptions() {
 			getElement(`prevOpts${set}`).checked = prevOpts;
 			getElement(`prevExts${set}`).checked = prevExts;
 			getElement(`sitesURL${set}`).value = sitesURL;
+			getElement(`regexpBlock${set}`).value = regexpBlock;
+			getElement(`regexpAllow${set}`).value = regexpAllow;
 		}
 
 		// General options
@@ -375,6 +383,8 @@ function exportOptions() {
 		let prevOpts = getElement(`prevOpts${set}`).checked;
 		let prevExts = getElement(`prevExts${set}`).checked;
 		let sitesURL = getElement(`sitesURL${set}`).value;
+		let regexpBlock = getElement(`regexpBlock${set}`).value;
+		let regexpAllow = getElement(`regexpAllow${set}`).value;
 
 		// Set option values
 		options[`setName${set}`] = setName;
@@ -392,6 +402,8 @@ function exportOptions() {
 		options[`prevOpts${set}`] = prevOpts;
 		options[`prevExts${set}`] = prevExts;
 		options[`sitesURL${set}`] = sitesURL;
+		options[`regexpBlock${set}`] = regexpBlock;
+		options[`regexpAllow${set}`] = regexpAllow;
 	}
 
 	// General options
@@ -474,6 +486,8 @@ function importOptions() {
 			let prevOpts = options[`prevOpts${set}`];
 			let prevExts = options[`prevExts${set}`];
 			let sitesURL = options[`sitesURL${set}`];
+			let regexpBlock = options[`regexpBlock${set}`];
+			let regexpAllow = options[`regexpAllow${set}`];
 
 			// Set component values
 			if (setName != undefined) {
@@ -574,6 +588,18 @@ function importOptions() {
 					element.value = sitesURL;
 				}
 			}
+			if (regexpBlock != undefined) {
+				let element = getElement(`regexpBlock${set}`);
+				if (!element.disabled) {
+					element.value = regexpBlock;
+				}
+			}
+			if (regexpAllow != undefined) {
+				let element = getElement(`regexpAllow${set}`);
+				if (!element.disabled) {
+					element.value = regexpAllow;
+				}
+			}
 		}
 
 		// General options
@@ -623,7 +649,10 @@ function disableSetOptions(set) {
 		"day0", "day1", "day2", "day3", "day4", "day5", "day6",
 		"blockURL", "defaultPage", "delayingPage", "blankPage", "homePage",
 		"activeBlock", "countFocus", "delayFirst", "delaySecs",
-		"prevOpts", "prevExts", "sitesURL", "cancelLockdown"
+		"prevOpts", "prevAddons", "prevSupport", "sitesURL",
+		"regexpBlock", "clearRegExpBlock", "genRegExpBlock",
+		"regexpAllow", "clearRegExpAllow", "genRegExpAllow",
+		"cancelLockdown"
 	];
 	for (let item of items) {
 		let element = getElement(`${item}${set}`);
@@ -700,6 +729,16 @@ for (let set = 1; set <= NUM_SETS; set++) {
 	$(`#showAdvOpts${set}`).click(function (e) {
 		$(`#showAdvOpts${set}`).css("display", "none");
 		$(`#advOpts${set}`).css("display", "block");
+	});
+	$(`#clearRegExpBlock${set}`).click(function (e) { $(`#regexpBlock${set}`).val(""); });
+	$(`#genRegExpBlock${set}`).click(function (e) {
+		let sites = $(`#sites${set}`).val();
+		$(`#regexpBlock${set}`).val(getRegExpSites(sites).block);
+	});
+	$(`#clearRegExpAllow${set}`).click(function (e) { $(`#regexpAllow${set}`).val(""); });
+	$(`#genRegExpAllow${set}`).click(function (e) {
+		let sites = $(`#sites${set}`).val();
+		$(`#regexpAllow${set}`).val(getRegExpSites(sites).allow);
 	});
 	$(`#cancelLockdown${set}`).click(function (e) {
 		browser.runtime.sendMessage({ type: "lockdown", set: set });

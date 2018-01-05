@@ -17,6 +17,12 @@ function openLockdown() {
 	openExtensionPage("lockdown.html");
 }
 
+// Open stats page
+//
+function openStats() {
+	openExtensionPage("stats.html");
+}
+
 // Open extension page (either create new tab or activate existing tab)
 //
 function openExtensionPage(url) {
@@ -36,3 +42,4 @@ function openExtensionPage(url) {
 
 document.querySelector("#options").addEventListener("click", openOptions);
 document.querySelector("#lockdown").addEventListener("click", openLockdown);
+document.querySelector("#stats").addEventListener("click", openStats);

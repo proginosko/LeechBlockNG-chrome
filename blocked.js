@@ -9,7 +9,7 @@ const browser = chrome;
 function processBlockInfo(info) {
 	if (!info) return;
 
-	let blockedURL = document.getElementById("leechblockBlockedURL");
+	let blockedURL = document.getElementById("lbBlockedURL");
 	if (info.blockedURL && blockedURL) {
 		if (info.blockedURL.length > 60) {
 			blockedURL.innerText = info.blockedURL.substring(0, 57) + "...";
@@ -18,12 +18,12 @@ function processBlockInfo(info) {
 		}
 	}
 
-	let blockedURLLink = document.getElementById("leechblockBlockedURLLink");
+	let blockedURLLink = document.getElementById("lbBlockedURLLink");
 	if (info.blockedURL && blockedURLLink) {
 		blockedURLLink.setAttribute("href", info.blockedURL);
 	}
 
-	let blockedSet = document.getElementById("leechblockBlockedSet");
+	let blockedSet = document.getElementById("lbBlockedSet");
 	if (info.blockedSet && info.blockedSetName && blockedSet) {
 		if (info.blockedSetName) {
 			blockedSet.innerText = info.blockedSetName;
@@ -32,12 +32,12 @@ function processBlockInfo(info) {
 		}
 	}
 
-	let unblockTime = document.getElementById("leechblockUnblockTime");
+	let unblockTime = document.getElementById("lbUnblockTime");
 	if (info.unblockTime && unblockTime) {
 		unblockTime.innerText = info.unblockTime;
 	}
 
-	let delaySecs = document.getElementById("leechblockDelaySeconds");
+	let delaySecs = document.getElementById("lbDelaySeconds");
 	if (info.delaySecs && delaySecs) {
 		delaySecs.innerText = info.delaySecs;
 
@@ -60,7 +60,7 @@ function onCountdownTimer(countdown) {
 		window.clearInterval(countdown.interval);
 
 		// Strike through countdown text
-		let countdownText = document.getElementById("leechblockCountdownText");
+		let countdownText = document.getElementById("lbCountdownText");
 		if (countdownText) {
 			countdownText.style.textDecoration = "line-through";
 		}
@@ -71,7 +71,7 @@ function onCountdownTimer(countdown) {
 	countdown.delaySecs--;
 
 	// Update countdown seconds on page
-	let delaySecs = document.getElementById("leechblockDelaySeconds");
+	let delaySecs = document.getElementById("lbDelaySeconds");
 	if (delaySecs) {
 		delaySecs.innerText = countdown.delaySecs;
 	}

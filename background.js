@@ -40,6 +40,13 @@ function refreshMenus() {
 		contexts: [context]
 	});
 
+	// Statistics
+	browser.contextMenus.create({
+		id: "stats",
+		title: "Statistics",
+		contexts: [context]
+	});
+
 	browser.contextMenus.create({
 		type: "separator",
 		contexts: [context]
@@ -169,6 +176,32 @@ function saveTimeData() {
 	});
 }
 
+// Restart time data
+//
+function restartTimeData(set) {
+	//log("restartTimeData: " + set);
+
+	if (!gGotOptions) {
+		return;
+	}
+
+	// Get current time in seconds
+	let now = Math.floor(Date.now() / 1000);
+
+	if (!set) {
+		for (set = 1; set <= NUM_SETS; set++) {
+			gOptions[`timedata${set}`][0] = now;
+			gOptions[`timedata${set}`][1] = 0;
+		}
+	} else {
+		gOptions[`timedata${set}`][0] = now;
+		gOptions[`timedata${set}`][1] = 0;
+	}
+
+	// Save time data to local storage
+	saveTimeData();
+}
+
 // Update ID of focused window
 //
 function updateFocusedWindowId() {
@@ -275,9 +308,9 @@ function checkTab(id, url, isRepeat) {
 
 	for (let set = 1; set <= NUM_SETS; set++) {
 		// Get regular expressions for matching sites to block/allow
-		let blockRE = gOptions[`blockRE${set}`];
+		let blockRE = gOptions[`regexpBlock${set}`] || gOptions[`blockRE${set}`];
 		if (!blockRE) continue; // no block for this set
-		let allowRE = gOptions[`allowRE${set}`];
+		let allowRE = gOptions[`regexpAllow${set}`] || gOptions[`allowRE${set}`];
 		let keywordRE = gOptions[`keywordRE${set}`];
 
 		// Get options for preventing access to chrome://extensions
@@ -487,9 +520,9 @@ function updateTimeData(url, secsOpen, secsFocus) {
 
 	for (let set = 1; set <= NUM_SETS; set++) {
 		// Get regular expressions for matching sites to block/allow
-		let blockRE = gOptions[`blockRE${set}`];
+		let blockRE = gOptions[`regexpBlock${set}`] || gOptions[`blockRE${set}`];
 		if (!blockRE) continue; // no block for this set
-		let allowRE = gOptions[`allowRE${set}`];
+		let allowRE = gOptions[`regexpAllow${set}`] || gOptions[`allowRE${set}`];
 
 		// Test URL against block/allow regular expressions
 		if (testURL(pageURL, blockRE, allowRE)) {
@@ -770,20 +803,24 @@ function getUnblockTime(set) {
 function applyLockdown(set, endTime) {
 	//log("applyLockdown: " + set + " " + endTime);
 
-	let timedata = gOptions[`timedata${set}`];
-
-	// Apply lockdown only if it doesn't reduce any current lockdown
-	if (endTime > timedata[4]) {
-		timedata[4] = endTime;
+	if (!gGotOptions) {
+		return;
 	}
 
-	gOptions[`timedata${set}`] = timedata;
+	// Apply lockdown only if it doesn't reduce any current lockdown
+	if (endTime > gOptions[`timedata${set}`][4]) {
+		gOptions[`timedata${set}`][4] = endTime;
+	}
 }
 
 // Cancel lockdown for specified set
 //
 function cancelLockdown(set) {
 	//log("cancelLockdown: " + set);
+
+	if (!gGotOptions) {
+		return;
+	}
 
 	gOptions[`timedata${set}`][4] = 0;
 }
@@ -880,6 +917,8 @@ function handleMenuClick(info, tab) {
 		browser.runtime.openOptionsPage();
 	} else if (id == "lockdown") {
 		openExtensionPage("lockdown.html");
+	} else if (id == "stats") {
+		openExtensionPage("stats.html");
 	} else if (id.startsWith("addSite-")) {
 		addSiteToSet(info.pageUrl, id.substr(8));
 	}
@@ -907,6 +946,10 @@ function handleMessage(message, sender, sendResponse) {
 			// Lockdown requested
 			applyLockdown(message.set, message.endTime);
 		}
+	} else if (message.type == "restart") {
+		// Restart time data requested by statistics page
+		restartTimeData(message.set);
+		sendResponse();
 	} else if (message.type == "blocked") {
 		// Block info requested by blocking/delaying page
 		let info = createBlockInfo(sender.url);

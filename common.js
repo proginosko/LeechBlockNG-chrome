@@ -69,6 +69,12 @@ function cleanOptions(options) {
 		if (typeof options[`sitesURL${set}`] !== "string") {
 			options[`sitesURL${set}`] = "";
 		}
+		if (typeof options[`regexpBlock${set}`] !== "string") {
+			options[`regexpBlock${set}`] = "";
+		}
+		if (typeof options[`regexpAllow${set}`] !== "string") {
+			options[`regexpAllow${set}`] = "";
+		}
 		if (typeof options[`blockRE${set}`] !== "string") {
 			options[`blockRE${set}`] = "";
 		}
@@ -235,6 +241,7 @@ function patternToRegExp(pattern) {
 	return "(www\\.)?" + pattern				// assume optional www prefix
 			.replace(special, "\\$&")			// fix special chars
 			.replace(/^www\\\./, "")			// remove existing www prefix
+			.replace(/\*\\\+/g, ".+")			// convert plus-wildcards
 			.replace(/\*{2,}/g, ".{STAR}")		// convert super-wildcards
 			.replace(/\*/g, "[^\\/]{STAR}")		// convert wildcards
 			.replace(/{STAR}/g, "*");			// convert stars
