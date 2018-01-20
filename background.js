@@ -864,6 +864,18 @@ function openDelayedPage(id, url, set) {
 function addSiteToSet(url, set) {
 	//log("addSiteToSet: " + url + " " + set);
 
+	if (!url) {
+		browser.tabs.query(
+			{ active: true, currentWindow: true },
+			function (tabs) { 
+				if (tabs[0].url) {
+					addSiteToSet(tabs[0].url, set);
+				}
+			}
+		);
+		return;
+	}
+
 	if (!/^http/i.test(url) || set < 1 || set > NUM_SETS) {
 		return;
 	}
