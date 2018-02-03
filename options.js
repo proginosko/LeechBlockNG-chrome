@@ -90,6 +90,7 @@ function saveOptions() {
 		let sitesURL = getElement(`sitesURL${set}`).value;
 		let regexpBlock = getElement(`regexpBlock${set}`).value;
 		let regexpAllow = getElement(`regexpAllow${set}`).value;
+		let ignoreHash = getElement(`ignoreHash${set}`).checked;
 
 		// Get regular expressions to match sites
 		let regexps = getRegExpSites(sites);
@@ -112,6 +113,7 @@ function saveOptions() {
 		options[`sitesURL${set}`] = sitesURL;
 		options[`regexpBlock${set}`] = regexpBlock;
 		options[`regexpAllow${set}`] = regexpAllow;
+		options[`ignoreHash${set}`] = ignoreHash;
 		options[`blockRE${set}`] = regexps.block;
 		options[`allowRE${set}`] = regexps.allow;
 		options[`keywordRE${set}`] = regexps.keyword;
@@ -130,6 +132,7 @@ function saveOptions() {
 	options["timerVisible"] = getElement("timerVisible").checked;
 	options["timerSize"] = getElement("timerSize").value;
 	options["timerLocation"] = getElement("timerLocation").value;
+	options["timerBadge"] = getElement("timerBadge").checked;
 	options["warnSecs"] = getElement("warnSecs").value;
 	options["contextMenu"] = getElement("contextMenu").checked;
 
@@ -263,7 +266,8 @@ function retrieveOptions() {
 			let sitesURL = options[`sitesURL${set}`];
 			let regexpBlock = options[`regexpBlock${set}`];
 			let regexpAllow = options[`regexpAllow${set}`];
-			
+			let ignoreHash = options[`ignoreHash${set}`];
+
 			// Apply custom set name to tab (if specified)
 			if (setName) {
 				getElement(`blockSetName${set}`).innerText = setName;
@@ -291,6 +295,7 @@ function retrieveOptions() {
 			getElement(`sitesURL${set}`).value = sitesURL;
 			getElement(`regexpBlock${set}`).value = regexpBlock;
 			getElement(`regexpAllow${set}`).value = regexpAllow;
+			getElement(`ignoreHash${set}`).checked = ignoreHash;
 		}
 
 		// General options
@@ -300,6 +305,7 @@ function retrieveOptions() {
 		getElement("timerVisible").checked = options["timerVisible"];
 		getElement("timerSize").value = options["timerSize"];
 		getElement("timerLocation").value = options["timerLocation"];
+		getElement("timerBadge").checked = options["timerBadge"];
 		getElement("warnSecs").value = options["warnSecs"];
 		getElement("contextMenu").checked = options["contextMenu"];
 
@@ -385,6 +391,7 @@ function exportOptions() {
 		let sitesURL = getElement(`sitesURL${set}`).value;
 		let regexpBlock = getElement(`regexpBlock${set}`).value;
 		let regexpAllow = getElement(`regexpAllow${set}`).value;
+		let ignoreHash = getElement(`ignoreHash${set}`).checked;
 
 		// Set option values
 		options[`setName${set}`] = setName;
@@ -404,6 +411,7 @@ function exportOptions() {
 		options[`sitesURL${set}`] = sitesURL;
 		options[`regexpBlock${set}`] = regexpBlock;
 		options[`regexpAllow${set}`] = regexpAllow;
+		options[`ignoreHash${set}`] = ignoreHash;
 	}
 
 	// General options
@@ -413,6 +421,7 @@ function exportOptions() {
 	options["timerVisible"] = getElement("timerVisible").checked;
 	options["timerSize"] = getElement("timerSize").value;
 	options["timerLocation"] = getElement("timerLocation").value;
+	options["timerBadge"] = getElement("timerBadge").checked;
 	options["warnSecs"] = getElement("warnSecs").value;
 	options["contextMenu"] = getElement("contextMenu").checked;
 
@@ -488,6 +497,7 @@ function importOptions() {
 			let sitesURL = options[`sitesURL${set}`];
 			let regexpBlock = options[`regexpBlock${set}`];
 			let regexpAllow = options[`regexpAllow${set}`];
+			let ignoreHash = options[`ignoreHash${set}`];
 
 			// Set component values
 			if (setName != undefined) {
@@ -600,6 +610,12 @@ function importOptions() {
 					element.value = regexpAllow;
 				}
 			}
+			if (ignoreHash != undefined) {
+				let element = getElement(`ignoreHash${set}`);
+				if (!element.disabled) {
+					element.checked = isTrue(ignoreHash);
+				}
+			}
 		}
 
 		// General options
@@ -609,6 +625,7 @@ function importOptions() {
 		let timerVisible = options["timerVisible"];
 		let timerSize = options["timerSize"];
 		let timerLocation = options["timerLocation"];
+		let timerBadge= options["timerBadge"];
 		let warnSecs = options["warnSecs"];
 		let contextMenu = options["contextMenu"];
 		if (oa != undefined) {
@@ -628,6 +645,9 @@ function importOptions() {
 		}
 		if (timerLocation != undefined) {
 			getElement("timerLocation").value = timerLocation;
+		}
+		if (timerBadge != undefined) {
+			getElement("timerBadge").checked = timerBadge;
 		}
 		if (warnSecs != undefined) {
 			getElement("warnSecs").value = warnSecs;
@@ -652,7 +672,7 @@ function disableSetOptions(set) {
 		"prevOpts", "prevAddons", "prevSupport", "sitesURL",
 		"regexpBlock", "clearRegExpBlock", "genRegExpBlock",
 		"regexpAllow", "clearRegExpAllow", "genRegExpAllow",
-		"cancelLockdown"
+		"ignoreHash", "cancelLockdown"
 	];
 	for (let item of items) {
 		let element = getElement(`${item}${set}`);

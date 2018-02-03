@@ -84,6 +84,9 @@ function cleanOptions(options) {
 		if (typeof options[`keywordRE${set}`] !== "string") {
 			options[`keywordRE${set}`] = "";
 		}
+		if (typeof options[`ignoreHash${set}`] !== "boolean") {
+			options[`ignoreHash${set}`] = true;
+		}
 		if (typeof options[`lockdown${set}`] !== "boolean") {
 			options[`lockdown${set}`] = false;
 		}
@@ -115,6 +118,9 @@ function cleanOptions(options) {
 	}
 	if (typeof options["timerLocation"] !== "string") {
 		options["timerLocation"] = "0"; // default: top left
+	}
+	if (typeof options["timerBadge"] !== "boolean") {
+		options["timerBadge"] = true; // default: enabled
 	}
 	if (typeof options["warnSecs"] !== "string") {
 		options["warnSecs"] = ""; // default: no warning

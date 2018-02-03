@@ -292,12 +292,6 @@ function checkTab(id, url, isRepeat) {
 		gTabs[id].allowedPath = null;
 	}
 
-	// Get URL without hash part (unless it's a hash-bang part)
-	let pageURL = parsedURL.page;
-	if (parsedURL.hash != null && /^!/.test(parsedURL.hash)) {
-		pageURL += "#" + parsedURL.hash;
-	}
-
 	// Get current time/date
 	let timedate = new Date();
 
@@ -307,6 +301,14 @@ function checkTab(id, url, isRepeat) {
 	gTabs[id].secsLeft = Infinity;
 
 	for (let set = 1; set <= NUM_SETS; set++) {
+		// Get URL of page (possibly with hash part)
+		let pageURL = parsedURL.page;
+		if (parsedURL.hash != null) {
+			if (/^!/.test(parsedURL.hash) || !gOptions[`ignoreHash${set}`]) {
+				pageURL += "#" + parsedURL.hash;
+			}
+		}
+
 		// Get regular expressions for matching sites to block/allow
 		let blockRE = gOptions[`regexpBlock${set}`] || gOptions[`blockRE${set}`];
 		if (!blockRE) continue; // no block for this set
@@ -610,6 +612,17 @@ function updateTimer(id) {
 		message.text = formatTime(secsLeft); // show timer with time left
 	}
 	browser.tabs.sendMessage(id, message);
+
+	// Set badge timer (if option selected)
+	if (gOptions["timerBadge"] && secsLeft < 600) {
+		let m = Math.floor(secsLeft / 60);
+		let s = Math.floor(secsLeft) % 60;
+		let text = m + ":" + ((s < 10) ? "0" + s : s);
+		browser.browserAction.setBadgeBackgroundColor({ color: "#666" });
+		browser.browserAction.setBadgeText({ text: text, tabId: id });
+	} else {
+		browser.browserAction.setBadgeText({ text: "", tabId: id });
+	}
 }
 
 // Create info for blocking/delaying page
