@@ -669,7 +669,7 @@ function disableSetOptions(set) {
 		"day0", "day1", "day2", "day3", "day4", "day5", "day6",
 		"blockURL", "defaultPage", "delayingPage", "blankPage", "homePage",
 		"activeBlock", "countFocus", "delayFirst", "delaySecs",
-		"prevOpts", "prevAddons", "prevSupport", "sitesURL",
+		"prevOpts", "prevExts", "sitesURL",
 		"regexpBlock", "clearRegExpBlock", "genRegExpBlock",
 		"regexpAllow", "clearRegExpAllow", "genRegExpAllow",
 		"ignoreHash", "cancelLockdown"
