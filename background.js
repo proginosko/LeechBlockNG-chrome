@@ -892,9 +892,11 @@ function applyOverride() {
 		// Save updated option to local storage
 		let options = {};
 		options["oret"] = overrideEndTime;
-		browser.storage.local.set(options).catch(
-			function (error) { warn("Cannot set options: " + error); }
-		);
+		browser.storage.local.set(options, function () {
+			if (browser.runtime.lastError) {
+				warn("Cannot set options: " + browser.runtime.lastError.message);
+			}
+		});
 
 		updateIcon();
 	}

@@ -16,9 +16,15 @@ var gOverrideMins;
 function initializePage() {
 	//log("initializePage");
 
-	browser.storage.local.get().then(onGot, onError);
+	browser.storage.local.get(onGot);
 
 	function onGot(options) {
+		if (browser.runtime.lastError) {
+			warn("Cannot get options: " + error);
+			$("#alertRetrieveError").dialog("open");
+			return;
+		}
+
 		gOverrideMins = options["orm"];
 	
 		if (!gOverrideMins) {
@@ -27,11 +33,6 @@ function initializePage() {
 		}
 
 		confirmAccess(options);
-	}
-
-	function onError(error) {
-		warn("Cannot get options: " + error);
-		$("#alertRetrieveError").dialog("open");
 	}
 }
 
