@@ -142,9 +142,6 @@ function cleanOptions(options) {
 	if (typeof options["contextMenu"] !== "boolean") {
 		options["contextMenu"] = true; // default: enabled
 	}
-	if (typeof options["toolsMenu"] !== "boolean") {
-		options["toolsMenu"] = true; // default: enabled
-	}
 	if (typeof options["matchSubdomains"] !== "boolean") {
 		options["matchSubdomains"] = false; // default: disabled for backwards compatibility
 	}

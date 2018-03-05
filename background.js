@@ -26,39 +26,38 @@ function refreshMenus() {
 	browser.contextMenus.removeAll();
 
 	let context = gOptions["contextMenu"] ? "all" : "browser_action";
-	let contexts = gOptions["toolsMenu"] ? [context, "tools_menu"] : [context];
 
 	// Options
 	browser.contextMenus.create({
 		id: "options",
 		title: "Options",
-		contexts: contexts
+		contexts: [context]
 	});
 
 	// Lockdown
 	browser.contextMenus.create({
 		id: "lockdown",
 		title: "Lockdown",
-		contexts: contexts
+		contexts: [context]
 	});
 
 	// Statistics
 	browser.contextMenus.create({
 		id: "stats",
 		title: "Statistics",
-		contexts: contexts
+		contexts: [context]
 	});
 
 	browser.contextMenus.create({
 		type: "separator",
-		contexts: [context] // never in tools menu
+		contexts: [context]
 	});
 
 	// Add Site
 	browser.contextMenus.create({
 		id: "addSite",
 		title: "Add Site",
-		contexts: [context] // never in tools menu
+		contexts: [context]
 	});
 
 	// Add Site submenu
@@ -72,7 +71,7 @@ function refreshMenus() {
 			id: `addSite-${set}`,
 			parentId: "addSite",
 			title: title,
-			contexts: contexts
+			contexts: [context]
 		});
 	}
 }
