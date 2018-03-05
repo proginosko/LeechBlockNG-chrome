@@ -1115,6 +1115,8 @@ function onInterval() {
 
 /*** STARTUP CODE BEGINS HERE ***/
 
+browser.browserAction.setIcon({ path: DEFAULT_ICON });
+
 if (browser.contextMenus) {
 	browser.contextMenus.onClicked.addListener(handleMenuClick);
 }
