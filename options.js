@@ -56,15 +56,36 @@ function saveOptions() {
 	}
 
 	// Check format for text fields in general options
-	let warnSecs = getElement("warnSecs").value;
-	if (!checkPosIntFormat(warnSecs)) {
+	if (!checkPosIntFormat($("#overrideMins").val())) {
 		$("#tabs").tabs("option", "active", NUM_SETS);
-		$("warnSecs").focus();
+		$("#overrideMins").focus();
+		$("#alertBadMinutes").dialog("open");
+		return false;
+	}
+	if (!checkPosIntFormat($("#warnSecs").val())) {
+		$("#tabs").tabs("option", "active", NUM_SETS);
+		$("#warnSecs").focus();
 		$("#alertBadSeconds").dialog("open");
 		return false;
 	}
 
 	let options = {};
+
+	// General options
+	options["oa"] = getElement("optionsAccess").value;
+	options["password"] = getElement("accessPassword").value;
+	options["hpp"] = getElement("hidePassword").checked;
+	options["timerVisible"] = getElement("timerVisible").checked;
+	options["timerSize"] = getElement("timerSize").value;
+	options["timerLocation"] = getElement("timerLocation").value;
+	options["timerBadge"] = getElement("timerBadge").checked;
+	options["orm"] = getElement("overrideMins").value;
+	options["ora"] = getElement("overrideAccess").value;
+	options["warnSecs"] = getElement("warnSecs").value;
+	options["warnImmediate"] = getElement("warnImmediate").checked;
+	options["contextMenu"] = getElement("contextMenu").checked;
+	options["toolsMenu"] = getElement("toolsMenu").checked;
+	options["matchSubdomains"] = getElement("matchSubdomains").checked;
 
 	for (let set = 1; set <= NUM_SETS; set++) {
 		// Get component values
@@ -85,6 +106,7 @@ function saveOptions() {
 		let countFocus = getElement(`countFocus${set}`).checked;
 		let delayFirst = getElement(`delayFirst${set}`).checked;
 		let delaySecs = getElement(`delaySecs${set}`).value;
+		let allowOverride = getElement(`allowOverride${set}`).checked;
 		let prevOpts = getElement(`prevOpts${set}`).checked;
 		let prevExts = getElement(`prevExts${set}`).checked;
 		let sitesURL = getElement(`sitesURL${set}`).value;
@@ -93,7 +115,7 @@ function saveOptions() {
 		let ignoreHash = getElement(`ignoreHash${set}`).checked;
 
 		// Get regular expressions to match sites
-		let regexps = getRegExpSites(sites);
+		let regexps = getRegExpSites(sites, options["matchSubdomains"]);
 
 		// Set option values
 		options[`setName${set}`] = setName;
@@ -108,6 +130,7 @@ function saveOptions() {
 		options[`countFocus${set}`] = countFocus;
 		options[`delayFirst${set}`] = delayFirst;
 		options[`delaySecs${set}`] = delaySecs;
+		options[`allowOverride${set}`] = allowOverride;
 		options[`prevOpts${set}`] = prevOpts;
 		options[`prevExts${set}`] = prevExts;
 		options[`sitesURL${set}`] = sitesURL;
@@ -124,17 +147,6 @@ function saveOptions() {
 			browser.permissions.request(permissions);
 		}
 	}
-
-	// General options
-	options["oa"] = getElement("optionsAccess").value;
-	options["password"] = getElement("accessPassword").value;
-	options["hpp"] = getElement("hidePassword").checked;
-	options["timerVisible"] = getElement("timerVisible").checked;
-	options["timerSize"] = getElement("timerSize").value;
-	options["timerLocation"] = getElement("timerLocation").value;
-	options["timerBadge"] = getElement("timerBadge").checked;
-	options["warnSecs"] = getElement("warnSecs").value;
-	options["contextMenu"] = getElement("contextMenu").checked;
 
 	browser.storage.local.set(options, function () {
 		if (browser.runtime.lastError) {
@@ -261,6 +273,7 @@ function retrieveOptions() {
 			let countFocus = options[`countFocus${set}`];
 			let delayFirst = options[`delayFirst${set}`];
 			let delaySecs = options[`delaySecs${set}`];
+			let allowOverride = options[`allowOverride${set}`];
 			let prevOpts = options[`prevOpts${set}`];
 			let prevExts = options[`prevExts${set}`];
 			let sitesURL = options[`sitesURL${set}`];
@@ -290,6 +303,7 @@ function retrieveOptions() {
 			getElement(`countFocus${set}`).checked = countFocus;
 			getElement(`delayFirst${set}`).checked = delayFirst;
 			getElement(`delaySecs${set}`).value = delaySecs;
+			getElement(`allowOverride${set}`).checked = allowOverride;
 			getElement(`prevOpts${set}`).checked = prevOpts;
 			getElement(`prevExts${set}`).checked = prevExts;
 			getElement(`sitesURL${set}`).value = sitesURL;
@@ -306,8 +320,13 @@ function retrieveOptions() {
 		getElement("timerSize").value = options["timerSize"];
 		getElement("timerLocation").value = options["timerLocation"];
 		getElement("timerBadge").checked = options["timerBadge"];
+		getElement("overrideMins").value = options["orm"];
+		getElement("overrideAccess").value = options["ora"];
 		getElement("warnSecs").value = options["warnSecs"];
+		getElement("warnImmediate").checked = options["warnImmediate"];
 		getElement("contextMenu").checked = options["contextMenu"];
+		getElement("toolsMenu").checked = options["toolsMenu"];
+		getElement("matchSubdomains").checked = options["matchSubdomains"];
 
 		confirmAccess(options);
 	}
@@ -386,6 +405,7 @@ function exportOptions() {
 		let countFocus = getElement(`countFocus${set}`).checked;
 		let delayFirst = getElement(`delayFirst${set}`).checked;
 		let delaySecs = getElement(`delaySecs${set}`).value;
+		let allowOverride = getElement(`allowOverride${set}`).checked;
 		let prevOpts = getElement(`prevOpts${set}`).checked;
 		let prevExts = getElement(`prevExts${set}`).checked;
 		let sitesURL = getElement(`sitesURL${set}`).value;
@@ -406,6 +426,7 @@ function exportOptions() {
 		options[`countFocus${set}`] = countFocus;
 		options[`delayFirst${set}`] = delayFirst;
 		options[`delaySecs${set}`] = delaySecs;
+		options[`allowOverride${set}`] = allowOverride;
 		options[`prevOpts${set}`] = prevOpts;
 		options[`prevExts${set}`] = prevExts;
 		options[`sitesURL${set}`] = sitesURL;
@@ -422,8 +443,13 @@ function exportOptions() {
 	options["timerSize"] = getElement("timerSize").value;
 	options["timerLocation"] = getElement("timerLocation").value;
 	options["timerBadge"] = getElement("timerBadge").checked;
+	options["orm"] = getElement("overrideMins").value;
+	options["ora"] = getElement("overrideAccess").value;
 	options["warnSecs"] = getElement("warnSecs").value;
+	options["warnImmediate"] = getElement("warnImmediate").checked;
 	options["contextMenu"] = getElement("contextMenu").checked;
+	options["toolsMenu"] = getElement("toolsMenu").checked;
+	options["matchSubdomins"] = getElement("matchSubdomains").checked;
 
 	// Convert options to text lines
 	let lines = [];
@@ -492,6 +518,7 @@ function importOptions() {
 			let countFocus = options[`countFocus${set}`];
 			let delayFirst = options[`delayFirst${set}`];
 			let delaySecs = options[`delaySecs${set}`];
+			let allowOverride = options[`allowOverride${set}`];
 			let prevOpts = options[`prevOpts${set}`];
 			let prevExts = options[`prevExts${set}`];
 			let sitesURL = options[`sitesURL${set}`];
@@ -580,6 +607,12 @@ function importOptions() {
 					element.value = delaySecs;
 				}
 			}
+			if (allowOverride != undefined) {
+				let element = getElement(`allowOverride${set}`);
+				if (!element.disabled) {
+					element.checked = isTrue(allowOverride);
+				}
+			}
 			if (prevOpts != undefined) {
 				let element = getElement(`prevOpts${set}`);
 				if (!element.disabled) {
@@ -626,8 +659,13 @@ function importOptions() {
 		let timerSize = options["timerSize"];
 		let timerLocation = options["timerLocation"];
 		let timerBadge= options["timerBadge"];
+		let orm = options["orm"];
+		let ora = options["ora"];
 		let warnSecs = options["warnSecs"];
+		let warnImmediate = options["warnImmediate"];
 		let contextMenu = options["contextMenu"];
+		let toolsMenu = options["toolsMenu"];
+		let matchSubdomains = options["matchSubdomains"]
 		if (oa != undefined) {
 			getElement("optionsAccess").value = oa;
 		}
@@ -649,11 +687,26 @@ function importOptions() {
 		if (timerBadge != undefined) {
 			getElement("timerBadge").checked = timerBadge;
 		}
+		if (orm != undefined) {
+			getElement("overrideMins").value = orm;
+		}
+		if (ora != undefined) {
+			getElement("overrideAccess").value = ora;
+		}
 		if (warnSecs != undefined) {
 			getElement("warnSecs").value = warnSecs;
 		}
+		if (warnImmediate != undefined) {
+			getElement("warnImmediate").value = warnImmediate;
+		}
 		if (contextMenu != undefined) {
 			getElement("contextMenu").checked = contextMenu;
+		}
+		if (toolsMenu != undefined) {
+			getElement("toolsMenu").checked = toolsMenu;
+		}
+		if (matchSubdomains != undefined) {
+			getElement("matchSubdomains").checked = matchSubdomains;
 		}
 
 		$("#alertImportSuccess").dialog("open");
@@ -668,7 +721,7 @@ function disableSetOptions(set) {
 		"times", "allDay", "limitMins", "limitPeriod", "conjMode",
 		"day0", "day1", "day2", "day3", "day4", "day5", "day6",
 		"blockURL", "defaultPage", "delayingPage", "blankPage", "homePage",
-		"activeBlock", "countFocus", "delayFirst", "delaySecs",
+		"activeBlock", "countFocus", "delayFirst", "delaySecs", "allowOverride",
 		"prevOpts", "prevExts", "sitesURL",
 		"regexpBlock", "clearRegExpBlock", "genRegExpBlock",
 		"regexpAllow", "clearRegExpAllow", "genRegExpAllow",
@@ -753,12 +806,14 @@ for (let set = 1; set <= NUM_SETS; set++) {
 	$(`#clearRegExpBlock${set}`).click(function (e) { $(`#regexpBlock${set}`).val(""); });
 	$(`#genRegExpBlock${set}`).click(function (e) {
 		let sites = $(`#sites${set}`).val();
-		$(`#regexpBlock${set}`).val(getRegExpSites(sites).block);
+		let matchSubdomains = getElement("matchSubdomains").checked;
+		$(`#regexpBlock${set}`).val(getRegExpSites(sites, matchSubdomains).block);
 	});
 	$(`#clearRegExpAllow${set}`).click(function (e) { $(`#regexpAllow${set}`).val(""); });
 	$(`#genRegExpAllow${set}`).click(function (e) {
 		let sites = $(`#sites${set}`).val();
-		$(`#regexpAllow${set}`).val(getRegExpSites(sites).allow);
+		let matchSubdomains = getElement("matchSubdomains").checked;
+		$(`#regexpAllow${set}`).val(getRegExpSites(sites, matchSubdomains).allow);
 	});
 	$(`#cancelLockdown${set}`).click(function (e) {
 		browser.runtime.sendMessage({ type: "lockdown", set: set });
