@@ -85,6 +85,7 @@ function saveOptions() {
 	options["warnImmediate"] = getElement("warnImmediate").checked;
 	options["contextMenu"] = getElement("contextMenu").checked;
 	options["matchSubdomains"] = getElement("matchSubdomains").checked;
+	options["processActiveTabs"] = getElement("processActiveTabs").checked;
 
 	for (let set = 1; set <= NUM_SETS; set++) {
 		// Get component values
@@ -325,6 +326,7 @@ function retrieveOptions() {
 		getElement("warnImmediate").checked = options["warnImmediate"];
 		getElement("contextMenu").checked = options["contextMenu"];
 		getElement("matchSubdomains").checked = options["matchSubdomains"];
+		getElement("processActiveTabs").checked = options["processActiveTabs"];
 
 		confirmAccess(options);
 	}
@@ -447,6 +449,7 @@ function exportOptions() {
 	options["warnImmediate"] = getElement("warnImmediate").checked;
 	options["contextMenu"] = getElement("contextMenu").checked;
 	options["matchSubdomins"] = getElement("matchSubdomains").checked;
+	options["processActiveTabs"] = getElement("processActiveTabs").checked;
 
 	// Convert options to text lines
 	let lines = [];
@@ -662,6 +665,7 @@ function importOptions() {
 		let warnImmediate = options["warnImmediate"];
 		let contextMenu = options["contextMenu"];
 		let matchSubdomains = options["matchSubdomains"]
+		let processActiveTabs = options["processActiveTabs"]
 		if (oa != undefined) {
 			getElement("optionsAccess").value = oa;
 		}
@@ -700,6 +704,9 @@ function importOptions() {
 		}
 		if (matchSubdomains != undefined) {
 			getElement("matchSubdomains").checked = matchSubdomains;
+		}
+		if (processActiveTabs != undefined) {
+			getElement("processActiveTabs").checked = processActiveTabs;
 		}
 
 		$("#alertImportSuccess").dialog("open");

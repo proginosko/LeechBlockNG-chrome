@@ -224,12 +224,18 @@ function updateFocusedWindowId() {
 
 // Process tabs: update time spent and check for blocks
 // 
-function processTabs() {
-	//log("processTabs");
+function processTabs(active) {
+	//log("processTabs: " + active);
 
 	gSetCounted.fill(false);
 
-	browser.tabs.query({}, onGot);
+	if (active) {
+		// Process only active tabs
+		browser.tabs.query({ active: true }, onGot);
+	} else {
+		// Process all tabs
+		browser.tabs.query({}, onGot);
+	}
 
 	function onGot(tabs) {
 		if (browser.runtime.lastError) {
@@ -237,7 +243,6 @@ function processTabs() {
 			return;
 		}
 
-		// Process all tabs
 		for (let tab of tabs) {
 			let focus = tab.active && (!gFocusWindowId || tab.windowId == gFocusWindowId);
 
@@ -308,9 +313,11 @@ function checkTab(id, url, isRepeat) {
 	for (let set = 1; set <= NUM_SETS; set++) {
 		// Get URL of page (possibly with hash part)
 		let pageURL = parsedURL.page;
+		let pageURLWithHash = parsedURL.page;
 		if (parsedURL.hash != null) {
+			pageURLWithHash +=  "#" + parsedURL.hash;
 			if (/^!/.test(parsedURL.hash) || !gOptions[`ignoreHash${set}`]) {
-				pageURL += "#" + parsedURL.hash;
+				pageURL = pageURLWithHash;
 			}
 		}
 
@@ -390,7 +397,7 @@ function checkTab(id, url, isRepeat) {
 			// Redirect page if all relevant block conditions are fulfilled
 			if (!override && doBlock && (!isRepeat || activeBlock)) {
 				// Get final URL for block page
-				blockURL = blockURL.replace(/\$S/g, set).replace(/\$U/g, pageURL);
+				blockURL = blockURL.replace(/\$S/g, set).replace(/\$U/g, pageURLWithHash);
 
 				if (keywordRE) {
 					// Check for keyword(s) before blocking
@@ -1074,6 +1081,12 @@ function handleTabUpdated(tabId, changeInfo, tab) {
 function handleTabActivated(activeInfo) {
 	//log("handleTabActivated: " + activeInfo.tabId);
 
+	if (gOptions["processActiveTabs"]) {
+		// Process all tabs to ensure time counted correctly
+		processTabs(false);
+		return;
+	}
+
 	let focus = (!gFocusWindowId || activeInfo.windowId == gFocusWindowId);
 
 	clockPageTime(activeInfo.tabId, true, focus);
@@ -1108,7 +1121,7 @@ function onInterval() {
 	if (!gGotOptions) {
 		retrieveOptions();
 	} else {
-		processTabs();
+		processTabs(gOptions["processActiveTabs"]);
 		updateIcon();
 	}
 }
