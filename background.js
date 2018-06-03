@@ -81,10 +81,10 @@ function refreshMenus() {
 	});
 
 	// Override
-	browser.menus.create({
+	browser.contextMenus.create({
 		id: "override",
 		title: "Override",
-		contexts: contexts
+		contexts: [context]
 	});
 
 	// Statistics
@@ -1192,7 +1192,7 @@ function onInterval() {
 
 /*** STARTUP CODE BEGINS HERE ***/
 
-browser.runtime.getPlatformInfo().then(
+browser.runtime.getPlatformInfo(
 	function (info) { gIsAndroid = (info.os == "android"); }
 );
 
