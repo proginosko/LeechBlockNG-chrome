@@ -6,15 +6,54 @@ const browser = chrome;
 
 const TICK_TIME = 1000; // update every second
 
+var gIsAndroid = false;
 var gGotOptions = false;
 var gOptions = {};
 var gTabs = [];
 var gSetCounted = [];
+var gRegExps = [];
 var gFocusWindowId = 0;
 var gOverrideIcon = false;
 
 function log(message) { console.log("[LBNG] " + message); }
 function warn(message) { console.warn("[LBNG] " + message); }
+
+// Create (precompile) regular expressions
+//
+function createRegExps() {
+	// Create new array if necessary
+	if (!gRegExps || gRegExps.length != NUM_SETS) {
+		gRegExps = [];
+		for (let set = 1; set <= NUM_SETS; set++) {
+			gRegExps.push({ block: null, allow: null, keyword: null });
+		}
+	}
+
+	// Create new RegExp objects
+	for (let set = 1; set <= NUM_SETS; set++) {
+		let blockRE = gOptions[`regexpBlock${set}`] || gOptions[`blockRE${set}`];
+		if (blockRE) {
+			gRegExps[set - 1].block = new RegExp(blockRE, "i");
+		}
+
+		let allowRE = gOptions[`regexpAllow${set}`] || gOptions[`allowRE${set}`];
+		if (allowRE) {
+			gRegExps[set - 1].allow = new RegExp(allowRE, "i");
+		}
+
+		let keywordRE = gOptions[`keywordRE${set}`];
+		if (keywordRE) {
+			gRegExps[set - 1].keyword = new RegExp(keywordRE, "i");
+		}
+	}
+}
+
+// Test URL against block/allow regular expressions
+//
+function testURL(pageURL, blockRE, allowRE) {
+	return (blockRE && blockRE.test(pageURL)
+			&& !(allowRE && allowRE.test(pageURL)));
+}
 
 // Refresh menus
 //
@@ -39,6 +78,13 @@ function refreshMenus() {
 		id: "lockdown",
 		title: "Lockdown",
 		contexts: [context]
+	});
+
+	// Override
+	browser.menus.create({
+		id: "override",
+		title: "Override",
+		contexts: contexts
 	});
 
 	// Statistics
@@ -95,6 +141,7 @@ function retrieveOptions() {
 		cleanOptions(gOptions);
 		cleanTimeData(gOptions);
 		gSetCounted = Array(NUM_SETS).fill(false);
+		createRegExps();
 		refreshMenus();
 		loadSiteLists();
 		updateIcon();
@@ -142,6 +189,8 @@ function loadSiteLists() {
 			gOptions[`blockRE${set}`] = regexps.block;
 			gOptions[`allowRE${set}`] = regexps.allow;
 			gOptions[`keywordRE${set}`] = regexps.keyword;
+
+			createRegExps();
 
 			// Save updated options to local storage
 			let options = {};
@@ -267,6 +316,12 @@ function processTabs(active) {
 function checkTab(id, url, isRepeat) {
 	//log("checkTab: " + id + " " + url + " " + isRepeat);
 
+	function isSameHost(host1, host2) {
+		return (host1 == host2)
+				|| (host1 == "www." + host2)
+				|| (host2 == "www." + host1);
+	}
+
 	// Quick exit for about:blank
 	if (url == "about:blank") {
 		return false; // not blocked
@@ -290,7 +345,7 @@ function checkTab(id, url, isRepeat) {
 	let parsedURL = getParsedURL(url);
 
 	// Check for allowed host/path
-	let ah = (gTabs[id].allowedHost == parsedURL.host);
+	let ah = isSameHost(gTabs[id].allowedHost, parsedURL.host);
 	let ap = !gTabs[id].allowedPath || (gTabs[id].allowedPath == parsedURL.path);
 	if (ah && ap) {
 		return false; // not blocked
@@ -322,10 +377,10 @@ function checkTab(id, url, isRepeat) {
 		}
 
 		// Get regular expressions for matching sites to block/allow
-		let blockRE = gOptions[`regexpBlock${set}`] || gOptions[`blockRE${set}`];
+		let blockRE = gRegExps[set - 1].block;
 		if (!blockRE) continue; // no block for this set
-		let allowRE = gOptions[`regexpAllow${set}`] || gOptions[`allowRE${set}`];
-		let keywordRE = gOptions[`keywordRE${set}`];
+		let allowRE = gRegExps[set - 1].allow;
+		let keywordRE = gRegExps[set - 1].keyword;
 
 		// Get options for preventing access to chrome://extensions
 		let prevExts = gOptions[`prevExts${set}`];
@@ -345,6 +400,7 @@ function checkTab(id, url, isRepeat) {
 			let blockURL = gOptions[`blockURL${set}`];
 			let activeBlock = gOptions[`activeBlock${set}`];
 			let allowOverride = gOptions[`allowOverride${set}`];
+			let showTimer = gOptions[`showTimer${set}`];
 
 			// Check day
 			let onSelectedDay = days[timedate.getDay()];
@@ -428,7 +484,7 @@ function checkTab(id, url, isRepeat) {
 			if (override) {
 				secsLeft = Math.max(secsLeft, overrideEndTime - now);
 			}
-			if (secsLeft < gTabs[id].secsLeft) {
+			if (showTimer && secsLeft < gTabs[id].secsLeft) {
 				gTabs[id].secsLeft = secsLeft;
 				gTabs[id].secsLeftSet = set;
 			}
@@ -543,9 +599,9 @@ function updateTimeData(url, secsOpen, secsFocus) {
 
 	for (let set = 1; set <= NUM_SETS; set++) {
 		// Get regular expressions for matching sites to block/allow
-		let blockRE = gOptions[`regexpBlock${set}`] || gOptions[`blockRE${set}`];
+		let blockRE = gRegExps[set - 1].block;
 		if (!blockRE) continue; // no block for this set
-		let allowRE = gOptions[`regexpAllow${set}`] || gOptions[`allowRE${set}`];
+		let allowRE = gRegExps[set - 1].allow;
 
 		// Test URL against block/allow regular expressions
 		if (testURL(pageURL, blockRE, allowRE)) {
@@ -635,7 +691,7 @@ function updateTimer(id) {
 	browser.tabs.sendMessage(id, message);
 
 	// Set badge timer (if option selected)
-	if (gOptions["timerBadge"] && secsLeft < 600) {
+	if (!gIsAndroid && gOptions["timerBadge"] && secsLeft < 600) {
 		let m = Math.floor(secsLeft / 60);
 		let s = Math.floor(secsLeft) % 60;
 		let text = m + ":" + ((s < 10) ? "0" + s : s);
@@ -649,6 +705,10 @@ function updateTimer(id) {
 // Update button icon
 //
 function updateIcon() {
+	if (gIsAndroid) {
+		return; // icon not supported yet
+	}
+
 	// Get current time in seconds
 	let now = Math.floor(Date.now() / 1000);
 
@@ -990,6 +1050,8 @@ function addSiteToSet(url, set) {
 		gOptions[`allowRE${set}`] = regexps.allow;
 		gOptions[`keywordRE${set}`] = regexps.keyword;
 
+		createRegExps();
+
 		// Save updated options to local storage
 		let options = {};
 		options[`sites${set}`] = sites;
@@ -1012,6 +1074,8 @@ function handleMenuClick(info, tab) {
 		browser.runtime.openOptionsPage();
 	} else if (id == "lockdown") {
 		openExtensionPage("lockdown.html");
+	} else if (id == "override") {
+		openExtensionPage("override.html");
 	} else if (id == "stats") {
 		openExtensionPage("stats.html");
 	} else if (id.startsWith("addSite-")) {
@@ -1128,7 +1192,9 @@ function onInterval() {
 
 /*** STARTUP CODE BEGINS HERE ***/
 
-browser.browserAction.setIcon({ path: DEFAULT_ICON });
+browser.runtime.getPlatformInfo().then(
+	function (info) { gIsAndroid = (info.os == "android"); }
+);
 
 if (browser.contextMenus) {
 	browser.contextMenus.onClicked.addListener(handleMenuClick);

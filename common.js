@@ -71,6 +71,9 @@ function cleanOptions(options) {
 		if (typeof options[`prevExts${set}`] !== "boolean") {
 			options[`prevExts${set}`] = false;
 		}
+		if (typeof options[`showTimer${set}`] !== "boolean") {
+			options[`showTimer${set}`] = true;
+		}
 		if (typeof options[`sitesURL${set}`] !== "string") {
 			options[`sitesURL${set}`] = "";
 		}
@@ -283,13 +286,6 @@ function keywordToRegExp(keyword) {
 			.replace(/_+/g, "\\s+")				// convert underscores
 			.replace(/\*+/, "\\S*")				// convert wildcards
 			+ "\\b";
-}
-
-// Test URL against block/allow regular expressions
-//
-function testURL(pageURL, blockRE, allowRE) {
-	return (blockRE && (new RegExp(blockRE, "i")).test(pageURL)
-			&& !(allowRE && (new RegExp(allowRE, "i")).test(pageURL)));
 }
 
 // Check time periods format

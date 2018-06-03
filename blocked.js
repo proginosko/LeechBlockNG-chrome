@@ -24,7 +24,7 @@ function processBlockInfo(info) {
 	}
 
 	let blockedSet = document.getElementById("lbBlockedSet");
-	if (info.blockedSet && info.blockedSetName && blockedSet) {
+	if (info.blockedSet && blockedSet) {
 		if (info.blockedSetName) {
 			blockedSet.innerText = info.blockedSetName;
 		} else {

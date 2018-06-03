@@ -58,6 +58,7 @@ function updateTimer(text, size, location) {
 			// Create timer
 			gTimer = document.createElement("div");
 			gTimer.setAttribute("style", TIMER_DEFAULT_STYLE);
+			gTimer.addEventListener("dblclick", function (e) { this.style.display = "none"; });
 		}
 
 		if (!document.body.contains(gTimer)) {
@@ -129,9 +130,6 @@ function hideAlert() {
 // Check page for keyword(s)
 //
 function checkKeyword(keywordRE) {
-	// Create regular expression (case insensitive)
-	let regexp = new RegExp(keywordRE, "i");
-
 	// Get all text nodes in document
 	let textNodes = document.evaluate(
 		"//text()", document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
@@ -139,7 +137,7 @@ function checkKeyword(keywordRE) {
 	//console.log("Checking " + textNodes.snapshotLength + " text node(s) for keyword(s)...");
 
 	for (let i = 0; i < textNodes.snapshotLength; i++) {
-		if (regexp.test(textNodes.snapshotItem(i).data)) {
+		if (keywordRE && keywordRE.test(textNodes.snapshotItem(i).data)) {
 			return true; // keyword(s) found
 		}
 	}

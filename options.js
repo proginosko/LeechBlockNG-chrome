@@ -109,6 +109,7 @@ function saveOptions() {
 		let allowOverride = getElement(`allowOverride${set}`).checked;
 		let prevOpts = getElement(`prevOpts${set}`).checked;
 		let prevExts = getElement(`prevExts${set}`).checked;
+		let showTimer = getElement(`showTimer${set}`).checked;
 		let sitesURL = getElement(`sitesURL${set}`).value;
 		let regexpBlock = getElement(`regexpBlock${set}`).value;
 		let regexpAllow = getElement(`regexpAllow${set}`).value;
@@ -133,6 +134,7 @@ function saveOptions() {
 		options[`allowOverride${set}`] = allowOverride;
 		options[`prevOpts${set}`] = prevOpts;
 		options[`prevExts${set}`] = prevExts;
+		options[`showTimer${set}`] = showTimer;
 		options[`sitesURL${set}`] = sitesURL;
 		options[`regexpBlock${set}`] = regexpBlock;
 		options[`regexpAllow${set}`] = regexpAllow;
@@ -276,6 +278,7 @@ function retrieveOptions() {
 			let allowOverride = options[`allowOverride${set}`];
 			let prevOpts = options[`prevOpts${set}`];
 			let prevExts = options[`prevExts${set}`];
+			let showTimer = options[`showTimer${set}`];
 			let sitesURL = options[`sitesURL${set}`];
 			let regexpBlock = options[`regexpBlock${set}`];
 			let regexpAllow = options[`regexpAllow${set}`];
@@ -306,6 +309,7 @@ function retrieveOptions() {
 			getElement(`allowOverride${set}`).checked = allowOverride;
 			getElement(`prevOpts${set}`).checked = prevOpts;
 			getElement(`prevExts${set}`).checked = prevExts;
+			getElement(`showTimer${set}`).checked = showTimer;
 			getElement(`sitesURL${set}`).value = sitesURL;
 			getElement(`regexpBlock${set}`).value = regexpBlock;
 			getElement(`regexpAllow${set}`).value = regexpAllow;
@@ -408,6 +412,7 @@ function exportOptions() {
 		let allowOverride = getElement(`allowOverride${set}`).checked;
 		let prevOpts = getElement(`prevOpts${set}`).checked;
 		let prevExts = getElement(`prevExts${set}`).checked;
+		let showTimer = getElement(`showTimer${set}`).checked;
 		let sitesURL = getElement(`sitesURL${set}`).value;
 		let regexpBlock = getElement(`regexpBlock${set}`).value;
 		let regexpAllow = getElement(`regexpAllow${set}`).value;
@@ -429,6 +434,7 @@ function exportOptions() {
 		options[`allowOverride${set}`] = allowOverride;
 		options[`prevOpts${set}`] = prevOpts;
 		options[`prevExts${set}`] = prevExts;
+		options[`showTimer${set}`] = showTimer;
 		options[`sitesURL${set}`] = sitesURL;
 		options[`regexpBlock${set}`] = regexpBlock;
 		options[`regexpAllow${set}`] = regexpAllow;
@@ -521,6 +527,7 @@ function importOptions() {
 			let allowOverride = options[`allowOverride${set}`];
 			let prevOpts = options[`prevOpts${set}`];
 			let prevExts = options[`prevExts${set}`];
+			let showTimer = options[`showTimer${set}`];
 			let sitesURL = options[`sitesURL${set}`];
 			let regexpBlock = options[`regexpBlock${set}`];
 			let regexpAllow = options[`regexpAllow${set}`];
@@ -625,6 +632,12 @@ function importOptions() {
 					element.checked = isTrue(prevExts);
 				}
 			}
+			if (showTimer != undefined) {
+				let element = getElement(`showTimer${set}`);
+				if (!element.disabled) {
+					element.checked = isTrue(showTimer);
+				}
+			}
 			if (sitesURL != undefined) {
 				let element = getElement(`sitesURL${set}`);
 				if (!element.disabled) {
@@ -722,7 +735,7 @@ function disableSetOptions(set) {
 		"day0", "day1", "day2", "day3", "day4", "day5", "day6",
 		"blockURL", "defaultPage", "delayingPage", "blankPage", "homePage",
 		"activeBlock", "countFocus", "delayFirst", "delaySecs", "allowOverride",
-		"prevOpts", "prevExts", "sitesURL",
+		"prevOpts", "prevExts", "showTimer", "sitesURL",
 		"regexpBlock", "clearRegExpBlock", "genRegExpBlock",
 		"regexpAllow", "clearRegExpAllow", "genRegExpAllow",
 		"ignoreHash", "cancelLockdown"
