@@ -43,7 +43,7 @@ function createRegExps() {
 
 		let keywordRE = gOptions[`keywordRE${set}`];
 		if (keywordRE) {
-			gRegExps[set - 1].keyword = new RegExp(keywordRE, "i");
+			gRegExps[set - 1].keyword = keywordRE; // Chrome workaround
 		}
 	}
 }
