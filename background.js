@@ -1129,6 +1129,10 @@ function handleTabCreated(tab) {
 function handleTabUpdated(tabId, changeInfo, tab) {
 	//log("handleTabUpdated: " + tabId);
 
+	if (!gGotOptions) {
+		return;
+	}
+
 	let focus = tab.active && (!gFocusWindowId || tab.windowId == gFocusWindowId);
 
 	if (changeInfo.status && changeInfo.status == "complete") {
@@ -1145,6 +1149,10 @@ function handleTabUpdated(tabId, changeInfo, tab) {
 function handleTabActivated(activeInfo) {
 	//log("handleTabActivated: " + activeInfo.tabId);
 
+	if (!gGotOptions) {
+		return;
+	}
+
 	if (gOptions["processActiveTabs"]) {
 		// Process all tabs to ensure time counted correctly
 		processTabs(false);
@@ -1160,11 +1168,19 @@ function handleTabActivated(activeInfo) {
 function handleTabRemoved(tabId, removeInfo) {
 	//log("handleTabRemoved: " + tabId);
 
+	if (!gGotOptions) {
+		return;
+	}
+
 	clockPageTime(tabId, false, false);
 }
 
 function handleBeforeNavigate(navDetails) {
 	//log("handleBeforeNavigate: " + navDetails.tabId);
+
+	if (!gGotOptions) {
+		return;
+	}
 
 	clockPageTime(navDetails.tabId, false, false);
 
