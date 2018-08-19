@@ -260,12 +260,12 @@ function updateFocusedWindowId() {
 		return; // no support for windows!
 	}
 
-	browser.windows.getLastFocused(
+	browser.windows.getCurrent(
 		function (win) {
 			if (browser.runtime.lastError) {
-				warn("Cannot get focused window: " + browser.runtime.lastError.message);
+				warn("Cannot get current window: " + browser.runtime.lastError.message);
 			} else {
-				gFocusWindowId = win.id;
+				gFocusWindowId = win.focused ? win.id : browser.windows.WINDOW_ID_NONE;
 			}
 		}
 	);
@@ -1197,6 +1197,8 @@ function handleWinFocused(winId) {
 
 function onInterval() {
 	//log("onInterval");
+
+	updateFocusedWindowId();
 
 	if (!gGotOptions) {
 		retrieveOptions();
