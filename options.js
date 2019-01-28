@@ -544,15 +544,16 @@ function exportOptions() {
 	if (!gIsAndroid) {
 		downloadOptions.saveAs = true;
 	}
-	browser.downloads.download(downloadOptions).then(onSuccess, onError);
+	browser.downloads.download(downloadOptions, onDownloaded);
+	
+	function onDownloaded() {
+		if (browser.runtime.lastError) {
+			warn("Cannot download options: " + error);
+			$("#alertExportError").dialog("open");
+			return;
+		}
 
-	function onSuccess() {
 		$("#alertExportSuccess").dialog("open");
-	}
-
-	function onError(error) {
-		warn("Cannot download options: " + error);
-		$("#alertExportError").dialog("open");
 	}
 }
 
@@ -606,32 +607,34 @@ function importOptions() {
 function exportOptionsSync() {
 	let options = compileExportOptions(false);
 
-	browser.storage.sync.set(options).then(onSuccess, onError);
-	
-	function onSuccess() {
+	browser.storage.sync.set(options, onExported);
+
+	function onExported() {
+		if (browser.runtime.lastError) {
+			warn("Cannot export options to sync storage: " + error);
+			$("#alertExportSyncError").dialog("open");
+			return;
+		}
+
 		$("#alertExportSuccess").dialog("open");
 	}
-
-	function onError(error) {
-		warn("Cannot export options to sync storage: " + error);
-		$("#alertExportSyncError").dialog("open");
-	};
 }
 
 // Import options from sync storage
 //
 function importOptionsSync() {
-	browser.storage.sync.get().then(onGot, onError);
+	browser.storage.sync.get(onImported);
 
-	function onGot(options) {
+	function onImported(options) {
+		if (browser.runtime.lastError) {
+			warn("Cannot import options from sync storage: " + error);
+			$("#alertRetrieveError").dialog("open");
+			return;
+		}
+
 		cleanOptions(options);
 		applyImportOptions(options, false);
 		$("#alertImportSuccess").dialog("open");
-	}
-
-	function onError(error) {
-		warn("Cannot import options from sync storage: " + error);
-		$("#alertRetrieveError").dialog("open");
 	}
 }
 
@@ -708,7 +711,7 @@ function initAccessControlPrompt(prompt) {
 
 /*** STARTUP CODE BEGINS HERE ***/
 
-browser.runtime.getPlatformInfo().then(
+browser.runtime.getPlatformInfo(
 	function (info) { gIsAndroid = (info.os == "android"); }
 );
 
