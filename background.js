@@ -716,7 +716,7 @@ function updateTimer(id) {
 	// Set tooltip
 	if (!gIsAndroid) {
 		if (secsLeft == undefined || secsLeft == Infinity) {
-			browser.browserAction.setTitle({ title: null, tabId: id });
+			browser.browserAction.setTitle({ title: "LeechBlock", tabId: id });
 		} else {
 			let title = "LeechBlock [" + formatTime(secsLeft) + "]"
 			browser.browserAction.setTitle({ title: title, tabId: id });
