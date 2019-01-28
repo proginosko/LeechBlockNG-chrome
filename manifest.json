@@ -1,11 +1,5 @@
 {
 
-	"applications": {
-		"gecko": {
-			"id": "leechblockng@proginosko.com"
-		}
-	},
-
 	"author": "James Anderson",
 
 	"background": {
