@@ -11,6 +11,7 @@ function getElement(id) { return document.getElementById(id); }
 
 var gAccessConfirmed = false;
 var gAccessRequiredInput;
+var gOverrideConfirm;
 var gOverrideMins;
 
 // Initialize page
@@ -18,7 +19,21 @@ var gOverrideMins;
 function initializePage() {
 	//log("initializePage");
 
-	browser.storage.local.get(onGot);
+	browser.storage.local.get("sync", onGotSync);
+
+	function onGotSync(options) {
+		if (browser.runtime.lastError) {
+			warn("Cannot get options: " + error);
+			$("#alertRetrieveError").dialog("open");
+			return;
+		}
+
+		if (options["sync"]) {
+			browser.storage.sync.get(onGot);
+		} else {
+			browser.storage.local.get(onGot);
+		}
+	}
 
 	function onGot(options) {
 		if (browser.runtime.lastError) {
@@ -27,6 +42,9 @@ function initializePage() {
 			return;
 		}
 
+		setTheme(options["theme"]);
+
+		gOverrideConfirm = options["orc"];
 		gOverrideMins = options["orm"];
 	
 		if (!gOverrideMins) {
@@ -64,22 +82,14 @@ function confirmAccess(options) {
 		$("#promptPasswordInput").focus();
 	} else if (ora > 1) {
 		let code = createAccessCode(32);
-		let codeText = code;
-		gAccessRequiredInput = code;
 		if (ora > 2) {
-			code = createAccessCode(32);
-			codeText += code;
-			gAccessRequiredInput += code;
+			code += createAccessCode(32);
 		}
 		if (ora > 3) {
-			code = createAccessCode(32);
-			codeText += "<br>" + code;
-			gAccessRequiredInput += code;
-			code = createAccessCode(32);
-			codeText += code;
-			gAccessRequiredInput += code;
+			code += createAccessCode(64);
 		}
-		$("#promptAccessCodeText").html(codeText);
+		gAccessRequiredInput = code;
+		displayAccessCode(code, options["accessCodeImage"]);
 		$("#promptAccessCodeInput").val("");
 		$("#promptAccessCode").dialog("open");
 		$("#promptAccessCodeInput").focus();
@@ -88,18 +98,55 @@ function confirmAccess(options) {
 	}
 }
 
+// Display access code (as text or image)
+//
+function displayAccessCode(code, asImage) {
+	if (asImage) {
+		// Display code as image
+		getElement("promptAccessCodeText").style.display = "none";
+		getElement("promptAccessCodeImage").style.display = "";
+		let canvas = getElement("promptAccessCodeCanvas");
+		canvas.width = (code.length == 32) ? 264 : 520;
+		canvas.height = (code.length == 128) ? 40 : 24;
+		let ctx = canvas.getContext("2d");
+		ctx.font = "normal 14px monospace";
+		ctx.fillStyle = "#000";
+		if (code.length == 128) {
+			ctx.fillText(code.substring(0, 64), 4, 16);
+			ctx.fillText(code.substring(64), 4, 32);
+		} else {
+			ctx.fillText(code, 4, 16);
+		}
+	} else {
+		// Display code as text
+		getElement("promptAccessCodeText").style.display = "";
+		getElement("promptAccessCodeImage").style.display = "none";
+		if (code.length == 128) {
+			let html = code.substring(0, 64) + "<br>" + code.substring(64);
+			getElement("promptAccessCodeText").innerHTML = html;
+		} else {
+			getElement("promptAccessCodeText").innerHTML = code;
+		}
+	}
+}
+
 // Activate override
 //
 function activateOverride() {
-	// Calculate end time
-	let endTime = new Date(Date.now() + gOverrideMins * 60000);
-
-	// Show confirmation dialog
-	$("#alertOverrideEndTime").html(endTime.toLocaleTimeString());
-	$("#alertOverrideActivated").dialog("open");
-
 	// Request override
 	browser.runtime.sendMessage({ type: "override" });
+
+	if (gOverrideConfirm) {
+		// Calculate end time
+		let endTime = new Date(Date.now() + gOverrideMins * 60000);
+
+		// Show confirmation dialog
+		$("#alertOverrideEndTime").html(endTime.toLocaleTimeString());
+		$("#alertOverrideActivated").dialog("open");
+	} else {
+		// Close page immediately (no confirmation dialog)
+		closePage();
+	}
 }
 
 // Initialize access control prompt

@@ -6,6 +6,10 @@ const browser = chrome;
 
 const TICK_TIME = 1000; // update every second
 
+function log(message) { console.log("[LBNG] " + message); }
+function warn(message) { console.warn("[LBNG] " + message); }
+
+var gStorage = browser.storage.local;
 var gIsAndroid = false;
 var gGotOptions = false;
 var gOptions = {};
@@ -14,9 +18,6 @@ var gSetCounted = [];
 var gRegExps = [];
 var gFocusWindowId = 0;
 var gOverrideIcon = false;
-
-function log(message) { console.log("[LBNG] " + message); }
-function warn(message) { console.warn("[LBNG] " + message); }
 
 // Create (precompile) regular expressions
 //
@@ -122,12 +123,26 @@ function refreshMenus() {
 	}
 }
 
-// Retrieve options from local storage
+// Retrieve options from storage
 //
-function retrieveOptions() {
-	//log("retrieveOptions");
+function retrieveOptions(update) {
+	//log("retrieveOptions: " + update);
 
-	browser.storage.local.get(onGot);
+	browser.storage.local.get("sync", onGotSync);
+
+	function onGotSync(options) {
+		if (browser.runtime.lastError) {
+			gGotOptions = false;
+			warn("Cannot get options: " + browser.runtime.lastError.message);
+			return;
+		}
+
+		gStorage = options["sync"]
+				? browser.storage.sync
+				: browser.storage.local;
+
+		gStorage.get(onGot);
+	}
 
 	function onGot(options) {
 		if (browser.runtime.lastError) {
@@ -136,8 +151,14 @@ function retrieveOptions() {
 			return;
 		}
 
+		// Copy retrieved options (exclude timedata if update)
+		for (let option in options) {
+			if (!update || !/^timedata/.test(option)) {
+				gOptions[option] = options[option];
+			}
+		}
 		gGotOptions = true;
-		gOptions = Object.assign({}, options); // clone
+
 		cleanOptions(gOptions);
 		cleanTimeData(gOptions);
 		gSetCounted = Array(NUM_SETS).fill(false);
@@ -198,7 +219,7 @@ function loadSiteLists() {
 			options[`blockRE${set}`] = regexps.block;
 			options[`allowRE${set}`] = regexps.allow;
 			options[`keywordRE${set}`] = regexps.keyword;
-			browser.storage.local.set(options, function () {
+			gStorage.set(options, function () {
 				if (browser.runtime.lastError) {
 					warn("Cannot set options: " + browser.runtime.lastError.message);
 				}
@@ -220,7 +241,7 @@ function saveTimeData() {
 	for (let set = 1; set <= NUM_SETS; set++) {
 		options[`timedata${set}`] = gOptions[`timedata${set}`];
 	}
-	browser.storage.local.set(options, function () {
+	gStorage.set(options, function () {
 		if (browser.runtime.lastError) {
 			warn("Cannot set options: " + browser.runtime.lastError.message);
 		}
@@ -394,7 +415,8 @@ function checkTab(id, url, isRepeat) {
 			let minPeriods = getMinPeriods(times);
 			let limitMins = gOptions[`limitMins${set}`];
 			let limitPeriod = gOptions[`limitPeriod${set}`];
-			let periodStart = getTimePeriodStart(now, limitPeriod);
+			let limitOffset = gOptions[`limitOffset${set}`];
+			let periodStart = getTimePeriodStart(now, limitPeriod, limitOffset);
 			let conjMode = gOptions[`conjMode${set}`];
 			let days = gOptions[`days${set}`];
 			let blockURL = gOptions[`blockURL${set}`];
@@ -611,7 +633,8 @@ function updateTimeData(url, secsOpen, secsFocus) {
 			let times = gOptions[`times${set}`];
 			let minPeriods = getMinPeriods(times);
 			let limitPeriod = gOptions[`limitPeriod${set}`];
-			let periodStart = getTimePeriodStart(now, limitPeriod);
+			let limitOffset = gOptions[`limitOffset${set}`];
+			let periodStart = getTimePeriodStart(now, limitPeriod, limitOffset);
 			let conjMode = gOptions[`conjMode${set}`];
 			let days = gOptions[`days${set}`];
 
@@ -690,6 +713,16 @@ function updateTimer(id) {
 	}
 	browser.tabs.sendMessage(id, message);
 
+	// Set tooltip
+	if (!gIsAndroid) {
+		if (secsLeft == undefined || secsLeft == Infinity) {
+			browser.browserAction.setTitle({ title: null, tabId: id });
+		} else {
+			let title = "LeechBlock [" + formatTime(secsLeft) + "]"
+			browser.browserAction.setTitle({ title: title, tabId: id });
+		}
+	}
+
 	// Set badge timer (if option selected)
 	if (!gIsAndroid && gOptions["timerBadge"] && secsLeft < 600) {
 		let m = Math.floor(secsLeft / 60);
@@ -728,13 +761,16 @@ function updateIcon() {
 // Create info for blocking/delaying page
 //
 function createBlockInfo(url) {
+	// Get theme
+	let theme = gOptions["theme"];
+
 	// Get parsed URL
 	let parsedURL = getParsedURL(url);
 	let pageURL = parsedURL.page;
 
 	if (parsedURL.args == null || parsedURL.args.length < 2) {
 		warn("Cannot create block info: not enough arguments in URL.");
-		return {};
+		return { theme: theme };
 	}
 
 	// Get block set and URL (including hash part) of blocked page
@@ -761,12 +797,17 @@ function createBlockInfo(url) {
 	// Get delaying time for block set
 	let delaySecs = gOptions[`delaySecs${blockedSet}`];
 
+	// Get reloading time (if specified)
+	let reloadSecs = gOptions[`reloadSecs${blockedSet}`];
+
 	return {
+		theme: theme,
 		blockedSet: blockedSet,
 		blockedSetName: blockedSetName,
 		blockedURL: blockedURL,
 		unblockTime: unblockTime,
-		delaySecs: delaySecs
+		delaySecs: delaySecs,
+		reloadSecs: reloadSecs
 	};
 }
 
@@ -790,7 +831,8 @@ function getUnblockTime(set) {
 	let minPeriods = getMinPeriods(times);
 	let limitMins = gOptions[`limitMins${set}`];
 	let limitPeriod = gOptions[`limitPeriod${set}`];
-	let periodStart = getTimePeriodStart(now, limitPeriod);
+	let limitOffset = gOptions[`limitOffset${set}`];
+	let periodStart = getTimePeriodStart(now, limitPeriod, limitOffset);
 	let conjMode = gOptions[`conjMode${set}`];
 	let days = gOptions[`days${set}`];
 
@@ -958,7 +1000,7 @@ function applyOverride() {
 		// Save updated option to local storage
 		let options = {};
 		options["oret"] = overrideEndTime;
-		browser.storage.local.set(options, function () {
+		gStorage.set(options, function () {
 			if (browser.runtime.lastError) {
 				warn("Cannot set options: " + browser.runtime.lastError.message);
 			}
@@ -1058,7 +1100,7 @@ function addSiteToSet(url, set) {
 		options[`blockRE${set}`] = regexps.block;
 		options[`allowRE${set}`] = regexps.allow;
 		options[`keywordRE${set}`] = regexps.keyword;
-		browser.storage.local.set(options, function () {
+		gStorage.set(options, function () {
 			if (browser.runtime.lastError) {
 				warn("Cannot set options: " + browser.runtime.lastError.message);
 			}
@@ -1096,7 +1138,7 @@ function handleMessage(message, sender, sendResponse) {
 		browser.tabs.remove(sender.tab.id);
 	} else if (message.type == "options") {
 		// Options updated
-		retrieveOptions();
+		retrieveOptions(true);
 	} else if (message.type == "lockdown") {
 		if (!message.endTime) {
 			// Lockdown canceled

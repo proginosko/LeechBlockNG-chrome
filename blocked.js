@@ -9,6 +9,14 @@ const browser = chrome;
 function processBlockInfo(info) {
 	if (!info) return;
 
+	if (info.theme) {
+		// Set theme
+		let link = document.getElementById("themeLink");
+		if (link) {
+			link.href = info.theme ? `themes/${info.theme}.css` : "";
+		}
+	}
+
 	let blockedURL = document.getElementById("lbBlockedURL");
 	if (info.blockedURL && blockedURL) {
 		if (info.blockedURL.length > 60) {
@@ -30,6 +38,7 @@ function processBlockInfo(info) {
 		} else {
 			blockedSet.innerText += " " + info.blockedSet;
 		}
+		document.title += " (" + blockedSet.innerText + ")";
 	}
 
 	let unblockTime = document.getElementById("lbUnblockTime");
@@ -48,6 +57,11 @@ function processBlockInfo(info) {
 			delaySecs: info.delaySecs
 		};
 		countdown.interval = window.setInterval(onCountdownTimer, 1000, countdown);
+	}
+
+	if (info.reloadSecs) {
+		// Reload blocked page after specified time
+		window.setTimeout(reloadBlockedPage, info.reloadSecs * 1000);
 	}
 }
 
@@ -87,6 +101,15 @@ function onCountdownTimer(countdown) {
 			blockedSet: countdown.blockedSet
 		};
 		browser.runtime.sendMessage(message);
+	}
+}
+
+// Attempt to reload blocked page
+//
+function reloadBlockedPage() {
+	let blockedURLLink = document.getElementById("lbBlockedURLLink");
+	if (blockedURLLink) {
+		blockedURLLink.click();
 	}
 }
 

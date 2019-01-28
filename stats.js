@@ -14,13 +14,28 @@ function getElement(id) { return document.getElementById(id); }
 function statsRefresh() {
 	//log("statsRefresh");
 
-	browser.storage.local.get(onGot);
+	browser.storage.local.get("sync", onGotSync);
+
+	function onGotSync(options) {
+		if (browser.runtime.lastError) {
+			warn("Cannot get options: " + error);
+			return;
+		}
+
+		if (options["sync"]) {
+			browser.storage.sync.get(onGot);
+		} else {
+			browser.storage.local.get(onGot);
+		}
+	}
 
 	function onGot(options) {
 		if (browser.runtime.lastError) {
 			warn("Cannot get options: " + error);
 			return;
 		}
+
+		setTheme(options["theme"]);
 
 		// Get current time in seconds
 		let now = Math.floor(Date.now() / 1000);
@@ -30,7 +45,8 @@ function statsRefresh() {
 			let timedata = options[`timedata${set}`];
 			let limitMins = options[`limitMins${set}`];
 			let limitPeriod = options[`limitPeriod${set}`];
-			let periodStart = getTimePeriodStart(now, limitPeriod);
+			let limitOffset = options[`limitOffset${set}`];
+			let periodStart = getTimePeriodStart(now, limitPeriod, limitOffset);
 
 			if (setName) {
 				getElement(`blockSetName${set}`).innerText = setName;
@@ -50,6 +66,11 @@ function statsRefresh() {
 							: (limitMins * 60);
 					let timeLeft = formatTime(secsLeft);
 					getElement(`timeLeft${set}`).innerText = timeLeft;
+				}
+
+				if (timedata[4] > now) {
+					let ldEndTime = new Date(timedata[4] * 1000).toLocaleString();
+					getElement(`ldEndTime${set}`).innerText = ldEndTime;
 				}
 			}
 		}

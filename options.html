@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <html lang="us">
 
 	<head>
@@ -9,6 +10,7 @@
 		<link href="options.css" rel="stylesheet">
 		<link href="icons/leechblock16.ico" rel="icon" type="image/x-icon">
 		<link href="icons/leechblock16.ico" rel="shortcut icon" type="image/x-icon">
+		<link id="themeLink" rel="stylesheet">
 	</head>
 
 	<body>
@@ -66,9 +68,12 @@
 										<option value="10800">3 hours</option>
 										<option value="14400">4 hours</option>
 										<option value="21600">6 hours</option>
+										<option value="28800">8 hours</option>
 										<option value="43200">half-day (12 hours)</option>
 										<option value="86400">day (24 hours)</option>
 										<option value="172800">2 days (48 hours)</option>
+										<option value="259200">3 days (72 hours)</option>
+										<option value="345600">4 days (96 hours)</option>
 										<option value="604800">week (7 days)</option>
 									</select>
 								</div>
@@ -136,6 +141,9 @@
 								Delay access to sites by <input id="delaySecs1" type="text" size="2"> seconds when delaying page is used
 							</p>
 							<p>
+								Attempt to reload blocked page every <input id="reloadSecs1" type="text" size="2"> seconds (only applies to default page)
+							</p>
+							<p>
 								<input id="allowOverride1" type="checkbox">
 								<label for="allowOverride1">Allow temporary override for these sites</label>
 							</p>
@@ -161,6 +169,11 @@
 							<p>
 								<input id="prevExts1" type="checkbox">
 								<label for="prevExts1">Prevent access to chrome://extensions at times when these sites are blocked</label>
+							</p>
+							<hr>
+							<p>
+								Offset time limit period by <input id="limitOffset1" type="text" size="2" title="Leave blank for no offset"> hours
+								&nbsp;&nbsp;<a href="http://www.proginosko.com/leechblock/faq/time-limit-offset/" target="_blank">What does this do?</a>
 							</p>
 							<hr>
 							<p>
@@ -267,9 +280,21 @@
 									</select>
 								</div>
 							</p>
+							<p>
+								<input id="overrideConfirm" type="checkbox">
+								<label for="overrideConfirm">Show confirmation message when override is activated</label>
+							</p>
 						</fieldset>
 						<fieldset>
 							<legend>Miscellaneous</legend>
+							<p>
+								<label>Theme:</label>
+								<select id="theme">
+									<option value="">Default</option>
+									<option value="dark">Dark</option>
+									<option value="spruce">Spruce</option>
+								</select>
+							</p>
 							<p>
 								<input id="contextMenu" type="checkbox">
 								<label for="contextMenu">Show context menu</label>
@@ -289,13 +314,26 @@
 								<input id="processActiveTabs" type="checkbox">
 								<label for="processActiveTabs">Process only active tabs (improves performance when multiple tabs open)</label>
 							</p>
+							<p>
+								<input id="syncStorage" type="checkbox">
+								<label for="syncStorage">Use sync storage for options (experimental: use at your own risk!)</label>
+							</p>
+							<p>
+								<input id="accessCodeImage" type="checkbox">
+								<label for="accessCodeImage">Display access code as image (experimental: use at your own risk!)</label>
+							</p>
 						</fieldset>
 						<fieldset>
 							<legend>Export / Import</legend>
 							<p>
-								<button id="exportOptions" type="button">Export Options</button>
-								<button id="importOptions" type="button">Import Options</button>
+								<button id="exportOptions" type="button">Export Options to File</button>
+								<button id="importOptions" type="button">Import Options from File</button>
 								<input type="file" id="importFile">
+							</p>
+							<hr>
+							<p>
+								<button id="exportOptionsSync" type="button">Export Options to Sync Storage</button>
+								<button id="importOptionsSync" type="button">Import Options from Sync Storage</button>
 							</p>
 						</fieldset>
 					</div>
@@ -340,6 +378,9 @@
 			<div id="alertBadTimeLimit" title="LeechBlock Options">
 				<p>Please enter the time limit in the correct format (as a positive whole number).</p>
 			</div>
+			<div id="alertBadTimeLimitOffset" title="LeechBlock Options">
+				<p>Please enter the time limit offset in the correct format (as a non-zero integer).</p>
+			</div>
 			<div id="alertBadSeconds" title="LeechBlock Options">
 				<p>Please enter the number of seconds in the correct format (as a positive whole number).</p>
 			</div>
@@ -355,8 +396,21 @@
 			<div id="alertImportError" title="LeechBlock Options">
 				<p><strong>Error:</strong> Unable to import options from file.</p>
 			</div>
+			<div id="alertImportSyncError" title="LeechBlock Options">
+				<p><strong>Error:</strong> Unable to import options from sync storage.</p>
+			</div>
 			<div id="alertImportSuccess" title="LeechBlock Options">
 				<p>The options have been imported successfully.</p>
+				<p><strong>Note:</strong> The imported options will not be applied until you <strong>Save Options</strong>.</p>
+			</div>
+			<div id="alertExportError" title="LeechBlock Options">
+				<p><strong>Error:</strong> Unable to download exported options.</p>
+			</div>
+			<div id="alertExportSyncError" title="LeechBlock Options">
+				<p><strong>Error:</strong> Unable to export options to sync storage.</p>
+			</div>
+			<div id="alertExportSuccess" title="LeechBlock Options">
+				<p>The options have been exported successfully.</p>
 			</div>
 			<div id="alertLockdownCancel" title="LeechBlock Options">
 				<p>The active lockdown has been canceled.</p>
@@ -371,6 +425,9 @@
 			<div id="promptAccessCode" title="LeechBlock Options">
 				<p>Enter the following code for access to options:</p>
 				<p id="promptAccessCodeText"></p>
+				<p id="promptAccessCodeImage">
+					<canvas id="promptAccessCodeCanvas"></canvas>
+				</p>
 				<p><input id="promptAccessCodeInput" type="text" size="64"></p>
 			</div>
 		</div>

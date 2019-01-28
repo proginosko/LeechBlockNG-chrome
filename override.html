@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <html lang="us">
 
 	<head>
@@ -9,6 +10,7 @@
 		<link href="options.css" rel="stylesheet">
 		<link href="icons/leechblock16.ico" rel="icon" type="image/x-icon">
 		<link href="icons/leechblock16.ico" rel="shortcut icon" type="image/x-icon">
+		<link id="themeLink" rel="stylesheet">
 	</head>
 
 	<body>
@@ -33,6 +35,9 @@
 			<div id="promptAccessCode" title="LeechBlock Override">
 				<p>Enter the following code to activate override:</p>
 				<p id="promptAccessCodeText"></p>
+				<p id="promptAccessCodeImage">
+					<canvas id="promptAccessCodeCanvas"></canvas>
+				</p>
 				<p><input id="promptAccessCodeInput" type="text" size="64"></p>
 			</div>
 		</div>

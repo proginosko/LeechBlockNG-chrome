@@ -1,3 +1,31 @@
+### Version 0.9.9 (01 Jan 2019)
+* Added theme options: Default, Dark, and Spruce (!)
+* Added option to display random access code as image instead of text.
+* Fixed bug affecting override confirmation message.
+
+### Version 0.9.8 (27 Dec 2018)
+* Added more time limit period options (8 hours, 3 days, 4 days).
+* Added option to automatically attempt to reload blocked page after interval.
+* Added option to show/hide override confirmation message.
+* Added option to specify offset (in hours) for time limit period.
+* Block set name now shown in title of blocking page.
+* Time left now shown in icon tooltip.
+* Improved scaling on mobile devices.
+* Under-the-hood improvements.
+
+### Version 0.9.7 (04 Sep 2018)
+* Fixed bug in sync storage export/import.
+
+### Version 0.9.6 (25 Aug 2018)
+* Added lockdown end time to statistics page.
+
+### Version 0.9.5 (19 Aug 2018)
+* Added sync storage options (experimental feature).
+
+### Version 0.9.4 (12 Aug 2018)
+* Fixed export function for Android.
+* Removed "Home Page" button (Firefox no longer allows extensions to open about:home).
+
 ### Version 0.9.3 (26 May 2018)
 * Added per-set option to show/hide countdown timer.
 * Countdown timer can now be hidden by double-clicking it (e.g., before printing page).

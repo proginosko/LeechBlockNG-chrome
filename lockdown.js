@@ -9,12 +9,28 @@ function warn(message) { console.warn("[LBNG] " + message); }
 
 function getElement(id) { return document.getElementById(id); }
 
+var gStorage = browser.storage.local;
+
 // Initialize form
 //
 function initializeForm() {
 	//log("initializeForm");
 
-	browser.storage.local.get(onGot);
+	browser.storage.local.get("sync", onGotSync);
+
+	function onGotSync(options) {
+		if (browser.runtime.lastError) {
+			warn("Cannot get options: " + error);
+			$("#alertRetrieveError").dialog("open");
+			return;
+		}
+
+		gStorage = options["sync"]
+				? browser.storage.sync
+				: browser.storage.local;
+
+		gStorage.get(onGot);
+	}
 
 	function onGot(options) {
 		if (browser.runtime.lastError) {
@@ -22,6 +38,8 @@ function initializeForm() {
 			$("#alertRetrieveError").dialog("open");
 			return;
 		}
+
+		setTheme(options["theme"]);
 
 		let lockdownHours = options["lockdownHours"];
 		if (lockdownHours > 0) {
@@ -94,7 +112,7 @@ function onActivate() {
 	for (let set = 1; set <= NUM_SETS; set++) {
 		options[`lockdown${set}`] = getElement(`blockSet${set}`).checked;
 	}
-	browser.storage.local.set(options, function () {
+	gStorage.set(options, function () {
 		if (browser.runtime.lastError) {
 			warn("Cannot set options: " + browser.runtime.lastError.message);
 		}
