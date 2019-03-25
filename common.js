@@ -55,8 +55,10 @@ const GENERAL_OPTIONS = {
 	warnImmediate: { type: "boolean", def: true, id: "warnImmediate" }, // default: warn only for immediate block
 	contextMenu: { type: "boolean", def: true, id: "contextMenu" }, // default: enabled
 	matchSubdomains: { type: "boolean", def: false, id: "matchSubdomains" }, // default: disabled
+	saveSecs: { type: "string", def: "10", id: "saveSecs" }, // default: every 10 seconds
 	processActiveTabs: { type: "boolean", def: false, id: "processActiveTabs" }, // default: disabled
 	accessCodeImage: { type: "boolean", def: false, id: "accessCodeImage" }, // default: disabled
+	autoExportSync: { type: "boolean", def: true, id: "autoExportSync" }, // default: enabled
 	lockdownHours: { type: "string", def: "", id: null }, // default: blank
 	lockdownMins: { type: "string", def: "", id: null }, // default: blank
 };

@@ -25,7 +25,7 @@
 
 	"description": "LeechBlock is a simple productivity tool designed to block those time-wasting sites that can suck the life out of your working day.",
 
-	"homepage_url": "http://www.proginosko.com/leechblock/",
+	"homepage_url": "https://www.proginosko.com/leechblock/",
 
 	"icons": {
 		"48": "icons/leechblock48.png",
@@ -53,6 +53,6 @@
 		"webNavigation"
 	],
 
-	"version": "0.9.9.1"
+	"version": "0.9.10"
 
 }

@@ -73,15 +73,24 @@ function saveOptions() {
 	}
 
 	// Check format for text fields in general options
-	if (!checkPosIntFormat($("#overrideMins").val())) {
+	let overrideMins = $("#overrideMins").val();
+	if (!checkPosIntFormat(overrideMins)) {
 		$("#tabs").tabs("option", "active", NUM_SETS);
 		$("#overrideMins").focus();
 		$("#alertBadMinutes").dialog("open");
 		return false;
 	}
-	if (!checkPosIntFormat($("#warnSecs").val())) {
+	let warnSecs = $("#warnSecs").val();
+	if (!checkPosIntFormat(warnSecs)) {
 		$("#tabs").tabs("option", "active", NUM_SETS);
 		$("#warnSecs").focus();
+		$("#alertBadSeconds").dialog("open");
+		return false;
+	}
+	let saveSecs = $("#saveSecs").val();
+	if (!saveSecs || !checkPosIntFormat(saveSecs)) {
+		$("#tabs").tabs("option", "active", NUM_SETS);
+		$("#saveSecs").focus();
 		$("#alertBadSeconds").dialog("open");
 		return false;
 	}
@@ -157,6 +166,11 @@ function saveOptions() {
 				warn("Cannot set options: " + browser.runtime.lastError.message);
 			}
 		});
+
+		// Export options to sync storage if selected
+		if (options["autoExportSync"] && !gIsAndroid) {
+			exportOptionsSync(); // no event passed, so dialogs suppressed
+		}
 	}
 
 	// Notify extension that options have been updated
@@ -333,6 +347,7 @@ function retrieveOptions() {
 			getElement("syncStorage").disabled = true;
 			getElement("exportOptionsSync").disabled = true;
 			getElement("importOptionsSync").disabled = true;
+			getElement("autoExportSync").disabled = true;
 		}
 
 		confirmAccess(options);
@@ -604,7 +619,7 @@ function importOptions() {
 
 // Export options to sync storage
 //
-function exportOptionsSync() {
+function exportOptionsSync(event) {
 	let options = compileExportOptions(false);
 
 	browser.storage.sync.set(options, onExported);
@@ -612,29 +627,37 @@ function exportOptionsSync() {
 	function onExported() {
 		if (browser.runtime.lastError) {
 			warn("Cannot export options to sync storage: " + error);
-			$("#alertExportSyncError").dialog("open");
+			if (event) {
+				$("#alertExportSyncError").dialog("open");
+			}
 			return;
 		}
 
-		$("#alertExportSuccess").dialog("open");
+		if (event) {
+			$("#alertExportSuccess").dialog("open");
+		}
 	}
 }
 
 // Import options from sync storage
 //
-function importOptionsSync() {
+function importOptionsSync(event) {
 	browser.storage.sync.get(onImported);
 
 	function onImported(options) {
 		if (browser.runtime.lastError) {
 			warn("Cannot import options from sync storage: " + error);
-			$("#alertRetrieveError").dialog("open");
+			if (event) {
+				$("#alertImportSyncError").dialog("open");
+			}
 			return;
 		}
 
 		cleanOptions(options);
 		applyImportOptions(options, false);
-		$("#alertImportSuccess").dialog("open");
+		if (event) {
+			$("#alertImportSuccess").dialog("open");
+		}
 	}
 }
 
@@ -714,6 +737,9 @@ function initAccessControlPrompt(prompt) {
 browser.runtime.getPlatformInfo(
 	function (info) { gIsAndroid = (info.os == "android"); }
 );
+
+// Set version text
+$("#version").text(browser.runtime.getManifest().version);
 
 // Use HTML for first block set to create other block sets
 let tabHTML = $("#tabBlockSet1").html();

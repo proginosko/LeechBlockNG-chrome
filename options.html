@@ -264,6 +264,16 @@
 							</p>
 						</fieldset>
 						<fieldset>
+							<legend>Warning Message</legend>
+							<p>
+								Display warning message <input id="warnSecs" type="text" size="2" title="Leave blank for no warning"> seconds before site is blocked
+							</p>
+							<p>
+								<input id="warnImmediate" type="checkbox">
+								<label for="warnImmediate">Only display warning message on pages that will be immediately blocked</label>
+							</p>
+						</fieldset>
+						<fieldset>
 							<legend>Temporary Override</legend>
 							<p>
 								Allow blocking to be suspended for a period of <input id="overrideMins" type="text" size="2" title="Leave blank for no override"> minutes
@@ -307,23 +317,19 @@
 								<label for="matchSubdomains">Block all subdomains (not just www)</label>
 							</p>
 							<p>
-								Display warning message <input id="warnSecs" type="text" size="2" title="Leave blank for no warning"> seconds before site is blocked
-							</p>
-							<p>
-								<input id="warnImmediate" type="checkbox">
-								<label for="warnImmediate">Only display warning message on pages that will be immediately blocked</label>
+								Save time data every <input id="saveSecs" type="text" size="2" title="Default: 10"> seconds
 							</p>
 							<p>
 								<input id="processActiveTabs" type="checkbox">
 								<label for="processActiveTabs">Process only active tabs (improves performance when multiple tabs open)</label>
 							</p>
 							<p>
-								<input id="syncStorage" type="checkbox">
-								<label for="syncStorage">Use sync storage for options (experimental: use at your own risk!)</label>
-							</p>
-							<p>
 								<input id="accessCodeImage" type="checkbox">
 								<label for="accessCodeImage">Display access code as image (experimental: use at your own risk!)</label>
+							</p>
+							<p>
+								<input id="syncStorage" type="checkbox">
+								<label for="syncStorage">Use sync storage for options (experimental: use at your own risk!)</label>
 							</p>
 						</fieldset>
 						<fieldset>
@@ -338,11 +344,15 @@
 								<button id="exportOptionsSync" type="button">Export Options to Sync Storage</button>
 								<button id="importOptionsSync" type="button">Import Options from Sync Storage</button>
 							</p>
+							<p>
+								<input id="autoExportSync" type="checkbox">
+								<label for="autoExportSync">Automatically export options to sync storage (as backup) whenever options are saved</label>
+							</p>
 						</fieldset>
 					</div>
 					<div id="paneAbout">
 						<p>
-							<a href="http://www.proginosko.com/leechblock/" target="_blank"><img src="images/leechblock_logo.png" alt="LeechBlock logo" title="LeechBlock"></a>
+							<a href="http://www.proginosko.com/leechblock/" target="_blank"><img src="images/leechblock_logo.svg" class="logo" alt="LeechBlock logo" title="LeechBlock"></a>
 						</p>
 						<p>
 							<a href="http://www.proginosko.com/leechblock/" target="_blank">LeechBlock NG</a>
@@ -350,8 +360,9 @@
 							block those time-wasting sites that can suck the life out of your working day.<br>
 							All you need to do is specify which sites to block and when to block them.
 						</p>
+						<p><strong>Version:</strong> <span id="version">?<span></p>
 						<p><strong>Author:</strong> James Anderson</p>
-						<p><strong>Contributor:</strong> Dario Kolac (graphics)</p>
+						<p><strong>Contributors:</strong> Dario Kolac (graphics) &amp; Robert Gützkow (graphics)</p>
 						<p><strong>Examples:</strong>
 						<a href="http://www.proginosko.com/leechblock/examples/" target="_blank">http://www.proginosko.com/leechblock/examples/</a></p>
 						<p><strong>FAQ:</strong>
