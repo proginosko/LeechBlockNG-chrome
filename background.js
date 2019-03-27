@@ -401,12 +401,14 @@ function checkTab(id, url, isRepeat) {
 		let allowRE = gRegExps[set].allow;
 		let keywordRE = gRegExps[set].keyword;
 
-		// Get options for preventing access to chrome://extensions
+		// Get options for preventing access to extensions/settings pages
 		let prevExts = gOptions[`prevExts${set}`];
+		let prevSettings = gOptions[`prevSettings${set}`];
 
 		// Test URL against block/allow regular expressions
 		if (testURL(pageURL, blockRE, allowRE)
-				|| (prevExts && /^chrome:\/\/extensions/i.test(pageURL))) {
+				|| (prevExts && /^chrome:\/\/extensions/i.test(pageURL))
+				|| (prevSettings && /^chrome:\/\/settings/i.test(pageURL))) {
 			// Get options for this set
 			let timedata = gOptions[`timedata${set}`];
 			let times = gOptions[`times${set}`];

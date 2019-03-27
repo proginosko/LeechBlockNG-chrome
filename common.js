@@ -30,6 +30,7 @@ const PER_SET_OPTIONS = {
 	allowOverride: { type: "boolean", def: false, id: "allowOverride" },
 	prevOpts: { type: "boolean", def: false, id: "prevOpts" },
 	prevExts: { type: "boolean", def: false, id: "prevExts" },
+	prevSettings: { type: "boolean", def: false, id: "prevSettings" },
 	showTimer: { type: "boolean", def: true, id: "showTimer" },
 	sitesURL: { type: "string", def: "", id: "sitesURL" },
 	regexpBlock: { type: "string", def: "", id: "regexpBlock" },
