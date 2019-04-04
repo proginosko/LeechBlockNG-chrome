@@ -352,7 +352,7 @@ function checkTab(id, url, isRepeat) {
 	}
 
 	// Quick exit for non-blockable URLs
-	if (!/^(http|file|chrome)/i.test(url)) {
+	if (!/^(http|file|chrome|vivaldi)/i.test(url)) {
 		gTabs[id].blockable = false;
 		return false; // not blocked
 	}
