@@ -352,7 +352,7 @@ function checkTab(id, url, isRepeat) {
 	}
 
 	// Quick exit for non-blockable URLs
-	if (!/^(http|file|chrome|vivaldi)/i.test(url)) {
+	if (!/^(http|file|chrome)/i.test(url)) {
 		gTabs[id].blockable = false;
 		return false; // not blocked
 	}
@@ -407,8 +407,8 @@ function checkTab(id, url, isRepeat) {
 
 		// Test URL against block/allow regular expressions
 		if (testURL(pageURL, blockRE, allowRE)
-				|| (prevExts && /^(chrome|vivaldi):\/\/extensions/i.test(pageURL))
-				|| (prevSettings && /^(chrome|vivaldi):\/\/settings/i.test(pageURL))) {
+				|| (prevExts && /^chrome:\/\/extensions/i.test(pageURL))
+				|| (prevSettings && /^chrome:\/\/settings/i.test(pageURL))) {
 			// Get options for this set
 			let timedata = gOptions[`timedata${set}`];
 			let times = gOptions[`times${set}`];
