@@ -6,6 +6,9 @@ const browser = chrome;
 
 const TICK_TIME = 1000; // update every second
 
+const BLOCKABLE_URL = /^(http|file|chrome)/i;
+const CLOCKABLE_URL = /^(http|file)/i;
+
 function log(message) { console.log("[LBNG] " + message); }
 function warn(message) { console.warn("[LBNG] " + message); }
 
@@ -323,7 +326,7 @@ function processTabs(active) {
 
 			let blocked = checkTab(tab.id, tab.url, true);
 
-			if (!blocked) {
+			if (!blocked && tab.active) {
 				updateTimer(tab.id);
 			}
 		}
@@ -351,14 +354,14 @@ function checkTab(id, url, isRepeat) {
 		gTabs[id] = { allowedHost: null, allowedPath: null };
 	}
 
+	gTabs[id].blockable = BLOCKABLE_URL.test(url);
+	gTabs[id].clockable = CLOCKABLE_URL.test(url);
+	gTabs[id].url = url;
+
 	// Quick exit for non-blockable URLs
-	if (!/^(http|file|chrome)/i.test(url)) {
-		gTabs[id].blockable = false;
+	if (!gTabs[id].blockable) {
 		return false; // not blocked
 	}
-
-	gTabs[id].blockable = true;
-	gTabs[id].url = url;
 
 	// Get parsed URL for this page
 	let parsedURL = getParsedURL(url);
@@ -555,7 +558,7 @@ function checkWarning(id) {
 // Clock time spent on page
 //
 function clockPageTime(id, open, focus) {
-	if (!gTabs[id] || !gTabs[id].blockable) {
+	if (!gTabs[id] || !gTabs[id].clockable) {
 		return;
 	}
 
@@ -571,10 +574,8 @@ function clockPageTime(id, open, focus) {
 		}
 	} else {
 		if (gTabs[id].openTime != undefined) {
-			if (/^(http|file)/i.test(gTabs[id].url)) {
-				// Calculate seconds spent on this page (while open)
-				secsOpen = ((time - gTabs[id].openTime) / 1000);
-			}
+			// Calculate seconds spent on this page (while open)
+			secsOpen = ((time - gTabs[id].openTime) / 1000);
 
 			gTabs[id].openTime = undefined;
 		}
@@ -589,10 +590,8 @@ function clockPageTime(id, open, focus) {
 		}
 	} else {
 		if (gTabs[id].focusTime != undefined) {
-			if (/^(http|file)/i.test(gTabs[id].url)) {
-				// Calculate seconds spent on this page (while focused)
-				secsFocus = ((time - gTabs[id].focusTime) / 1000);
-			}
+			// Calculate seconds spent on this page (while focused)
+			secsFocus = ((time - gTabs[id].focusTime) / 1000);
 
 			gTabs[id].focusTime = undefined;
 		}
@@ -695,7 +694,7 @@ function updateTimeData(url, secsOpen, secsFocus) {
 // Update timer
 //
 function updateTimer(id) {
-	if (!gTabs[id] || !gTabs[id].blockable || /^about/i.test(gTabs[id].url)) {
+	if (!gTabs[id] || !gTabs[id].clockable) {
 		return;
 	}
 
@@ -1186,7 +1185,7 @@ function handleTabUpdated(tabId, changeInfo, tab) {
 
 		let blocked = checkTab(tab.id, tab.url, false);
 
-		if (!blocked) {
+		if (!blocked && tab.active) {
 			updateTimer(tab.id);
 		}
 	}

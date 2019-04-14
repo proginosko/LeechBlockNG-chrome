@@ -677,7 +677,7 @@ function disableSetOptions(set) {
 	// Disable buttons
 	let items = [
 		"allDay",
-		"defaultPage", "delayingPage", "blankPage", "homePage",
+		"defaultPage", "delayingPage", "blankPage",
 		"clearRegExpBlock", "genRegExpBlock",
 		"clearRegExpAllow", "genRegExpAllow",
 		"cancelLockdown"
@@ -728,6 +728,21 @@ function initAccessControlPrompt(prompt) {
 	);
 }
 
+// Handle keydown event
+//
+function handleKeyDown(event) {
+	if (event.ctrlKey && event.which == 83) {
+		event.preventDefault();
+		if (!event.shiftKey) {
+			// Ctrl+S -> Save Options
+			$("#saveOptions").click();
+		} else {
+			// Ctrl+Shift+S -> Save Options & Close
+			$("#saveOptionsClose").click();
+		}
+	}
+}
+
 /*** STARTUP CODE BEGINS HERE ***/
 
 browser.runtime.getPlatformInfo(
@@ -757,7 +772,6 @@ for (let set = 1; set <= NUM_SETS; set++) {
 	$(`#defaultPage${set}`).click(function (e) { $(`#blockURL${set}`).val(DEFAULT_BLOCK_URL); });
 	$(`#delayingPage${set}`).click(function (e) { $(`#blockURL${set}`).val(DELAYED_BLOCK_URL); });
 	$(`#blankPage${set}`).click(function (e) { $(`#blockURL${set}`).val("about:blank"); });
-	$(`#homePage${set}`).click(function (e) { $(`#blockURL${set}`).val("about:home"); });
 	$(`#showAdvOpts${set}`).click(function (e) {
 		$(`#showAdvOpts${set}`).css("display", "none");
 		$(`#advOpts${set}`).css("display", "block");
@@ -806,3 +820,5 @@ initAccessControlPrompt("promptPassword");
 initAccessControlPrompt("promptAccessCode");
 
 window.addEventListener("DOMContentLoaded", retrieveOptions);
+
+window.addEventListener("keydown", handleKeyDown);
