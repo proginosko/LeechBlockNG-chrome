@@ -125,6 +125,15 @@
 							</p>
 							<hr>
 							<p>
+								<input id="applyFilter1" type="checkbox">
+								<label for="applyFilter1">Apply filter instead of blocking page:</label>
+								<select id="filterName1">
+									<option>grayscale</option>
+									<option>invert</option>
+									<option>sepia</option>
+								</select>
+							</p>
+							<p>
 								<input id="activeBlock1" type="checkbox">
 								<label for="activeBlock1">Immediately block pages on these sites once blocking conditions are met</label>
 							</p>
@@ -148,6 +157,7 @@
 							</p>
 						</fieldset>
 						<p>
+							<button id="resetOpts1" type="button">Reset Options to Defaults</button>
 							<button id="showAdvOpts1" type="button">Show Advanced Options</button>
 						</p>
 						<fieldset id="advOpts1">
@@ -213,6 +223,13 @@
 						</fieldset>
 					</div>
 					<div id="paneGeneral">
+						<fieldset>
+							<legend>Block Sets</legend>
+							<p>
+								Number of block sets (1&ndash;<span id="maxSets">?</span>):
+								<input id="numSets" type="text" size="2" title="Default: 6">
+							</p>
+						</fieldset>
 						<fieldset>
 							<legend>Access Control</legend>
 							<p>
@@ -407,6 +424,9 @@
 			<div id="alertBadBlockURL" title="LeechBlock Options">
 				<p>Please enter the URL for the blocking page in the correct format (as a fully specified URL).</p>
 			</div>
+			<div id="alertBadNumSets" title="LeechBlock Options">
+				<p>Please enter the number of block sets in the correct format (as a positive whole number).</p>
+			</div>
 			<div id="alertNoImportFile" title="LeechBlock Options">
 				<p>Please select a file containing the options to import.</p>
 			</div>
@@ -431,6 +451,10 @@
 			</div>
 			<div id="alertLockdownCancel" title="LeechBlock Options">
 				<p>The active lockdown has been canceled.</p>
+			</div>
+			<div id="alertResetOptions" title="LeechBlock Options">
+				<p>The options for this block set have been reset to the defaults.</p>
+				<p><strong>Note:</strong> The defaults will not be applied until you <strong>Save Options</strong>.</p>
 			</div>
 		</div>
 

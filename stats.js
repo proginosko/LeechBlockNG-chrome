@@ -9,10 +9,37 @@ function warn(message) { console.warn("[LBNG] " + message); }
 
 function getElement(id) { return document.getElementById(id); }
 
-// Refresh table of statistics
+var gFormHTML;
+var gNumSets;
+
+// Initialize form (with specified number of block sets)
 //
-function statsRefresh() {
-	//log("statsRefresh");
+function initForm(numSets) {
+	//log("initForm: " + numSets);
+
+	// Reset form to original HTML
+	$("#form").html(gFormHTML);
+
+	gNumSets = +numSets;
+
+	// Use HTML for first row to create other rows
+	let rowHTML = $("#statsRow1").html();
+	for (let set = 2; set <= gNumSets; set++) {
+		let nextRowHTML = rowHTML
+				.replace(/(Block Set) 1/g, `$1 ${set}`)
+				.replace(/id="(\w+)1"/g, `id="$1${set}"`);
+		$("#statsTable").append(`<tr id="statsRow${set}">${nextRowHTML}</tr>`);
+	}
+
+	$(":button").click(handleClick);
+}
+
+// Refresh page
+//
+function refreshPage() {
+	//log("refreshPage");
+
+	$("#form").hide();
 
 	browser.storage.local.get("sync", onGotSync);
 
@@ -35,12 +62,17 @@ function statsRefresh() {
 			return;
 		}
 
+		cleanOptions(options);
+
+		// Initialize form
+		initForm(options["numSets"]);
+
 		setTheme(options["theme"]);
 
 		// Get current time in seconds
 		let now = Math.floor(Date.now() / 1000);
 
-		for (let set = 1; set <= NUM_SETS; set++) {
+		for (let set = 1; set <= gNumSets; set++) {
 			let setName = options[`setName${set}`];
 			let timedata = options[`timedata${set}`];
 			let limitMins = options[`limitMins${set}`];
@@ -102,26 +134,18 @@ function handleClick(e) {
 	if (id == "restartAll") {
 		// Request restart time data for all sets
 		let message = { type: "restart", set: 0 };
-		browser.runtime.sendMessage(message, statsRefresh);
+		browser.runtime.sendMessage(message, refreshPage);
 	} else if (/restart\d+/.test(id)) {
 		// Request restart time data for specific set
 		let message = { type: "restart", set: +id.substr(7) };
-		browser.runtime.sendMessage(message, statsRefresh);
+		browser.runtime.sendMessage(message, refreshPage);
 	}
 }
 
 /*** STARTUP CODE BEGINS HERE ***/
 
-// Use HTML for first row to create other rows
-let rowHTML = $("#statsRow1").html();
-for (let set = 2; set <= NUM_SETS; set++) {
-	let nextRowHTML = rowHTML
-			.replace(/Block Set 1/g, `Block Set ${set}`)
-			.replace(/id="(\w+)1"/g, `id="$1${set}"`);
-	$("#statsTable").append(`<tr id="statsRow${set}">${nextRowHTML}</tr>`);
-}
+// Save original HTML of form
+gFormHTML = $("#form").html();
 
-$(":button").click(handleClick);
-
-window.addEventListener("DOMContentLoaded", statsRefresh);
-window.addEventListener("focus", statsRefresh);
+window.addEventListener("DOMContentLoaded", refreshPage);
+window.addEventListener("focus", refreshPage);

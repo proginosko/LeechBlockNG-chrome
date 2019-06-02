@@ -1,3 +1,17 @@
+### Version 1.0.3 (29 May 2019)
+* Fixed bug affecting options file import.
+
+### Version 1.0.2 (29 May 2019)
+* Fixed bug affecting options file import.
+
+### Version 1.0.1 (25 May 2019)
+* Fixed bug in countdown timer position.
+
+### Version 1.0 (24 May 2019)
+* Finally! Added option to customize number of block sets.
+* Added option to apply filter (grayscale, invert, sepia) instead of blocking page.
+* Bug fixes and under-the-hood improvements.
+
 ### Version 0.9.11 (14 Apr 2019)
 * Added keyboard shortcuts for options (Ctrl+S to Save, Ctrl+Shift+S to Save & Close).
 * Under-the-hood performance improvements.
