@@ -45,7 +45,7 @@ function refreshPage() {
 
 	function onGotSync(options) {
 		if (browser.runtime.lastError) {
-			warn("Cannot get options: " + error);
+			warn("Cannot get options: " + browser.runtime.lastError.message);
 			return;
 		}
 
@@ -58,7 +58,7 @@ function refreshPage() {
 
 	function onGot(options) {
 		if (browser.runtime.lastError) {
-			warn("Cannot get options: " + error);
+			warn("Cannot get options: " + browser.runtime.lastError.message);
 			return;
 		}
 

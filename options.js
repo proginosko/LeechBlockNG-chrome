@@ -271,7 +271,7 @@ function saveOptions(event) {
 		}
 
 		// Set all options in local storage
-		browser.storage.local.set(options), function () {
+		browser.storage.local.set(options, function () {
 			if (browser.runtime.lastError) {
 				warn("Cannot set options: " + browser.runtime.lastError.message);
 			} else {
@@ -657,7 +657,7 @@ function exportOptions() {
 	
 	function onDownloaded() {
 		if (browser.runtime.lastError) {
-			warn("Cannot download options: " + error);
+			warn("Cannot download options: " + browser.runtime.lastError.message);
 			$("#alertExportError").dialog("open");
 			return;
 		}
@@ -730,7 +730,7 @@ function exportOptionsSync(event) {
 
 	function onExported() {
 		if (browser.runtime.lastError) {
-			warn("Cannot export options to sync storage: " + error);
+			warn("Cannot export options to sync storage: " + browser.runtime.lastError.message);
 			if (event) {
 				$("#alertExportSyncError").dialog("open");
 			}
@@ -750,7 +750,7 @@ function importOptionsSync(event) {
 
 	function onImported(options) {
 		if (browser.runtime.lastError) {
-			warn("Cannot import options from sync storage: " + error);
+			warn("Cannot import options from sync storage: " + browser.runtime.lastError.message);
 			if (event) {
 				$("#alertImportSyncError").dialog("open");
 			}

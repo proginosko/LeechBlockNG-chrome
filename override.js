@@ -23,7 +23,7 @@ function initializePage() {
 
 	function onGotSync(options) {
 		if (browser.runtime.lastError) {
-			warn("Cannot get options: " + error);
+			warn("Cannot get options: " + browser.runtime.lastError.message);
 			$("#alertRetrieveError").dialog("open");
 			return;
 		}
@@ -37,7 +37,7 @@ function initializePage() {
 
 	function onGot(options) {
 		if (browser.runtime.lastError) {
-			warn("Cannot get options: " + error);
+			warn("Cannot get options: " + browser.runtime.lastError.message);
 			$("#alertRetrieveError").dialog("open");
 			return;
 		}
