@@ -348,8 +348,8 @@ function checkTab(id, url, isRepeat) {
 				|| (host2 == "www." + host1);
 	}
 
-	// Quick exit for about:blank
-	if (url == "about:blank") {
+	// Quick exit for about:blank and chrome-extension
+	if (url == "about:blank" || url.startsWith("chrome-extension")) {
 		return false; // not blocked
 	}
 
