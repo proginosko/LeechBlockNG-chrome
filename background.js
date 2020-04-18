@@ -6,7 +6,7 @@ const browser = chrome;
 
 const TICK_TIME = 1000; // update every second
 
-const BLOCKABLE_URL = /^(http|file|chrome)/i;
+const BLOCKABLE_URL = /^(http|file|chrome|edge)/i;
 const CLOCKABLE_URL = /^(http|file)/i;
 
 function log(message) { console.log("[LBNG] " + message); }
@@ -348,8 +348,9 @@ function checkTab(id, url, isRepeat) {
 				|| (host2 == "www." + host1);
 	}
 
-	// Quick exit for about:blank and chrome-extension
-	if (url == "about:blank" || url.startsWith("chrome-extension")) {
+	// Quick exit for about:blank and extension pages
+	if (url == "about:blank" || /^(chrome-)?extension/i.test(url)) {
+		log("Quick exit for " + url);
 		return false; // not blocked
 	}
 
@@ -414,8 +415,8 @@ function checkTab(id, url, isRepeat) {
 
 		// Test URL against block/allow regular expressions
 		if (testURL(pageURL, blockRE, allowRE)
-				|| (prevExts && /^chrome:\/\/extensions/i.test(pageURL))
-				|| (prevSettings && /^chrome:\/\/settings/i.test(pageURL))) {
+				|| (prevExts && /^[a-z]+:\/\/extensions/i.test(pageURL))
+				|| (prevSettings && /^[a-z]+:\/\/settings/i.test(pageURL))) {
 			// Get options for this set
 			let timedata = gOptions[`timedata${set}`];
 			let times = gOptions[`times${set}`];
