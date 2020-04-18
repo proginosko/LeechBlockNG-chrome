@@ -1,3 +1,10 @@
+### Version 1.0.5 (04 Apr 2020)
+* Add option for 2-week time period.
+* Fixed bug affecting block sets >= 10.
+
+### Version 1.0.4 (25 Jun 2019)
+* Minor code tweaks.
+
 ### Version 1.0.3 (29 May 2019)
 * Fixed bug affecting options file import.
 
