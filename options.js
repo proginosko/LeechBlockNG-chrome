@@ -849,7 +849,7 @@ function disableGeneralOptions() {
 		"timerVisible", "timerSize", "timerLocation", "timerBadge",
 		"warnSecs", "warnImmediate",
 		"overrideMins", "overrideAccess", "overrideConfirm",
-		"theme", "contextMenu", "toolsMenu", "matchSubdomains",
+		"theme", "contextMenu", "matchSubdomains",
 		"saveSecs", "processActiveTabs", "accessCodeImage", "syncStorage",
 		"exportOptions", "importOptions", "importFile",
 		"exportOptionsSync", "importOptionsSync", "autoExportSync"
