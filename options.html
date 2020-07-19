@@ -63,7 +63,8 @@
 										<option value=""></option>
 										<option value="900">quarter-hour (15 mins)</option>
 										<option value="1800">half-hour (30 mins)</option>
-										<option value="3600">hour</option>
+										<option value="3600">hour (60 mins)</option>
+										<option value="5400">1.5 hours (90 mins)</option>
 										<option value="7200">2 hours</option>
 										<option value="10800">3 hours</option>
 										<option value="14400">4 hours</option>
@@ -85,7 +86,7 @@
 									<option>within time periods OR after time limit</option>
 									<option>within time periods AND after time limit</option>
 								</select>
-								&nbsp;&nbsp;<a href="http://www.proginosko.com/leechblock/faq/difference-or-and/" target="_blank">What's the difference?</a>
+								&nbsp;&nbsp;<a href="https://www.proginosko.com/leechblock/faq/difference-or-and/" target="_blank">What's the difference?</a>
 							</p>
 							<p>
 								<label>Select the days on which to block these sites:</label>
@@ -129,6 +130,9 @@
 								<input id="applyFilter1" type="checkbox">
 								<label for="applyFilter1">Apply filter instead of blocking page:</label>
 								<select id="filterName1">
+									<option>blur (1px)</option>
+									<option>blur (2px)</option>
+									<option>blur (4px)</option>
 									<option>grayscale</option>
 									<option>invert</option>
 									<option>sepia</option>
@@ -156,6 +160,9 @@
 								<input id="allowOverride1" type="checkbox">
 								<label for="allowOverride1">Allow temporary override for these sites</label>
 							</p>
+							<p>
+								<strong>Note:</strong> You should also specify an override period in the General options.
+							</p>
 						</fieldset>
 						<p>
 							<button id="resetOpts1" type="button">Reset Options to Defaults</button>
@@ -177,6 +184,10 @@
 								<label for="prevOpts1">Prevent access to options for this block set at times when these sites are blocked</label>
 							</p>
 							<p>
+								<input id="prevGenOpts1" type="checkbox">
+								<label for="prevGenOpts1">Prevent access to General options at times when these sites are blocked</label>
+							</p>
+							<p>
 								<input id="prevExts1" type="checkbox">
 								<label for="prevExts1">Prevent access to Extensions page at times when these sites are blocked</label>
 							</p>
@@ -187,13 +198,13 @@
 							<hr>
 							<p>
 								Offset time limit period by <input id="limitOffset1" type="text" size="2" title="Leave blank for no offset"> hours
-								&nbsp;&nbsp;<a href="http://www.proginosko.com/leechblock/faq/time-limit-offset/" target="_blank">What does this do?</a>
+								&nbsp;&nbsp;<a href="https://www.proginosko.com/leechblock/faq/time-limit-offset/" target="_blank">What does this do?</a>
 							</p>
 							<hr>
 							<p>
 								<label>Load list of sites from URL:</label>
 								<div><input id="sitesURL1" type="text" size="60" title="Use $S to pass block set number and $T to pass UTC timestamp in milliseconds">
-								&nbsp;&nbsp;<a href="http://www.proginosko.com/leechblock/faq/load-from-url/" target="_blank">What does this do?</a></div>
+								&nbsp;&nbsp;<a href="https://www.proginosko.com/leechblock/faq/load-from-url/" target="_blank">What does this do?</a></div>
 							</p>
 							<p>
 								<label>Use <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions" target="_blank">regular expression</a>
@@ -356,6 +367,9 @@
 						<fieldset>
 							<legend>Export / Import</legend>
 							<p>
+								<strong>Note:</strong> Import will be disabled if you have prevented access to the options for any block set.
+							</p>
+							<p>
 								<button id="exportOptions" type="button">Export Options to File</button>
 								<button id="importOptions" type="button">Import Options from File</button>
 								<input type="file" id="importFile">
@@ -373,10 +387,10 @@
 					</div>
 					<div id="paneAbout">
 						<p>
-							<a href="http://www.proginosko.com/leechblock/" target="_blank"><img src="images/leechblock_logo.svg" class="logo" alt="LeechBlock logo" title="LeechBlock"></a>
+							<a href="https://www.proginosko.com/leechblock/" target="_blank"><img src="images/leechblock_logo.svg" class="logo" alt="LeechBlock logo" title="LeechBlock"></a>
 						</p>
 						<p>
-							<a href="http://www.proginosko.com/leechblock/" target="_blank">LeechBlock NG</a>
+							<a href="https://www.proginosko.com/leechblock/" target="_blank">LeechBlock NG</a>
 							(Next Generation) is a simple productivity tool designed to<br>
 							block those time-wasting sites that can suck the life out of your working day.<br>
 							All you need to do is specify which sites to block and when to block them.
@@ -385,11 +399,11 @@
 						<p><strong>Author:</strong> James Anderson</p>
 						<p><strong>Contributors:</strong> Dario Kolac (graphics) &amp; Robert Gützkow (graphics)</p>
 						<p><strong>Examples:</strong>
-						<a href="http://www.proginosko.com/leechblock/examples/" target="_blank">http://www.proginosko.com/leechblock/examples/</a></p>
+						<a href="https://www.proginosko.com/leechblock/examples/" target="_blank">https://www.proginosko.com/leechblock/examples/</a></p>
 						<p><strong>FAQ:</strong>
-						<a href="http://www.proginosko.com/leechblock/faq/" target="_blank">http://www.proginosko.com/leechblock/faq/</a></p>
+						<a href="https://www.proginosko.com/leechblock/faq/" target="_blank">https://www.proginosko.com/leechblock/faq/</a></p>
 						<p><strong>Support:</strong>
-						<a href="http://www.proginosko.com/leechblock/support/" target="_blank">http://www.proginosko.com/leechblock/support/</a></p>
+						<a href="https://www.proginosko.com/leechblock/support/" target="_blank">https://www.proginosko.com/leechblock/support/</a></p>
 					</div>
 				</div>
 

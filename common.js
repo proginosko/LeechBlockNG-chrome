@@ -11,6 +11,8 @@ const OVERRIDE_ICON = { 16: "icons/leechblock16o.png", 32: "icons/leechblock32o.
 
 const PARSE_URL = /^((([\w-]+):\/*(\w+(?::\w+)?@)?([\w-\.]+)(?::(\d*))?)([^\?#]*))(\?[^#]*)?(#.*)?$/;
 
+const LEECHBLOCK_URL = "https://www.proginosko.com/leechblock/";
+
 const PER_SET_OPTIONS = {
 	// def: default value, id: form element identifier (see options.html)
 	setName: { type: "string", def: "", id: "setName" },
@@ -31,6 +33,7 @@ const PER_SET_OPTIONS = {
 	reloadSecs: { type: "string", def: "", id: "reloadSecs" },
 	allowOverride: { type: "boolean", def: false, id: "allowOverride" },
 	prevOpts: { type: "boolean", def: false, id: "prevOpts" },
+	prevGenOpts: { type: "boolean", def: false, id: "prevGenOpts" },
 	prevExts: { type: "boolean", def: false, id: "prevExts" },
 	prevSettings: { type: "boolean", def: false, id: "prevSettings" },
 	showTimer: { type: "boolean", def: true, id: "showTimer" },

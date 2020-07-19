@@ -348,20 +348,27 @@ function checkTab(id, url, isRepeat) {
 				|| (host2 == "www." + host1);
 	}
 
-	// Quick exit for about:blank and extension pages
-	if (url == "about:blank" || /^(chrome-)?extension/i.test(url)) {
-		log("Quick exit for " + url);
-		return false; // not blocked
-	}
+	// Remove view-source prefix if necessary
+	url = url.replace(/^view-source:/i, "");
 
 	if (!gTabs[id]) {
 		// Create object to track this tab
-		gTabs[id] = { allowedHost: null, allowedPath: null };
+		gTabs[id] = { allowedHost: null, allowedPath: null, filtered: false };
 	}
 
 	gTabs[id].blockable = BLOCKABLE_URL.test(url);
 	gTabs[id].clockable = CLOCKABLE_URL.test(url);
 	gTabs[id].url = url;
+
+	// Quick exit for about:blank and extension pages
+	if (url == "about:blank" || /^(chrome-)?extension/i.test(url)) {
+		return false; // not blocked
+	}
+
+	// Quick exit for LeechBlock website (documentation should be always available)
+	if (url.startsWith(LEECHBLOCK_URL)) {
+		return false; // not blocked
+	}
 
 	// Quick exit for non-blockable URLs
 	if (!gTabs[id].blockable) {
@@ -482,7 +489,7 @@ function checkTab(id, url, isRepeat) {
 					|| (!conjMode && (withinTimePeriods || afterTimeLimit))
 					|| (conjMode && (withinTimePeriods && afterTimeLimit));
 
-			// Redirect page if all relevant block conditions are fulfilled
+			// Apply block if all relevant block conditions are fulfilled
 			if (!override && doBlock && (!isRepeat || activeBlock)) {
 				// Get final URL for block page
 				blockURL = blockURL.replace(/\$S/g, set).replace(/\$U/g, pageURLWithHash);
@@ -496,12 +503,25 @@ function checkTab(id, url, isRepeat) {
 					browser.tabs.sendMessage(id, message,
 						function (keyword) {
 							if (keyword) {
-								// Redirect page
-								browser.tabs.update(id, { url: blockURL });
+								if (applyFilter) {
+									gTabs[id].filtered = true;
+
+									// Send message to tab
+									let message = {
+										type: "filter",
+										name: filterName
+									};
+									browser.tabs.sendMessage(id, message);
+								} else {
+									// Redirect page
+									browser.tabs.update(id, { url: blockURL });
+								}
 							}
 						}
 					);
 				} else if (applyFilter) {
+					gTabs[id].filtered = true;
+
 					// Send message to tab
 					let message = {
 						type: "filter",
@@ -514,6 +534,18 @@ function checkTab(id, url, isRepeat) {
 
 					return true; // blocked
 				}
+			}
+
+			// Clear filter if no longer blocked
+			if (gTabs[id].filtered && (override || !doBlock)) {
+				gTabs[id].filtered = false;
+
+				// Send message to tab
+				let message = {
+					type: "filter",
+					name: null
+				};
+				browser.tabs.sendMessage(id, message);
 			}
 
 			// Update seconds left before block
