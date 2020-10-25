@@ -25,6 +25,7 @@ const PER_SET_OPTIONS = {
 	days: { type: "array", def: [false, true, true, true, true, true, false], id: "day" },
 	blockURL: { type: "string", def: DEFAULT_BLOCK_URL, id: "blockURL" },
 	applyFilter: { type: "boolean", def: false, id: "applyFilter" },
+	closeTab: { type: "boolean", def: false, id: "closeTab" },
 	filterName: { type: "string", def: "grayscale", id: "filterName" },
 	activeBlock: { type: "boolean", def: false, id: "activeBlock" },
 	countFocus: { type: "boolean", def: true, id: "countFocus" },
@@ -37,6 +38,7 @@ const PER_SET_OPTIONS = {
 	prevExts: { type: "boolean", def: false, id: "prevExts" },
 	prevSettings: { type: "boolean", def: false, id: "prevSettings" },
 	showTimer: { type: "boolean", def: true, id: "showTimer" },
+	allowKeywords: { type: "boolean", def: false, id: "allowKeywords" },
 	sitesURL: { type: "string", def: "", id: "sitesURL" },
 	regexpBlock: { type: "string", def: "", id: "regexpBlock" },
 	regexpAllow: { type: "string", def: "", id: "regexpAllow" },
@@ -134,7 +136,7 @@ function cleanTimeData(options) {
 //
 function getParsedURL(url) {
 	let results = PARSE_URL.exec(url);
-	if (results != null) {
+	if (results) {
 		let page = results[1];
 		let origin = results[2];
 		let protocol = results[3];
@@ -146,14 +148,15 @@ function getParsedURL(url) {
 		let fragment = results[9];
 		return {
 			pageNoArgs: page,
-			page: (query == null) ? page : (page + query),
+			page: query ? (page + query) : page,
 			origin: origin,
 			protocol: protocol,
 			host: host,
-			path: path,
+			pathNoArgs: path,
+			path: query ? (path + query) : path,
 			query: query,
-			args: (query == null) ? null : query.substring(1).split(/[;&]/),
-			hash: (fragment == null) ? null : fragment.substring(1)
+			args: query ? query.substring(1).split(/[;&]/) : null,
+			hash: fragment ? fragment.substring(1) : null 
 		};
 	} else {
 		warn("Cannot parse URL: " + url);
@@ -163,6 +166,7 @@ function getParsedURL(url) {
 			origin: null,
 			protocol: null,
 			host: null,
+			pathNoArgs: null,
 			path: null,
 			query: null,
 			args: null,

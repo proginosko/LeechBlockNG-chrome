@@ -353,7 +353,7 @@ function checkTab(id, url, isRepeat) {
 
 	if (!gTabs[id]) {
 		// Create object to track this tab
-		gTabs[id] = { allowedHost: null, allowedPath: null, filtered: false };
+		gTabs[id] = { allowedHost: null, allowedPath: null, allowedSet: 0 };
 	}
 
 	gTabs[id].blockable = BLOCKABLE_URL.test(url);
@@ -379,13 +379,14 @@ function checkTab(id, url, isRepeat) {
 	let parsedURL = getParsedURL(url);
 
 	// Check for allowed host/path
-	let ah = isSameHost(gTabs[id].allowedHost, parsedURL.host);
-	let ap = !gTabs[id].allowedPath || (gTabs[id].allowedPath == parsedURL.path);
-	if (ah && ap) {
-		return false; // not blocked
-	} else {
+	let allowHost = isSameHost(gTabs[id].allowedHost, parsedURL.host);
+	let allowPath = !gTabs[id].allowedPath || (gTabs[id].allowedPath == parsedURL.path);
+	let allowSet = gTabs[id].allowedSet;
+	if (!allowHost || !allowPath) {
+		// Allowing delayed site/page no longer applies
 		gTabs[id].allowedHost = null;
 		gTabs[id].allowedPath = null;
+		gTabs[id].allowedSet = 0;
 	}
 
 	// Get current time/date
@@ -400,6 +401,11 @@ function checkTab(id, url, isRepeat) {
 	gTabs[id].secsLeft = Infinity;
 
 	for (let set = 1; set <= gNumSets; set++) {
+		if (allowHost && allowPath && allowSet == set) {
+			// Allow delayed site/page
+			continue;
+		}
+
 		// Get URL of page (possibly with hash part)
 		let pageURL = parsedURL.page;
 		let pageURLWithHash = parsedURL.page;
@@ -436,10 +442,12 @@ function checkTab(id, url, isRepeat) {
 			let days = gOptions[`days${set}`];
 			let blockURL = gOptions[`blockURL${set}`];
 			let applyFilter = gOptions[`applyFilter${set}`];
+			let closeTab = gOptions[`closeTab${set}`];
 			let filterName = gOptions[`filterName${set}`];
 			let activeBlock = gOptions[`activeBlock${set}`];
 			let allowOverride = gOptions[`allowOverride${set}`];
 			let showTimer = gOptions[`showTimer${set}`];
+			let allowKeywords = gOptions[`allowKeywords${set}`];
 
 			// Check day
 			let onSelectedDay = days[timedate.getDay()];
@@ -494,6 +502,25 @@ function checkTab(id, url, isRepeat) {
 				// Get final URL for block page
 				blockURL = blockURL.replace(/\$S/g, set).replace(/\$U/g, pageURLWithHash);
 
+				function applyBlock() {
+					if (closeTab) {
+						// Close tab
+						browser.tabs.remove(id);
+					} else if (applyFilter) {
+						gTabs[id].filterSet = set;
+
+						// Send message to tab
+						let message = {
+							type: "filter",
+							name: filterName
+						};
+						browser.tabs.sendMessage(id, message);
+					} else {
+						// Redirect page
+						browser.tabs.update(id, { url: blockURL });
+					}
+				}
+
 				if (keywordRE) {
 					// Check for keyword(s) before blocking
 					let message = {
@@ -502,43 +529,20 @@ function checkTab(id, url, isRepeat) {
 					};
 					browser.tabs.sendMessage(id, message,
 						function (keyword) {
-							if (keyword) {
-								if (applyFilter) {
-									gTabs[id].filtered = true;
-
-									// Send message to tab
-									let message = {
-										type: "filter",
-										name: filterName
-									};
-									browser.tabs.sendMessage(id, message);
-								} else {
-									// Redirect page
-									browser.tabs.update(id, { url: blockURL });
-								}
+							if (keyword != allowKeywords) {
+								applyBlock();
 							}
 						}
 					);
-				} else if (applyFilter) {
-					gTabs[id].filtered = true;
-
-					// Send message to tab
-					let message = {
-						type: "filter",
-						name: filterName
-					};
-					browser.tabs.sendMessage(id, message);
 				} else {
-					// Redirect page
-					browser.tabs.update(id, { url: blockURL });
-
+					applyBlock();
 					return true; // blocked
 				}
 			}
 
 			// Clear filter if no longer blocked
-			if (gTabs[id].filtered && (override || !doBlock)) {
-				gTabs[id].filtered = false;
+			if (set == gTabs[id].filterSet && (override || !doBlock)) {
+				gTabs[id].filterSet = undefined;
 
 				// Send message to tab
 				let message = {
@@ -1096,9 +1100,8 @@ function openDelayedPage(id, url, set) {
 
 	// Set parameters for allowing host
 	gTabs[id].allowedHost = parsedURL.host;
-	if (!gOptions[`delayFirst${set}`]) {
-		gTabs[id].allowedPath = parsedURL.path;
-	}
+	gTabs[id].allowedPath = gOptions[`delayFirst${set}`] ? null : parsedURL.path;
+	gTabs[id].allowedSet = set;
 
 	// Redirect page
 	browser.tabs.update(id, { url: url });
@@ -1225,12 +1228,13 @@ function handleTabCreated(tab) {
 
 	if (!gTabs[tab.id]) {
 		// Create object to track this tab
-		gTabs[tab.id] = { allowedHost: null, allowedPath: null };
+		gTabs[tab.id] = { allowedHost: null, allowedPath: null, allowedSet: 0 };
 
 		if (tab.openerTabId) {
 			// Inherit properties from opener tab
 			gTabs[tab.id].allowedHost = gTabs[tab.openerTabId].allowedHost;
 			gTabs[tab.id].allowedPath = gTabs[tab.openerTabId].allowedPath;
+			gTabs[tab.id].allowedSet = gTabs[tab.openerTabId].allowedSet;
 		}
 	}
 }
