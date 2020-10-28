@@ -529,7 +529,7 @@ function checkTab(id, url, isRepeat) {
 					};
 					browser.tabs.sendMessage(id, message,
 						function (keyword) {
-							if (keyword != allowKeywords) {
+							if (typeof keyword == "boolean" && keyword != allowKeywords) {
 								applyBlock();
 							}
 						}
