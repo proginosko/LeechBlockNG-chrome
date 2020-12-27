@@ -22,6 +22,7 @@ var gSetCounted = [];
 var gSavedTimeData = [];
 var gRegExps = [];
 var gFocusWindowId = 0;
+var gAllFocused = false;
 var gOverrideIcon = false;
 var gSaveSecsCount = 0;
 
@@ -158,6 +159,8 @@ function retrieveOptions(update) {
 
 		gNumSets = +gOptions["numSets"];
 
+		gAllFocused = gOptions["allFocused"];
+
 		createRegExps();
 		refreshMenus();
 		loadSiteLists();
@@ -267,7 +270,8 @@ function restartTimeData(set) {
 	}
 
 	// Get current time in seconds
-	let now = Math.floor(Date.now() / 1000);
+	let clockOffset = gOptions["clockOffset"];
+	let now = Math.floor(Date.now() / 1000) + (clockOffset * 60);
 
 	if (!set) {
 		for (set = 1; set <= gNumSets; set++) {
@@ -322,7 +326,7 @@ function processTabs(active) {
 		}
 
 		for (let tab of tabs) {
-			let focus = tab.active && (!gFocusWindowId || tab.windowId == gFocusWindowId);
+			let focus = tab.active && (gAllFocused || !gFocusWindowId || tab.windowId == gFocusWindowId);
 
 			// Force update of time spent on this page
 			clockPageTime(tab.id, false, false);
@@ -389,11 +393,12 @@ function checkTab(id, url, isRepeat) {
 		gTabs[id].allowedSet = 0;
 	}
 
-	// Get current time/date
-	let timedate = new Date();
-
 	// Get current time in seconds
-	let now = Math.floor(Date.now() / 1000);
+	let clockOffset = gOptions["clockOffset"];
+	let now = Math.floor(Date.now() / 1000) + (clockOffset * 60);
+
+	// Get current time/date
+	let timedate = new Date(now * 1000);
 
 	// Get override end time
 	let overrideEndTime = gOptions["oret"];
@@ -668,11 +673,12 @@ function updateTimeData(url, secsOpen, secsFocus) {
 	let parsedURL = getParsedURL(url);
 	let pageURL = parsedURL.page;
 
-	// Get current time/date
-	let timedate = new Date();
-
 	// Get current time in seconds
-	let now = Math.floor(Date.now() / 1000);
+	let clockOffset = gOptions["clockOffset"];
+	let now = Math.floor(Date.now() / 1000) + (clockOffset * 60);
+
+	// Get current time/date
+	let timedate = new Date(now * 1000);
 
 	for (let set = 1; set <= gNumSets; set++) {
 		// Get regular expressions for matching sites to block/allow
@@ -798,7 +804,8 @@ function updateIcon() {
 	}
 
 	// Get current time in seconds
-	let now = Math.floor(Date.now() / 1000);
+	let clockOffset = gOptions["clockOffset"];
+	let now = Math.floor(Date.now() / 1000) + (clockOffset * 60);
 
 	// Get override end time
 	let overrideEndTime = gOptions["oret"];
@@ -839,8 +846,12 @@ function createBlockInfo(url) {
 	// Get unblock time for block set
 	let unblockTime = getUnblockTime(blockedSet);
 	if (unblockTime != null) {
+		// Get current date of the month
+		let clockOffset = gOptions["clockOffset"];
+		let date = new Date(Date.now() + (clockOffset * 60000)).getDate();
+
 		// Convert to string
-		if (unblockTime.getDate() == new Date().getDate()) {
+		if (unblockTime.getDate() == date) {
 			// Same day: show time only
 			unblockTime = unblockTime.toLocaleTimeString();
 		} else {
@@ -875,11 +886,12 @@ function getUnblockTime(set) {
 		return null;
 	}
 
-	// Get current time/date
-	let timedate = new Date();
-	
 	// Get current time in seconds
-	let now = Math.floor(Date.now() / 1000);
+	let clockOffset = gOptions["clockOffset"];
+	let now = Math.floor(Date.now() / 1000) + (clockOffset * 60);
+
+	// Get current time/date
+	let timedate = new Date(now * 1000);
 
 	// Get options for this set
 	let timedata = gOptions[`timedata${set}`];
@@ -1052,7 +1064,9 @@ function applyOverride() {
 	let overrideMins = gOptions["orm"];
 	if (overrideMins) {
 		// Calculate end time
-		let overrideEndTime = Math.floor(Date.now() / 1000) + (overrideMins * 60);
+		let clockOffset = gOptions["clockOffset"];
+		let now = Math.floor(Date.now() / 1000) + (clockOffset * 60);
+		let overrideEndTime = now + (overrideMins * 60);
 
 		// Update option
 		gOptions["oret"] = overrideEndTime;
@@ -1246,7 +1260,7 @@ function handleTabUpdated(tabId, changeInfo, tab) {
 		return;
 	}
 
-	let focus = tab.active && (!gFocusWindowId || tab.windowId == gFocusWindowId);
+	let focus = tab.active && (gAllFocused || !gFocusWindowId || tab.windowId == gFocusWindowId);
 
 	if (changeInfo.status && changeInfo.status == "complete") {
 		clockPageTime(tab.id, true, focus);
@@ -1272,7 +1286,7 @@ function handleTabActivated(activeInfo) {
 		return;
 	}
 
-	let focus = (!gFocusWindowId || activeInfo.windowId == gFocusWindowId);
+	let focus = (gAllFocused || !gFocusWindowId || activeInfo.windowId == gFocusWindowId);
 
 	clockPageTime(activeInfo.tabId, true, focus);
 	updateTimer(activeInfo.tabId);

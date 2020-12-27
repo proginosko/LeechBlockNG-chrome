@@ -13,6 +13,11 @@ const PARSE_URL = /^((([\w-]+):\/*(\w+(?::\w+)?@)?([\w-\.]+)(?::(\d*))?)([^\?#]*
 
 const LEECHBLOCK_URL = "https://www.proginosko.com/leechblock/";
 
+const U_WORD_CHAR = "[\\p{L}\\p{N}]";
+const U_WORD_BEGIN = `(?<!${U_WORD_CHAR})(?=${U_WORD_CHAR})`;
+const U_WORD_END = `(?<=${U_WORD_CHAR})(?!${U_WORD_CHAR})`;
+const U_WORD_BOUND = `(?:${U_WORD_BEGIN}|${U_WORD_END})`;
+
 const PER_SET_OPTIONS = {
 	// def: default value, id: form element identifier (see options.html)
 	setName: { type: "string", def: "", id: "setName" },
@@ -65,6 +70,8 @@ const GENERAL_OPTIONS = {
 	contextMenu: { type: "boolean", def: true, id: "contextMenu" }, // default: enabled
 	matchSubdomains: { type: "boolean", def: false, id: "matchSubdomains" }, // default: disabled
 	saveSecs: { type: "string", def: "10", id: "saveSecs" }, // default: every 10 seconds
+	clockOffset: { type: "string", def: "", id: "clockOffset" }, // default: no offset
+	allFocused: { type: "boolean", def: false, id: "allFocused" }, // default: disabled
 	processActiveTabs: { type: "boolean", def: false, id: "processActiveTabs" }, // default: disabled
 	accessCodeImage: { type: "boolean", def: false, id: "accessCodeImage" }, // default: disabled
 	autoExportSync: { type: "boolean", def: true, id: "autoExportSync" }, // default: enabled
@@ -123,10 +130,12 @@ function cleanOptions(options) {
 //
 function cleanTimeData(options) {
 	let numSets = +options["numSets"];
+	let clockOffset = options["clockOffset"];
+	let now = Math.floor(Date.now() / 1000) + (clockOffset * 60);
 	for (let set = 1; set <= numSets; set++) {
 		let timedata = options[`timedata${set}`];
 		if (!Array.isArray(timedata) || timedata.length < 5) {
-			timedata = [Math.floor(Date.now() / 1000), 0, 0, 0, 0];
+			timedata = [now, 0, 0, 0, 0];
 		}
 		options[`timedata${set}`] = timedata;
 	}
@@ -224,7 +233,9 @@ function getRegExpSites(sites, matchSubdomains) {
 		allow: (allows.length > 0)
 				? "^" + (allowFiles ? "file:|" : "") + "(https?|file):\\/+(" + allows.join("|") + ")"
 				: (allowFiles ? "^file:" : ""),
-		keyword: (keywords.length > 0) ? keywords.join("|") : ""
+		keyword: (keywords.length > 0)
+				? U_WORD_BEGIN + "(" + keywords.join("|") + ")" + U_WORD_END
+				: ""
 	};
 }
 
@@ -246,11 +257,10 @@ function patternToRegExp(pattern, matchSubdomains) {
 //
 function keywordToRegExp(keyword) {
 	let special = /[\.\|\?\:\+\-\^\$\(\)\[\]\{\}\\]/g;
-	return "\\b" + keyword
+	return keyword
 			.replace(special, "\\$&")			// fix special chars
 			.replace(/_+/g, "\\s+")				// convert underscores
-			.replace(/\*+/, "\\S*")				// convert wildcards
-			+ "\\b";
+			.replace(/\*+/g, "\\S*");			// convert wildcards
 }
 
 // Check time periods format
