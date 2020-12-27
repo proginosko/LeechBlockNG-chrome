@@ -146,7 +146,7 @@ function handleMessage(message, sender, sendResponse) {
 	} else if (message.type == "alert") {
 		showAlert(message.text);
 	} else if (message.type == "keyword") {
-		let keyword = checkKeyword(new RegExp(message.keywordRE, "i")); // Chrome workaround
+		let keyword = checkKeyword(new RegExp(message.keywordRE, "iu")); // Chrome workaround
 		sendResponse(keyword);
 	} else if (message.type == "filter") {
 		applyFilter(message.name);
