@@ -16,12 +16,6 @@
 		"default_title": "LeechBlock"
 	},
 
-	"browser_specific_settings": {
-		"gecko": {
-			"id": "leechblockng@proginosko.com"
-		}
-	},
-
 	"content_scripts": [
 		{
 			"matches": ["<all_urls>"],
