@@ -101,7 +101,7 @@ function hideAlert() {
 //
 function checkKeyword(keywordRE) {
 	if (!keywordRE) {
-		return false; // nothing to find!
+		return null; // nothing to find!
 	}
 
 	// Get all text nodes in document
@@ -111,13 +111,14 @@ function checkKeyword(keywordRE) {
 	//console.log("Checking " + textNodes.snapshotLength + " text node(s) for keyword(s)...");
 
 	for (let i = 0; i < textNodes.snapshotLength; i++) {
+		let matches;
 		let data = textNodes.snapshotItem(i).data;
-		if (data && keywordRE.test(data)) {
-			return true; // keyword(s) found
+		if (data && (matches = keywordRE.exec(data)) != null) {
+			return matches[0]; // keyword(s) found
 		}
 	}
 
-	return false; // keyword(s) not found
+	return null; // keyword(s) not found
 }
 
 // Apply filter
@@ -141,16 +142,31 @@ function applyFilter(name) {
 /*** EVENT HANDLERS BEGIN HERE ***/
 
 function handleMessage(message, sender, sendResponse) {
-	if (message.type == "timer") {
-		updateTimer(message.text, message.size, message.location);
-	} else if (message.type == "alert") {
-		showAlert(message.text);
-	} else if (message.type == "keyword") {
-		let keyword = checkKeyword(new RegExp(message.keywordRE, "iu")); // Chrome workaround
-		sendResponse(keyword);
-	} else if (message.type == "filter") {
-		applyFilter(message.name);
+
+	switch (message.type) {
+
+		case "alert":
+			showAlert(message.text);
+			break;
+
+		case "filter":
+			applyFilter(message.name);
+			break;
+
+		case "keyword":
+			let keyword = checkKeyword(new RegExp(message.keywordRE, "iu")); // Chrome workaround
+			sendResponse(keyword);
+			break;
+
+		case "timer":
+			updateTimer(message.text, message.size, message.location);
+			break;
+
 	}
+
 }
 
 browser.runtime.onMessage.addListener(handleMessage);
+
+// Send URL of referring page to background script
+browser.runtime.sendMessage({ type: "referrer", referrer: document.referrer });

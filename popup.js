@@ -4,6 +4,36 @@
 
 const browser = chrome;
 
+// Initialize page
+//
+function initializePage() {
+	browser.storage.local.get("sync", onGotSync);
+
+	function onGotSync(options) {
+		if (browser.runtime.lastError) {
+			return;
+		}
+
+		if (options["sync"]) {
+			browser.storage.sync.get("theme", onGot);
+		} else {
+			browser.storage.local.get("theme", onGot);
+		}
+	}
+
+	function onGot(options) {
+		if (browser.runtime.lastError) {
+			return;
+		}
+
+		let theme = options["theme"];
+		let link = document.getElementById("themeLink");
+		if (link) {
+			link.href = theme ? `themes/${theme}.css` : "";
+		}
+	}
+}
+
 // Open options page
 //
 function openOptions() {
@@ -50,3 +80,5 @@ document.querySelector("#options").addEventListener("click", openOptions);
 document.querySelector("#lockdown").addEventListener("click", openLockdown);
 document.querySelector("#override").addEventListener("click", openOverride);
 document.querySelector("#stats").addEventListener("click", openStats);
+
+document.addEventListener("DOMContentLoaded", initializePage);

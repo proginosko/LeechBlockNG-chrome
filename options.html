@@ -41,7 +41,11 @@
 								<div><textarea id="sites1" cols="60" rows="10" spellcheck="false" placeholder="somesite.com"></textarea></div>
 							</p>
 							<p>
-								<strong>Tip:</strong> Use <code>*</code> as <a href="https://www.proginosko.com/leechblock/faq/wildcards/" target="_blank">wildcard</a>, <code>+</code> to prefix <a href="https://www.proginosko.com/leechblock/faq/exceptions/" target="_blank">exceptions</a>, and <code>~</code> to prefix <a href="https://www.proginosko.com/leechblock/faq/keywords/" target="_blank">keywords</a>.
+								<strong>Tip:</strong>
+								Use <code>*</code> as <a href="https://www.proginosko.com/leechblock/faq/wildcards/" target="_blank">wildcard</a>,
+								<code>+</code> to prefix <a href="https://www.proginosko.com/leechblock/faq/exceptions/" target="_blank">exceptions</a>,
+								<code>&gt;</code> to prefix <a href="https://www.proginosko.com/leechblock/faq/referrers/" target="_blank">referrers</a>,
+								and <code>~</code> to prefix <a href="https://www.proginosko.com/leechblock/faq/keywords/" target="_blank">keywords</a>.
 							</p>
 						</fieldset>
 						<fieldset>
@@ -64,10 +68,13 @@
 									minutes in every
 									<select id="limitPeriod1">
 										<option value=""></option>
-										<option value="900">quarter-hour (15 mins)</option>
-										<option value="1800">half-hour (30 mins)</option>
-										<option value="3600">hour (60 mins)</option>
-										<option value="5400">1.5 hours (90 mins)</option>
+										<option value="300">5 minutes</option>
+										<option value="600">10 minutes</option>
+										<option value="900">15 minutes</option>
+										<option value="1200">20 minutes</option>
+										<option value="1800">half-hour (30 minutes)</option>
+										<option value="3600">hour (60 minutes)</option>
+										<option value="5400">1.5 hours (90 minutes)</option>
 										<option value="7200">2 hours</option>
 										<option value="10800">3 hours</option>
 										<option value="14400">4 hours</option>
@@ -75,9 +82,9 @@
 										<option value="28800">8 hours</option>
 										<option value="43200">half-day (12 hours)</option>
 										<option value="86400">day (24 hours)</option>
-										<option value="172800">2 days (48 hours)</option>
-										<option value="259200">3 days (72 hours)</option>
-										<option value="345600">4 days (96 hours)</option>
+										<option value="172800">2 days</option>
+										<option value="259200">3 days</option>
+										<option value="345600">4 days</option>
 										<option value="604800">week (7 days)</option>
 										<option value="1209600">2 weeks (14 days)</option>
 									</select>
@@ -152,6 +159,10 @@
 							<p>
 								<input id="countFocus1" type="checkbox">
 								<label for="countFocus1">Count time spent on these sites only when browser tab is active</label>
+							</p>
+							<p>
+								<input id="showKeyword1" type="checkbox">
+								<label for="showKeyword1">Show matched keyword on blocking page</label>
 							</p>
 							<p>
 								<input id="delayFirst1" type="checkbox">
@@ -274,6 +285,10 @@
 							<p>
 								<input id="hidePassword" type="checkbox">
 								<label for="hidePassword">Hide password characters when entered at prompt</label>
+							</p>
+							<p>
+								<label>Prevent all access to options during these time periods:</label><br>
+								<div><input id="accessPreventTimes" type="text" size="60" placeholder="Example: 0900-1230,1330-1700"></div>
 							</p>
 						</fieldset>
 						<fieldset>
@@ -424,6 +439,8 @@
 						<a href="https://www.proginosko.com/leechblock/faq/" target="_blank">https://www.proginosko.com/leechblock/faq/</a></p>
 						<p><strong>Support:</strong>
 						<a href="https://www.proginosko.com/leechblock/support/" target="_blank">https://www.proginosko.com/leechblock/support/</a></p>
+						<p><strong>Version History:</strong>
+						<a href="https://www.proginosko.com/leechblock/version-history/" target="_blank">https://www.proginosko.com/leechblock/version-history/</a></p>
 					</div>
 				</div>
 
@@ -439,6 +456,12 @@
 		<div id="alerts" style="display: none;">
 			<div id="alertRetrieveError" title="LeechBlock Options">
 				<p><strong>Error:</strong> Unable to retrieve options from browser storage.</p>
+			</div>
+			<div id="alertAccessPrevent" title="LeechBlock Options">
+				<p>You have prevented access to options during these time periods: <strong><span id="alertAccessPreventTimes"></span></strong></p>
+			</div>
+			<div id="alertBadAccessPreventTimes" title="LeechBlock Options">
+				<p>Completely preventing access to options is a bad idea! Please enter different time periods.</p>
 			</div>
 			<div id="alertBadTimes" title="LeechBlock Options">
 				<p>Please enter the time periods in the correct format. Use 24-hour clock format (HHMM) for times,
