@@ -498,11 +498,9 @@ function retrieveOptions() {
 		}
 
 		if (gIsAndroid) {
-			// Disable sync options (sync storage not supported on Android yet)
-			getElement("syncStorage").disabled = true;
-			getElement("exportOptionsSync").disabled = true;
-			getElement("importOptionsSync").disabled = true;
-			getElement("autoExportSync").disabled = true;
+			// Hide sync options (sync storage not supported on Android yet)
+			getElement("syncOpts1").style.display = "none";
+			getElement("syncOpts2").style.display = "none";
 		}
 
 		confirmAccess(options);
@@ -904,12 +902,13 @@ function disableGeneralOptions() {
 	// Disable all general options
 	let items = [
 		"numSets",
-		"optionsAccess", "accessPassword", "hidePassword",
+		"optionsAccess", "accessPassword", "hidePassword", "accessPreventTimes",
 		"timerVisible", "timerSize", "timerLocation", "timerBadge",
 		"warnSecs", "warnImmediate",
 		"overrideMins", "overrideAccess", "overrideConfirm",
 		"theme", "contextMenu", "matchSubdomains",
-		"saveSecs", "processActiveTabs", "accessCodeImage", "syncStorage",
+		"saveSecs", "clockOffset", "allFocused",
+		"processActiveTabs", "accessCodeImage", "syncStorage",
 		"exportOptions", "importOptions", "importFile",
 		"exportOptionsSync", "importOptionsSync", "autoExportSync"
 	];

@@ -197,6 +197,10 @@
 								<label for="showTimer1">Show countdown timer for this block set</label>
 							</p>
 							<p>
+								<input id="allowRefers1" type="checkbox">
+								<label for="allowRefers1">Treat referrers as allow-conditions rather than block-conditions</label>
+							</p>
+							<p>
 								<input id="allowKeywords1" type="checkbox">
 								<label for="allowKeywords1">Treat keywords as allow-conditions rather than block-conditions</label>
 							</p>
@@ -394,7 +398,7 @@
 								<input id="accessCodeImage" type="checkbox">
 								<label for="accessCodeImage">Display access code as image</label>
 							</p>
-							<p>
+							<p id="syncOpts1">
 								<input id="syncStorage" type="checkbox">
 								<label for="syncStorage">Use sync storage for options (experimental: use at your own risk!)</label>
 							</p>
@@ -409,6 +413,7 @@
 								<button id="importOptions" type="button">Import Options from File</button>
 								<input type="file" id="importFile">
 							</p>
+							<span id="syncOpts2">
 							<hr>
 							<p>
 								<button id="exportOptionsSync" type="button">Export Options to Sync Storage</button>
@@ -418,6 +423,7 @@
 								<input id="autoExportSync" type="checkbox">
 								<label for="autoExportSync">Automatically export options to sync storage (as backup) whenever options are saved</label>
 							</p>
+							</span>
 						</fieldset>
 					</div>
 					<div id="paneAbout">

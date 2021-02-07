@@ -46,6 +46,7 @@ const PER_SET_OPTIONS = {
 	prevExts: { type: "boolean", def: false, id: "prevExts" },
 	prevSettings: { type: "boolean", def: false, id: "prevSettings" },
 	showTimer: { type: "boolean", def: true, id: "showTimer" },
+	allowRefers: { type: "boolean", def: false, id: "allowRefers" },
 	allowKeywords: { type: "boolean", def: false, id: "allowKeywords" },
 	sitesURL: { type: "string", def: "", id: "sitesURL" },
 	regexpBlock: { type: "string", def: "", id: "regexpBlock" },
