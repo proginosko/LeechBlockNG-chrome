@@ -557,6 +557,7 @@ function checkTab(id, isBeforeNav, isRepeat) {
 						browser.tabs.sendMessage(id, message);
 					} else {
 						gTabs[id].keyword = keyword;
+						gTabs[id].url = blockURL; // prevent reload loop on Chrome
 
 						// Redirect page
 						browser.tabs.update(id, { url: blockURL });
