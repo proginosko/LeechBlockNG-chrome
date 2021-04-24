@@ -58,7 +58,8 @@
 		"contextMenus",
 		"storage",
 		"tabs",
-		"webNavigation"
+		"webNavigation",
+		"unlimitedStorage"  
 	],
 
 	"version": "1.0.11.2"
