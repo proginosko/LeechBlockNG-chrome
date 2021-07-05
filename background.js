@@ -431,6 +431,8 @@ function checkTab(id, isBeforeNav, isRepeat) {
 	let overrideEndTime = gOptions["oret"];
 
 	gTabs[id].secsLeft = Infinity;
+	gTabs[id].secsLeftSet = 0;
+	gTabs[id].showTimer = false;
 
 	for (let set = 1; set <= gNumSets; set++) {
 		if (allowHost && allowPath && allowSet == set) {
@@ -482,8 +484,9 @@ function checkTab(id, isBeforeNav, isRepeat) {
 			let days = gOptions[`days${set}`];
 			let blockURL = gOptions[`blockURL${set}`];
 			let applyFilter = gOptions[`applyFilter${set}`];
-			let closeTab = gOptions[`closeTab${set}`];
 			let filterName = gOptions[`filterName${set}`];
+			let filterMute = gOptions[`filterMute${set}`];
+			let closeTab = gOptions[`closeTab${set}`];
 			let activeBlock = gOptions[`activeBlock${set}`];
 			let allowOverride = gOptions[`allowOverride${set}`];
 			let showTimer = gOptions[`showTimer${set}`];
@@ -547,6 +550,11 @@ function checkTab(id, isBeforeNav, isRepeat) {
 					} else if (applyFilter) {
 						gTabs[id].filterSet = set;
 
+						// Mute tab if option selected
+						if (filterMute) {
+							browser.tabs.update(id, { "muted": true });
+						}
+
 						// Send message to tab
 						let message = {
 							type: "filter",
@@ -592,6 +600,11 @@ function checkTab(id, isBeforeNav, isRepeat) {
 			if (set == gTabs[id].filterSet && (override || !doBlock)) {
 				gTabs[id].filterSet = undefined;
 
+				// Unmute tab if option selected
+				if (filterMute) {
+					browser.tabs.update(id, { "muted": false });
+				}
+
 				// Send message to tab
 				let message = {
 					type: "filter",
@@ -607,9 +620,10 @@ function checkTab(id, isBeforeNav, isRepeat) {
 			if (override) {
 				secsLeft = Math.max(secsLeft, overrideEndTime - now);
 			}
-			if (showTimer && secsLeft < gTabs[id].secsLeft) {
+			if (secsLeft < gTabs[id].secsLeft) {
 				gTabs[id].secsLeft = secsLeft;
 				gTabs[id].secsLeftSet = set;
+				gTabs[id].showTimer = showTimer;
 			}
 		}
 	}
@@ -623,6 +637,10 @@ function checkTab(id, isBeforeNav, isRepeat) {
 //
 function checkWarning(id) {
 	let set = gTabs[id].secsLeftSet;
+	if (set < 1 || set > gNumSets) {
+		return;
+	}
+
 	let warnSecs = gOptions["warnSecs"];
 	let canWarn = !gOptions["warnImmediate"] || gOptions[`activeBlock${set}`]
 
@@ -807,14 +825,16 @@ function updateTimer(id) {
 		return;
 	}
 
-	// Send message to tab
 	let secsLeft = gTabs[id].secsLeft;
+	let showTimer = gTabs[id].showTimer;
+
+	// Send message to tab
 	let message = {
 		type: "timer",
 		size: gOptions["timerSize"],
 		location: gOptions["timerLocation"]
 	};
-	if (!gOptions["timerVisible"] || secsLeft == undefined || secsLeft == Infinity) {
+	if (!gOptions["timerVisible"] || secsLeft == Infinity || !showTimer) {
 		message.text = null; // hide timer
 	} else {
 		message.text = formatTime(secsLeft); // show timer with time left
@@ -823,7 +843,7 @@ function updateTimer(id) {
 
 	// Set tooltip
 	if (!gIsAndroid) {
-		if (secsLeft == undefined || secsLeft == Infinity) {
+		if (secsLeft == Infinity) {
 			browser.browserAction.setTitle({ title: "LeechBlock", tabId: id });
 		} else {
 			let title = "LeechBlock [" + formatTime(secsLeft) + "]"
@@ -832,7 +852,7 @@ function updateTimer(id) {
 	}
 
 	// Set badge timer (if option selected)
-	if (!gIsAndroid && gOptions["timerBadge"] && secsLeft < 600) {
+	if (!gIsAndroid && gOptions["timerBadge"] && secsLeft < 600 && showTimer) {
 		let m = Math.floor(secsLeft / 60);
 		let s = Math.floor(secsLeft) % 60;
 		let text = m + ":" + ((s < 10) ? "0" + s : s);
@@ -1138,7 +1158,7 @@ function applyOverride() {
 // Open extension page (either create new tab or activate existing tab)
 //
 function openExtensionPage(url) {
-	let fullURL = browser.extension.getURL(url);
+	let fullURL = browser.runtime.getURL(url);
 
 	browser.tabs.query({ url: fullURL }, onGot);
 
