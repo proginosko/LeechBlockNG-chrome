@@ -89,28 +89,28 @@ function refreshMenus() {
 	// Options
 	browser.contextMenus.create({
 		id: "options",
-		title: "Options",
+		title: browser.i18n.getMessage("optionsMenuItem"),
 		contexts: [context]
 	});
 
 	// Lockdown
 	browser.contextMenus.create({
 		id: "lockdown",
-		title: "Lockdown",
+		title: browser.i18n.getMessage("lockdownMenuItem"),
 		contexts: [context]
 	});
 
 	// Override
 	browser.contextMenus.create({
 		id: "override",
-		title: "Override",
+		title: browser.i18n.getMessage("overrideMenuItem"),
 		contexts: [context]
 	});
 
 	// Statistics
 	browser.contextMenus.create({
 		id: "stats",
-		title: "Statistics",
+		title: browser.i18n.getMessage("statisticsMenuItem"),
 		contexts: [context]
 	});
 
@@ -122,17 +122,15 @@ function refreshMenus() {
 	// Add Site
 	browser.contextMenus.create({
 		id: "addSite",
-		title: "Add Site",
+		title: browser.i18n.getMessage("addSiteMenuItem"),
 		contexts: [context]
 	});
 
 	// Add Site submenu
 	for (let set = 1; set <= gNumSets; set++) {
-		let title = `Add Site to Block Set ${set}`;
+		let title = browser.i18n.getMessage("addSiteToBlockSetMenuItem");
 		let setName = gOptions[`setName${set}`];
-		if (setName) {
-			title += ` (${setName})`;
-		}
+		title += setName ? ` ${set} (${setName})` : ` ${set}`;
 		browser.contextMenus.create({
 			id: `addSite-${set}`,
 			parentId: "addSite",
@@ -566,7 +564,7 @@ function checkTab(id, isBeforeNav, isRepeat) {
 						gTabs[id].url = blockURL; // prevent reload loop on Chrome
 
 						// Get final URL for block page
-						blockURL = blockURL
+						blockURL = getLocalizedURL(blockURL)
 								.replace(/\$K/g, keyword ? keyword : "")
 								.replace(/\$S/g, set)
 								.replace(/\$U/g, pageURLWithHash);

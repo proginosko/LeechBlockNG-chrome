@@ -29,7 +29,7 @@ function initializePage() {
 		let theme = options["theme"];
 		let link = document.getElementById("themeLink");
 		if (link) {
-			link.href = theme ? `themes/${theme}.css` : "";
+			link.href = theme ? `/themes/${theme}.css` : "";
 		}
 	}
 }
