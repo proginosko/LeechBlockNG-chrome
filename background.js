@@ -1449,6 +1449,9 @@ browser.runtime.getPlatformInfo(
 	function (info) { gIsAndroid = (info.os == "android"); }
 );
 
+let localePath = browser.i18n.getMessage("localePath");
+browser.browserAction.setPopup({ popup: localePath + "popup.html" });
+
 if (browser.contextMenus) {
 	browser.contextMenus.onClicked.addListener(handleMenuClick);
 }
