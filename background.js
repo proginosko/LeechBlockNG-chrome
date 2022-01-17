@@ -140,7 +140,7 @@ function refreshMenus() {
 	}
 
 	// Add Page
-	browser.menus.create({
+	browser.contextMenus.create({
 		id: "addPage",
 		title: browser.i18n.getMessage("addPageMenuItem"),
 		contexts: [context]
@@ -151,7 +151,7 @@ function refreshMenus() {
 		let title = browser.i18n.getMessage("addPageToBlockSetMenuItem");
 		let setName = gOptions[`setName${set}`];
 		title += setName ? ` ${set} (${setName})` : ` ${set}`;
-		browser.menus.create({
+		browser.contextMenus.create({
 			id: `addPage-${set}`,
 			parentId: "addPage",
 			title: title,
