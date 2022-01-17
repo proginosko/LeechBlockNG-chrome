@@ -138,6 +138,26 @@ function refreshMenus() {
 			contexts: [context]
 		});
 	}
+
+	// Add Page
+	browser.menus.create({
+		id: "addPage",
+		title: browser.i18n.getMessage("addPageMenuItem"),
+		contexts: [context]
+	});
+
+	// Add Page submenu
+	for (let set = 1; set <= gNumSets; set++) {
+		let title = browser.i18n.getMessage("addPageToBlockSetMenuItem");
+		let setName = gOptions[`setName${set}`];
+		title += setName ? ` ${set} (${setName})` : ` ${set}`;
+		browser.menus.create({
+			id: `addPage-${set}`,
+			parentId: "addPage",
+			title: title,
+			contexts: [context]
+		});
+	}
 }
 
 // Retrieve options from storage
@@ -1125,26 +1145,20 @@ function cancelLockdown(set) {
 
 // Apply override
 //
-function applyOverride() {
-	//log("applyOverride");
+function applyOverride(endTime) {
+	//log("applyOverride: " + endTime);
 
 	if (!gGotOptions) {
 		return;
 	}
 
-	let overrideMins = gOptions["orm"];
-	if (overrideMins) {
-		// Calculate end time
-		let clockOffset = gOptions["clockOffset"];
-		let now = Math.floor(Date.now() / 1000) + (clockOffset * 60);
-		let overrideEndTime = now + (overrideMins * 60);
-
+	if (endTime) {
 		// Update option
-		gOptions["oret"] = overrideEndTime;
+		gOptions["oret"] = endTime;
 
-		// Save updated option to local storage
+		// Save updated option to storage
 		let options = {};
-		options["oret"] = overrideEndTime;
+		options["oret"] = endTime;
 		gStorage.set(options, function () {
 			if (browser.runtime.lastError) {
 				warn("Cannot set options: " + browser.runtime.lastError.message);
@@ -1194,8 +1208,8 @@ function openDelayedPage(id, url, set) {
 
 // Add site to block set
 //
-function addSiteToSet(url, set) {
-	//log("addSiteToSet: " + url + " " + set);
+function addSiteToSet(url, set, includePath) {
+	//log("addSiteToSet: " + url + " " + set + " " + includePath);
 
 	if (!url) {
 		browser.tabs.query(
@@ -1221,6 +1235,9 @@ function addSiteToSet(url, set) {
 
 	// Add site if not already included
 	let site = parsedURL.host.replace(/^www\./, "");
+	if (includePath) {
+		site += parsedURL.path; // include full path to page
+	}
 	let patterns = sites.split(/\s+/);
 	if (patterns.indexOf(site) < 0) {
 		// Get sorted list of sites including new one
@@ -1239,7 +1256,7 @@ function addSiteToSet(url, set) {
 
 		createRegExps();
 
-		// Save updated options to local storage
+		// Save updated options to storage
 		let options = {};
 		options[`sites${set}`] = sites;
 		options[`blockRE${set}`] = regexps.block;
@@ -1267,7 +1284,9 @@ function handleMenuClick(info, tab) {
 	} else if (id == "stats") {
 		openExtensionPage("stats.html");
 	} else if (id.startsWith("addSite-")) {
-		addSiteToSet(info.pageUrl, id.substr(8));
+		addSiteToSet(info.pageUrl, id.substr(8), false);
+	} else if (id.startsWith("addPage-")) {
+		addSiteToSet(info.pageUrl, id.substr(8), true);
 	}
 }
 
@@ -1314,7 +1333,7 @@ function handleMessage(message, sender, sendResponse) {
 
 		case "override":
 			// Override requested
-			applyOverride();
+			applyOverride(message.endTime);
 			break;
 
 		case "referrer":

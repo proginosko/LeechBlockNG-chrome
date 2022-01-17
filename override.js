@@ -15,6 +15,18 @@ var gClockOffset;
 var gOverrideConfirm;
 var gOverrideMins;
 
+// Initialize form
+//
+function initForm() {
+	//log("initForm");
+
+	// Set up JQuery UI widgets
+	$("#activate").button();
+	$("#activate").click(activateOverride);
+	$("#cancel").button();
+	$("#cancel").click(closePage);
+}
+
 // Initialize page
 //
 function initializePage() {
@@ -45,17 +57,15 @@ function initializePage() {
 
 		cleanOptions(options);
 
+		// Initialize form
+		initForm();
+
 		setTheme(options["theme"]);
 
 		gClockOffset = options["clockOffset"];
 
 		gOverrideConfirm = options["orc"];
 		gOverrideMins = options["orm"];
-	
-		if (!gOverrideMins) {
-			$("#alertNoOverride").dialog("open");
-			return;
-		}
 
 		confirmAccess(options);
 	}
@@ -98,8 +108,12 @@ function confirmAccess(options) {
 		$("#promptAccessCodeInput").val("");
 		$("#promptAccessCode").dialog("open");
 		$("#promptAccessCodeInput").focus();
-	} else {
+	} else if (gOverrideMins) {
+		// Override duration already specified in General options
 		activateOverride();
+	} else {
+		// Override duration not specified in General options
+		$("#form").show();
 	}
 }
 
@@ -148,14 +162,30 @@ function displayAccessCode(code, asImage) {
 // Activate override
 //
 function activateOverride() {
+	// Get duration from form if not already specified
+	if (!gOverrideMins) {
+		gOverrideMins = $("#mins").val();
+		if (!gOverrideMins || !checkPosIntFormat(gOverrideMins)) {
+			gOverrideMins = "";
+			$("#mins").val("");
+			$("#alertNoDuration").dialog("open");
+			return;
+		}
+	}
+
+	// Calculate end time for override
+	let endTime = Math.floor(Date.now() / 1000) + (gClockOffset * 60) + (gOverrideMins * 60);
+
 	// Request override
-	browser.runtime.sendMessage({ type: "override" });
+	let message = {
+		type: "override",
+		endTime: endTime
+	};
+	browser.runtime.sendMessage(message);
 
 	if (gOverrideConfirm) {
-		// Calculate end time
-		let endTime = new Date(Date.now() + (gClockOffset * 60000) + (gOverrideMins * 60000));
-
 		// Show confirmation dialog
+		endTime = new Date(endTime * 1000);
 		$("#alertOverrideEndTime").html(endTime.toLocaleTimeString());
 		$("#alertOverrideActivated").dialog("open");
 	} else {
@@ -173,7 +203,11 @@ function initAccessControlPrompt(prompt) {
 			let input = $(`#${prompt}Input`);
 			if (input.val() == gAccessRequiredInput) {
 				gAccessConfirmed = true;
-				activateOverride();
+				if (gOverrideMins) {
+					activateOverride();
+				} else {
+					$("#form").show();
+				}
 				$(`#${prompt}`).dialog("close");
 			} else {
 				input.val("");
@@ -214,7 +248,9 @@ $("div[id^='alert']").dialog({
 	width: 500,
 	buttons: {
 		OK: function () { $(this).dialog("close"); }
-	},
+	}
+});
+$("#alertOverrideActivated").dialog({
 	close: function (event, ui) { closePage(); }
 });
 
