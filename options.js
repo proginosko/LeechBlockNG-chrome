@@ -100,6 +100,7 @@ function initForm(numSets) {
 		});
 		$(`#advOpts${set}`).css("display", "none");
 	}
+	$("#overridePasswordShow").change(overridePasswordShow);
 	$("#theme").change(function (e) { setTheme($("#theme").val()); });
 	$("#clockOffset").click(showClockOffsetTime);
 	$("#clockOffset").keyup(showClockOffsetTime);
@@ -108,6 +109,7 @@ function initForm(numSets) {
 	$("#importOptions").click(importOptions);
 	$("#exportOptionsSync").click(exportOptionsSync);
 	$("#importOptionsSync").click(importOptionsSync);
+	$("#openDiagnostics").click(openDiagnostics);
 	$("#saveOptions").button();
 	$("#saveOptions").click({ closeOptions: false }, saveOptions);
 	$("#saveOptionsClose").button();
@@ -435,6 +437,9 @@ function retrieveOptions() {
 
 		// Check whether access to options should be prevented
 		for (let set = 1; set <= gNumSets; set++) {
+			// Do nothing if set is disabled
+			if (options[`disable${set}`]) continue;
+
 			// Get options
 			let timedata = options[`timedata${set}`];
 			let times = options[`times${set}`];
@@ -443,8 +448,11 @@ function retrieveOptions() {
 			let limitPeriod = options[`limitPeriod${set}`];
 			let limitOffset = options[`limitOffset${set}`];
 			let periodStart = getTimePeriodStart(now, limitPeriod, limitOffset);
+			let rollover = options[`rollover${set}`];
 			let conjMode = options[`conjMode${set}`];
 			let days = options[`days${set}`];
+
+			updateRolloverTime(timedata, limitMins, limitPeriod, periodStart);
 
 			// Check day
 			let onSelectedDay = days[timedate.getDay()];
@@ -461,13 +469,10 @@ function retrieveOptions() {
 			}
 
 			// Check time limit
-			let afterTimeLimit = false;
-			if (onSelectedDay && limitMins && limitPeriod) {
-				// Check time period and time limit
-				if (timedata[2] == periodStart && timedata[3] >= (limitMins * 60)) {
-					afterTimeLimit = true;
-				}
-			}
+			let secsRollover = rollover ? timedata[5] : 0;
+			let afterTimeLimit = (onSelectedDay && limitMins && limitPeriod)
+					&& (timedata[2] == periodStart)
+					&& (timedata[3] >= secsRollover + (limitMins * 60));
 
 			// Check lockdown condition
 			let lockdown = (timedata[4] > now);
@@ -622,6 +627,14 @@ function displayAccessCode(code, asImage) {
 			codeText.appendChild(document.createTextNode(code));
 		}
 	}
+}
+
+// Show/hide override password
+//
+function overridePasswordShow() {
+	let input = getElement("overridePassword");
+	let checkbox = getElement("overridePasswordShow");
+	input.type = checkbox.checked ? "text" : "password";
 }
 
 // Show adjusted time based on clock offset
@@ -871,6 +884,14 @@ function importOptionsSync(event) {
 			$("#alertImportSuccess").dialog("open");
 		}
 	}
+}
+
+// Open diagnostics page
+//
+function openDiagnostics() {
+	let fullURL = browser.runtime.getURL("diagnostics.html");
+
+	browser.tabs.create({ url: fullURL });
 }
 
 // Swap options for two block sets

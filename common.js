@@ -32,6 +32,7 @@ const PER_SET_OPTIONS = {
 	limitMins: { type: "string", def: "", id: "limitMins" },
 	limitPeriod: { type: "string", def: "", id: "limitPeriod" },
 	limitOffset: { type: "string", def: "", id: "limitOffset" },
+	rollover: { type: "boolean", def: false, id: "rollover" },
 	conjMode: { type: "boolean", def: false, id: "conjMode" },
 	days: { type: "array", def: [false, true, true, true, true, true, false], id: "day" },
 	blockURL: { type: "string", def: DEFAULT_BLOCK_URL, id: "blockURL" },
@@ -51,6 +52,7 @@ const PER_SET_OPTIONS = {
 	prevGenOpts: { type: "boolean", def: false, id: "prevGenOpts" },
 	prevExts: { type: "boolean", def: false, id: "prevExts" },
 	prevSettings: { type: "boolean", def: false, id: "prevSettings" },
+	disable: { type: "boolean", def: false, id: "disable" },
 	showTimer: { type: "boolean", def: true, id: "showTimer" },
 	allowRefers: { type: "boolean", def: false, id: "allowRefers" },
 	allowKeywords: { type: "boolean", def: false, id: "allowKeywords" },
@@ -73,8 +75,9 @@ const GENERAL_OPTIONS = {
 	timerSize: { type: "string", def: "1", id: "timerSize" }, // default: medium
 	timerLocation: { type: "string", def: "0", id: "timerLocation" }, // default: top left
 	timerBadge: { type: "boolean", def: true, id: "timerBadge" }, // default: enabled
-	orm: { type: "string", def: "", id: "overrideMins" }, // default: no override
+	orm: { type: "string", def: "", id: "overrideMins" }, // default: no prespecified override
 	ora: { type: "string", def: "0", id: "overrideAccess" }, // default: no password or code
+	orp: { type: "string", def: "", id: "overridePassword" }, // default: blank
 	orc: { type: "boolean", def: true, id: "overrideConfirm" }, // default: enabled
 	warnSecs: { type: "string", def: "", id: "warnSecs" }, // default: no warning
 	warnImmediate: { type: "boolean", def: true, id: "warnImmediate" }, // default: warn only for immediate block
@@ -85,6 +88,7 @@ const GENERAL_OPTIONS = {
 	allFocused: { type: "boolean", def: false, id: "allFocused" }, // default: disabled
 	processActiveTabs: { type: "boolean", def: false, id: "processActiveTabs" }, // default: disabled
 	accessCodeImage: { type: "boolean", def: false, id: "accessCodeImage" }, // default: disabled
+	diagMode: { type: "boolean", def: false, id: "diagMode" }, // default: disabled
 	autoExportSync: { type: "boolean", def: true, id: "autoExportSync" }, // default: enabled
 	lockdownHours: { type: "string", def: "", id: null }, // default: blank
 	lockdownMins: { type: "string", def: "", id: null }, // default: blank
@@ -138,6 +142,9 @@ function cleanOptions(options) {
 // timedata[2] = start time for time limit period (secs since epoch)
 // timedata[3] = time spent on sites during this limit period (secs)
 // timedata[4] = end time for lockdown (secs since epoch)
+// timedata[5] = rollover time for current period (secs)
+// timedata[6] = rollover time for next period (secs)
+// timedata[7] = start time for next rollover period (secs since epoch)
 //
 function cleanTimeData(options) {
 	let numSets = +options["numSets"];
@@ -145,8 +152,10 @@ function cleanTimeData(options) {
 	let now = Math.floor(Date.now() / 1000) + (clockOffset * 60);
 	for (let set = 1; set <= numSets; set++) {
 		let timedata = options[`timedata${set}`];
-		if (!Array.isArray(timedata) || timedata.length < 5) {
-			timedata = [now, 0, 0, 0, 0];
+		if (!Array.isArray(timedata)) {
+			timedata = [now, 0, 0, 0, 0, 0, 0, 0];
+		} else while (timedata.length < 8) {
+			timedata.push(0);
 		}
 		options[`timedata${set}`] = timedata;
 	}
@@ -414,6 +423,29 @@ function getTimePeriodStart(now, limitPeriod, limitOffset) {
 	}
 
 	return 0;
+}
+
+// Update rollover time (if new time limit period has been entered)
+//
+function updateRolloverTime(timedata, limitMins, limitPeriod, periodStart) {
+	if (limitMins && limitPeriod) {
+		if (timedata[7] < periodStart) {
+			// Credit full rollover time and start new rollover period
+			timedata[5] = (limitMins * 60);
+			timedata[6] = (limitMins * 60);
+			timedata[7] = periodStart + (+limitPeriod);
+		} else if (timedata[7] == periodStart) {
+			// Credit tracked rollover time and start new rollover period
+			timedata[5] = timedata[6];
+			timedata[6] = (limitMins * 60);
+			timedata[7] = periodStart + (+limitPeriod);
+		}
+	} else {
+		// No time limit set, so no rollover time to track
+		timedata[5] = 0;
+		timedata[6] = 0;
+		timedata[7] = 0;
+	}
 }
 
 // Format a time in seconds to HH:MM:SS format
