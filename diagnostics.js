@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const browser = chrome;
+
 function log(message) { console.log("[LBNG] " + message); }
 function warn(message) { console.warn("[LBNG] " + message); }
 
@@ -33,17 +35,29 @@ function initForm() {
 function initializePage() {
 	//log("initializePage");
 
-	browser.storage.local.get("sync").then(onGotSync, onError);
+	browser.storage.local.get("sync", onGotSync);
 
 	function onGotSync(options) {
+		if (browser.runtime.lastError) {
+			warn("Cannot get options: " + browser.runtime.lastError.message);
+			$("#alertRetrieveError").dialog("open");
+			return;
+		}
+
 		if (options["sync"]) {
-			browser.storage.sync.get().then(onGot, onError);
+			browser.storage.sync.get(onGot);
 		} else {
-			browser.storage.local.get().then(onGot, onError);
+			browser.storage.local.get(onGot);
 		}
 	}
 
 	function onGot(options) {
+		if (browser.runtime.lastError) {
+			warn("Cannot get options: " + browser.runtime.lastError.message);
+			$("#alertRetrieveError").dialog("open");
+			return;
+		}
+
 		gOptions = options;
 
 		cleanOptions(gOptions);
@@ -54,11 +68,6 @@ function initializePage() {
 		setTheme(gOptions["theme"]);
 
 		$("#form").show();
-	}
-
-	function onError(error) {
-		warn("Cannot get options: " + error);
-		$("#alertRetrieveError").dialog("open");
 	}
 }
 
