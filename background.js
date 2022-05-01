@@ -9,6 +9,8 @@ const TICK_TIME = 1000; // update every second
 const BLOCKABLE_URL = /^(http|file|chrome|edge|extension)/i;
 const CLOCKABLE_URL = /^(http|file)/i;
 const EXTENSION_URL = browser.runtime.getURL("");
+const BLOCKED_PAGE_URL = browser.runtime.getURL(BLOCKED_PAGE);
+const DELAYED_PAGE_URL = browser.runtime.getURL(DELAYED_PAGE);
 
 function log(message) { console.log("[LBNG] " + message); }
 function warn(message) { console.warn("[LBNG] " + message); }
@@ -40,7 +42,8 @@ function initTab(id) {
 			allowedPath: null,
 			allowedSet: 0,
 			referrer: "",
-			url: "about:blank"
+			url: "about:blank",
+			loaded: false
 		};
 		return true;
 	}
@@ -335,6 +338,31 @@ function restartTimeData(set) {
 	saveTimeData();
 }
 
+// Reorder time data
+//
+function reorderTimeData(ordering) {
+	//log("reorderTimeData: " + ordering);
+
+	if (!ordering) {
+		return;
+	}
+
+	// Create copy of time data for each set
+	let timedata = [];
+	for (let set = 1; set <= gNumSets; set++) {
+		timedata[set] = gOptions[`timedata${set}`].slice();
+	}
+
+	// Reorder time data according to specified ordering
+	for (let set = 1; set <= gNumSets; set++) {
+		if (ordering[set] <= gNumSets) {
+			gOptions[`timedata${set}`] = timedata[ordering[set]];
+		}
+	}
+
+	saveTimeData();
+}
+
 // Update ID of focused window
 //
 function updateFocusedWindowId() {
@@ -383,10 +411,12 @@ function processTabs(active) {
 			clockPageTime(tab.id, false, false);
 			clockPageTime(tab.id, true, focus);
 
-			let blocked = checkTab(tab.id, false, true);
-
-			if (!blocked && tab.active) {
-				updateTimer(tab.id);
+			if (gTabs[tab.id].loaded) {
+				let blocked = checkTab(tab.id, false, true);
+	
+				if (!blocked && tab.active) {
+					updateTimer(tab.id);
+				}
 			}
 		}
 	}
@@ -411,19 +441,16 @@ function checkTab(id, isBeforeNav, isRepeat) {
 	gTabs[id].blockable = BLOCKABLE_URL.test(url);
 	gTabs[id].clockable = CLOCKABLE_URL.test(url);
 
-	// Quick exit for about:blank and extension pages
-	if (url == "about:blank" || /^(chrome-)?extension/i.test(url)) {
-		return false; // not blocked
-	}
-
-	// Quick exit for LeechBlock extension/website
-	// (documentation should always be available)
-	if (url.startsWith(EXTENSION_URL) || url.startsWith(LEECHBLOCK_URL)) {
-		return false; // not blocked
-	}
-
-	// Quick exit for non-blockable URLs
-	if (!gTabs[id].blockable) {
+	// Quick exit for the following cases:
+	// - about:blank
+	// - non-blockable URLs
+	// - blocking/delaying pages
+	// - LeechBlock website (documentation should always be available)
+	if (url == "about:blank"
+			|| !gTabs[id].blockable
+			|| url.startsWith(BLOCKED_PAGE_URL)
+			|| url.startsWith(DELAYED_PAGE_URL)
+			|| url.startsWith(LEECHBLOCK_URL)) {
 		return false; // not blocked
 	}
 
@@ -1208,21 +1235,19 @@ function applyOverride(endTime) {
 		return;
 	}
 
-	if (endTime) {
-		// Update option
-		gOptions["oret"] = endTime;
+	// Update option
+	gOptions["oret"] = endTime;
 
-		// Save updated option to storage
-		let options = {};
-		options["oret"] = endTime;
-		gStorage.set(options, function () {
-			if (browser.runtime.lastError) {
-				warn("Cannot set options: " + browser.runtime.lastError.message);
-			}
-		});
+	// Save updated option to storage
+	let options = {};
+	options["oret"] = endTime;
+	gStorage.set(options, function () {
+		if (browser.runtime.lastError) {
+			warn("Cannot set options: " + browser.runtime.lastError.message);
+		}
+	});
 
-		updateIcon();
-	}
+	updateIcon();
 }
 
 // Open extension page (either create new tab or activate existing tab)
@@ -1385,6 +1410,7 @@ function handleMessage(message, sender, sendResponse) {
 		case "options":
 			// Options updated
 			retrieveOptions(true);
+			reorderTimeData(message.ordering);
 			break;
 
 		case "override":
@@ -1401,6 +1427,11 @@ function handleMessage(message, sender, sendResponse) {
 			// Restart time data requested by statistics page
 			restartTimeData(message.set);
 			sendResponse();
+			break;
+
+		case "loaded":
+			// Register that content script has been loaded
+			gTabs[sender.tab.id].loaded = true;
 			break;
 
 	}
@@ -1497,6 +1528,7 @@ function handleBeforeNavigate(navDetails) {
 	clockPageTime(tabId, false, false);
 
 	if (navDetails.frameId == 0) {
+		gTabs[tabId].loaded = false
 		gTabs[tabId].url = navDetails.url;
 
 		let blocked = checkTab(tabId, true, false);

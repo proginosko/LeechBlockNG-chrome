@@ -175,3 +175,6 @@ browser.runtime.onMessage.addListener(handleMessage);
 
 // Send URL of referring page to background script
 browser.runtime.sendMessage({ type: "referrer", referrer: document.referrer });
+
+// Register that this script has now loaded
+browser.runtime.sendMessage({ type: "loaded" });

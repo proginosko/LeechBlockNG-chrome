@@ -4,6 +4,8 @@
 
 const MAX_SETS = 30;
 const ALL_DAY_TIMES = "0000-2400";
+const BLOCKED_PAGE = "blocked.html";
+const DELAYED_PAGE = "delayed.html";
 const DEFAULT_BLOCK_URL = "blocked.html?$S&$U";
 const DELAYED_BLOCK_URL = "delayed.html?$S&$U";
 const DEFAULT_ICON = { 16: "icons/leechblock16.png", 32: "icons/leechblock32.png" };
@@ -271,7 +273,7 @@ function getRegExpSites(sites, matchSubdomains) {
 // Convert site pattern to regular expression
 //
 function patternToRegExp(pattern, matchSubdomains) {
-	let special = /[\.\|\?\:\+\-\^\$\(\)\[\]\{\}\\]/g;
+	let special = /[\.\|\?\:\+\^\$\(\)\[\]\{\}\\]/g;
 	let subdomains = matchSubdomains ? "([^/]*\\.)?" : "(www\\.)?"
 	return subdomains + pattern
 			.replace(special, "\\$&")			// fix special chars

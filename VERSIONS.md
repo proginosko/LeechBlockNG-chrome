@@ -1,3 +1,12 @@
+### Version 1.4.2 (01 May 2022)
+* Added button to cancel override.
+* Fixed issue with hyphens in URLs.
+
+### Version 1.4.1 (17 Apr 2022)
+* Added Italian localization.
+* Updated Hebrew localization.
+* Bug fixes and minor code tweaks.
+
 ### Version 1.4 (20 Mar 2022)
 * Added option to roll over unused time.
 * Added option for separate override password.
