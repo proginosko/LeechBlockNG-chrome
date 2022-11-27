@@ -427,7 +427,7 @@ function processTabs(active) {
 			} else if (CLOCKABLE_URL.test(tab.url)) {
 				// Ping tab to see if content script has loaded
 				let message = { type: "ping" };
-				browser.tabs.sendMessage(tab.id, message).catch(function (error) {});
+				browser.tabs.sendMessage(tab.id, message);
 			}
 		}
 	}
