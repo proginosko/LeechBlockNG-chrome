@@ -14,6 +14,8 @@ var gAccessRequiredInput;
 var gClockOffset;
 var gOverrideConfirm;
 var gOverrideMins;
+var gOverrideSetNames = [];
+var gClockTimeOpts;
 
 // Initialize form
 //
@@ -62,10 +64,30 @@ function initializePage() {
 
 		setTheme(options["theme"]);
 
+		// Get clock time format
+		gClockTimeOpts = {};
+		let clockTimeFormat = options["clockTimeFormat"];
+		if (clockTimeFormat > 0) {
+			gClockTimeOpts.hour12 = (clockTimeFormat == 1);
+		}
+
 		gClockOffset = options["clockOffset"];
 
 		gOverrideConfirm = options["orc"];
 		gOverrideMins = options["orm"];
+
+		// Get list of sets to override
+		let numSets = +options["numSets"];
+		for (let set = 1; set <= numSets; set++) {
+			if (options[`allowOverride${set}`]) {
+				let setName = options[`setName${set}`];
+				if (setName) {
+					gOverrideSetNames.push(`Block Set ${set} (${setName})`);
+				} else {
+					gOverrideSetNames.push(`Block Set ${set}`);
+				}
+			}
+		}
 
 		confirmAccess(options);
 	}
@@ -224,7 +246,12 @@ function activateOverride() {
 	if (gOverrideConfirm) {
 		// Show confirmation dialog
 		endTime = new Date(endTime * 1000);
-		$("#alertOverrideEndTime").html(endTime.toLocaleTimeString());
+		$("#alertOverrideEndTime").html(endTime.toLocaleTimeString(undefined, gClockTimeOpts));
+		if (gOverrideSetNames.length > 0) {
+			$("#alertOverrideNoSets").hide();
+			$("#alertOverrideSets").show();
+			$("#alertOverrideSetList").html("<ul><li>" + gOverrideSetNames.join("</li><li>") + "</li></ul>");
+		}
 		$("#alertOverrideActivated").dialog("open");
 	} else {
 		// Close page immediately (no confirmation dialog)
@@ -242,7 +269,8 @@ function initAccessControlPrompt(prompt) {
 			if (input.val() == gAccessRequiredInput) {
 				gAccessConfirmed = true;
 				if (gOverrideMins) {
-					activateOverride();
+					// Slight delay to allow focus to pass to new dialog
+					setTimeout(activateOverride, 100);
 				} else {
 					$("#form").show();
 				}

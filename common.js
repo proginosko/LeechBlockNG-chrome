@@ -86,6 +86,7 @@ const GENERAL_OPTIONS = {
 	warnImmediate: { type: "boolean", def: true, id: "warnImmediate" }, // default: warn only for immediate block
 	contextMenu: { type: "boolean", def: true, id: "contextMenu" }, // default: enabled
 	matchSubdomains: { type: "boolean", def: false, id: "matchSubdomains" }, // default: disabled
+	clockTimeFormat: { type: "string", def: "0", id: "clockTimeFormat" }, // default: locale default
 	saveSecs: { type: "string", def: "10", id: "saveSecs" }, // default: every 10 seconds
 	clockOffset: { type: "string", def: "", id: "clockOffset" }, // default: no offset
 	allFocused: { type: "boolean", def: false, id: "allFocused" }, // default: disabled
@@ -259,12 +260,12 @@ function getRegExpSites(sites, matchSubdomains) {
 	}
 	return {
 		block: (blocks.length > 0)
-				? "^" + (blockFiles ? "file:|" : "") + "(https?|file):\\/+(" + blocks.join("|") + ")"
+				? "^" + (blockFiles ? "file:|" : "") + "(https?|file):\\/+([\\w\\:]+@)?(" + blocks.join("|") + ")"
 				: (blockFiles ? "^file:" : ""),
 		allow: (allows.length > 0)
-				? "^" + (allowFiles ? "file:|" : "") + "(https?|file):\\/+(" + allows.join("|") + ")"
+				? "^" + (allowFiles ? "file:|" : "") + "(https?|file):\\/+([\\w\\:]+@)?(" + allows.join("|") + ")"
 				: (allowFiles ? "^file:" : ""),
-		refer: (refers.length > 0) ? "^(https?|file):\\/+(" + refers.join("|") + ")" : "",
+		refer: (refers.length > 0) ? "^(https?|file):\\/+([\\w\\:]+@)?(" + refers.join("|") + ")" : "",
 		keyword: (keywords.length > 0)
 				? U_WORD_BEGIN + "(" + keywords.join("|") + ")" + U_WORD_END
 				: ""

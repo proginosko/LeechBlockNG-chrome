@@ -11,6 +11,7 @@ function getElement(id) { return document.getElementById(id); }
 
 var gFormHTML;
 var gNumSets;
+var gClockTimeOpts;
 
 // Initialize form (with specified number of block sets)
 //
@@ -70,6 +71,13 @@ function refreshPage() {
 
 		setTheme(options["theme"]);
 
+		// Get clock time format
+		gClockTimeOpts = {};
+		let clockTimeFormat = options["clockTimeFormat"];
+		if (clockTimeFormat > 0) {
+			gClockTimeOpts.hour12 = (clockTimeFormat == 1);
+		}
+
 		// Get current time in seconds
 		let clockOffset = options["clockOffset"];
 		let now = Math.floor(Date.now() / 1000) + (clockOffset * 60);
@@ -110,7 +118,7 @@ function refreshPage() {
 			}
 
 			if (timedata[4] > now) {
-				let ldEndTime = new Date(timedata[4] * 1000).toLocaleString();
+				let ldEndTime = getFormattedClockTime(timedata[4] * 1000);
 				getElement(`ldEndTime${set}`).innerText = ldEndTime;
 			}
 		}
@@ -127,11 +135,17 @@ function getFormattedStats(now, timedata) {
 			- Math.floor(timedata[0] / 86400);
 	let weeks = Math.floor((days + 6) / 7);
 	return {
-		startTime: new Date(timedata[0] * 1000).toLocaleString(),
+		startTime: getFormattedClockTime(timedata[0] * 1000),
 		totalTime: formatTime(timedata[1]),
 		perWeekTime: formatTime(timedata[1] / weeks),
 		perDayTime: formatTime(timedata[1] / days)
 	};
+}
+
+// Return clock time in desired format (12/24-hour)
+//
+function getFormattedClockTime(time) {
+	return new Date(time).toLocaleString(undefined, gClockTimeOpts);
 }
 
 // Handle button click

@@ -25,6 +25,7 @@ var gTabs = [];
 var gSetCounted = [];
 var gSavedTimeData = [];
 var gRegExps = [];
+var gActiveTabId = 0;
 var gPrevActiveTabId = 0;
 var gFocusWindowId = 0;
 var gAllFocused = false;
@@ -411,12 +412,22 @@ function processTabs(active) {
 			clockPageTime(tab.id, false, false);
 			clockPageTime(tab.id, true, focus);
 
+			if (tab.url.startsWith("about")) {
+				gTabs[tab.id].loaded = true;
+				gTabs[tab.id].url = tab.url;
+			}
+
 			if (gTabs[tab.id].loaded) {
+				// Check tab to see if page should be blocked
 				let blocked = checkTab(tab.id, false, true);
 	
 				if (!blocked && tab.active) {
 					updateTimer(tab.id);
 				}
+			} else if (CLOCKABLE_URL.test(tab.url)) {
+				// Ping tab to see if content script has loaded
+				let message = { type: "ping" };
+				browser.tabs.sendMessage(tab.id, message).catch(function (error) {});
 			}
 		}
 	}
@@ -1017,13 +1028,20 @@ function createBlockInfo(id, url) {
 		let clockOffset = gOptions["clockOffset"];
 		let date = new Date(Date.now() + (clockOffset * 60000)).getDate();
 
+		// Get clock time format
+		let clockTimeOpts = {};
+		let clockTimeFormat = gOptions["clockTimeFormat"];
+		if (clockTimeFormat > 0) {
+			clockTimeOpts.hour12 = (clockTimeFormat == 1);
+		}
+
 		// Convert to string
 		if (unblockTime.getDate() == date) {
 			// Same day: show time only
-			unblockTime = unblockTime.toLocaleTimeString();
+			unblockTime = unblockTime.toLocaleTimeString(undefined, clockTimeOpts);
 		} else {
 			// Different day: show date and time
-			unblockTime = unblockTime.toLocaleString();
+			unblockTime = unblockTime.toLocaleString(undefined, clockTimeOpts);
 		}
 	}
 
@@ -1250,6 +1268,23 @@ function applyOverride(endTime) {
 	updateIcon();
 }
 
+// Reset rollover time for all sets applicable to active tab
+//
+function resetRolloverTime() {
+	//log("resetRolloverTime");
+
+	if (!gGotOptions || !gActiveTabId) {
+		return;
+	}
+
+	// Get block set for currently active time limit
+	let set = gTabs[gActiveTabId].secsLeftSet;
+	if (set) {
+		// Reset rollover time
+		gOptions[`timedata${set}`][5] = 0;
+	}
+}
+
 // Open extension page (either create new tab or activate existing tab)
 //
 function openExtensionPage(url) {
@@ -1397,6 +1432,12 @@ function handleMessage(message, sender, sendResponse) {
 			openDelayedPage(sender.tab.id, message.blockedURL, message.blockedSet);
 			break;
 
+		case "loaded":
+			// Register that content script has been loaded
+			gTabs[sender.tab.id].loaded = true;
+			gTabs[sender.tab.id].url = message.url;
+			break;
+
 		case "lockdown":
 			if (!message.endTime) {
 				// Lockdown canceled
@@ -1423,15 +1464,15 @@ function handleMessage(message, sender, sendResponse) {
 			gTabs[sender.tab.id].referrer = message.referrer;
 			break;
 
+		case "reset-rollover":
+			// Reset rollover time
+			resetRolloverTime();
+			break;
+
 		case "restart":
 			// Restart time data requested by statistics page
 			restartTimeData(message.set);
 			sendResponse();
-			break;
-
-		case "loaded":
-			// Register that content script has been loaded
-			gTabs[sender.tab.id].loaded = true;
 			break;
 
 	}
@@ -1468,6 +1509,7 @@ function handleTabUpdated(tabId, changeInfo, tab) {
 	if (changeInfo.status && changeInfo.status == "complete") {
 		clockPageTime(tab.id, true, focus);
 
+		// Check tab to see if page should be blocked
 		let blocked = checkTab(tab.id, false, false);
 
 		if (!blocked && tab.active) {
@@ -1480,6 +1522,7 @@ function handleTabActivated(activeInfo) {
 	let tabId = activeInfo.tabId;
 	//log("handleTabActivated: " + tabId);
 
+	gActiveTabId = tabId;
 	gPrevActiveTabId = activeInfo.previousTabId;
 
 	initTab(tabId);
@@ -1531,6 +1574,7 @@ function handleBeforeNavigate(navDetails) {
 		gTabs[tabId].loaded = false
 		gTabs[tabId].url = navDetails.url;
 
+		// Check tab to see if page should be blocked
 		let blocked = checkTab(tabId, true, false);
 	}
 }

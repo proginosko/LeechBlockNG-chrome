@@ -22,6 +22,7 @@ var gSetDisabled;
 var gSetOrdering, gSetReordered;
 var gTabIndex = 0;
 var gNewOpen = true;
+var gClockTimeOpts;
 
 // Initialize form (with specified number of block sets)
 //
@@ -65,6 +66,11 @@ function initForm(numSets) {
 	// Set up JQuery UI widgets
 	$("#tabs").tabs({ activate: onActivate });
 	for (let set = 1; set <= gNumSets; set++) {
+		if (gIsAndroid) {
+			// Use alternative arrows on move-left/move-right buttons
+			$(`#moveSetL${set}`).html("&#x25C0; Move Set");
+			$(`#moveSetR${set}`).html("Move Set &#x25B6;");
+		}
 		$(`#moveSetL${set}`).click(function (e) {
 			swapSets(set, set - 1);
 			$("#tabs").tabs("option", "active", set - 2);
@@ -105,6 +111,7 @@ function initForm(numSets) {
 		});
 		$(`#advOpts${set}`).css("display", "none");
 	}
+	$("#accessPasswordShow").change(accessPasswordShow);
 	$("#overridePasswordShow").change(overridePasswordShow);
 	$("#theme").change(function (e) { setTheme($("#theme").val()); });
 	$("#clockOffset").click(showClockOffsetTime);
@@ -123,6 +130,12 @@ function initForm(numSets) {
 	// Disable first move-left and last move-right buttons
 	getElement("moveSetL1").disabled = true;
 	getElement("moveSetR" + gNumSets).disabled = true;
+
+	if (gIsAndroid) {
+		// Hide sync options (sync storage not supported on Android yet)
+		getElement("syncOpts1").style.display = "none";
+		getElement("syncOpts2").style.display = "none";
+	}
 
 	// Set active tab
 	if (gTabIndex < 0) {
@@ -420,6 +433,13 @@ function retrieveOptions() {
 
 		setTheme(options["theme"]);
 
+		// Get clock time format
+		gClockTimeOpts = {};
+		let clockTimeFormat = options["clockTimeFormat"];
+		if (clockTimeFormat > 0) {
+			gClockTimeOpts.hour12 = (clockTimeFormat == 1);
+		}
+
 		// Get current time in seconds
 		let clockOffset = options["clockOffset"];
 		let now = Math.floor(Date.now() / 1000) + (clockOffset * 60);
@@ -553,12 +573,6 @@ function retrieveOptions() {
 			}
 		}
 
-		if (gIsAndroid) {
-			// Hide sync options (sync storage not supported on Android yet)
-			getElement("syncOpts1").style.display = "none";
-			getElement("syncOpts2").style.display = "none";
-		}
-
 		confirmAccess(options);
 	}
 }
@@ -647,6 +661,14 @@ function displayAccessCode(code, asImage) {
 	}
 }
 
+// Show/hide access password
+//
+function accessPasswordShow() {
+	let input = getElement("accessPassword");
+	let checkbox = getElement("accessPasswordShow");
+	input.type = checkbox.checked ? "text" : "password";
+}
+
 // Show/hide override password
 //
 function overridePasswordShow() {
@@ -663,7 +685,7 @@ function showClockOffsetTime() {
 		$("#clockOffsetTime").css("display", "none");
 	} else {
 		let timedate = new Date(Date.now() + (clockOffset * 60000));
-		$("#clockOffsetTime").html(timedate.toLocaleString());
+		$("#clockOffsetTime").html(timedate.toLocaleString(undefined, gClockTimeOpts));
 		$("#clockOffsetTime").css("display", "inline");
 	}
 }
@@ -749,6 +771,12 @@ function applyImportOptions(options) {
 			}
 		}
 
+		// Apply Chrome-specific options
+		let val = options[`prevExts${set}`];
+		if (val != undefined) {
+			getElement(`prevAddons${set}`).checked = val;
+		}
+
 		// Apply custom set name to tab (if specified)
 		updateBlockSetName(set, options[`setName${set}`]);
 	}
@@ -785,7 +813,7 @@ function exportOptions() {
 
 	// Create blob and download it
 	let blob = new Blob(lines, { type: "text/plain", endings: "native" });
-	var url = URL.createObjectURL(blob);
+	let url = URL.createObjectURL(blob);
 	let downloadOptions = { url: url, filename: DEFAULT_OPTIONS_FILE };
 	if (!gIsAndroid) {
 		downloadOptions.saveAs = true;
