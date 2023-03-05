@@ -13,7 +13,7 @@ function processBlockInfo(info) {
 		// Set theme
 		let link = document.getElementById("themeLink");
 		if (link) {
-			link.href = info.theme ? `/themes/${info.theme}.css` : "";
+			link.href = "/themes/" + (info.theme ? `${info.theme}.css` : "default.css");
 		}
 	}
 
@@ -105,7 +105,7 @@ function onCountdownTimer(countdown) {
 		// Clear countdown timer
 		window.clearInterval(countdown.interval);
 
-		// Request extension allow blocked page and redirect
+		// Notify extension that delay countdown has completed
 		let message = {
 			type: "delayed",
 			blockedURL: countdown.blockedURL,

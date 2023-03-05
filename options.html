@@ -9,8 +9,8 @@
 		<title>LeechBlock Options</title>
 		<link href="/jquery-ui/jquery-ui.min.css" rel="stylesheet">
 		<link href="/options.css" rel="stylesheet">
-		<link href="/icons/leechblock16.ico" rel="icon" type="image/x-icon">
-		<link href="/icons/leechblock16.ico" rel="shortcut icon" type="image/x-icon">
+		<link href="/icons/leechblock32.ico" rel="icon" type="image/x-icon">
+		<link href="/icons/leechblock32.ico" rel="shortcut icon" type="image/x-icon">
 		<link id="themeLink" rel="stylesheet">
 	</head>
 
@@ -28,8 +28,8 @@
 					</ul>
 					<div id="blockSet1">
 						<p>
-							<button id="moveSetL1" type="button">&#x2BC7; Move Set</button>
-							<button id="moveSetR1" type="button" style="float: right;">Move Set &#x2BC8;</button>
+							<button id="moveSetL1" type="button">&larr; Move Set</button>
+							<button id="moveSetR1" type="button" style="float: right;">Move Set &rarr;</button>
 						</p>
 						<fieldset>
 							<legend>What to Block</legend>
@@ -186,6 +186,10 @@
 							</p>
 							<p>
 								Delay access to sites by <input id="delaySecs1" type="text" size="2"> seconds when delaying page is used
+							</p>
+							<p>
+								<input id="delayAutoLoad1" type="checkbox">
+								<label for="delayAutoLoad1">Automatically load blocked page when delay countdown reaches zero</label>
 							</p>
 							<p>
 								<input id="delayCancel1" type="checkbox">
@@ -403,6 +407,7 @@
 								<label>Theme:</label>
 								<select id="theme">
 									<option value="">Default</option>
+									<option value="light">Light</option>
 									<option value="dark">Dark</option>
 									<option value="spruce">Spruce</option>
 								</select>
@@ -462,6 +467,10 @@
 								<button id="exportOptions" type="button">Export Options to File</button>
 								<button id="importOptions" type="button">Import Options from File</button>
 								<input type="file" id="importFile">
+							</p>
+							<p>
+								<input id="exportPasswords" type="checkbox">
+								<label for="exportPasswords">Include passwords in exported options</label>
 							</p>
 							<span id="syncOpts2">
 							<hr>

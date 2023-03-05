@@ -66,11 +66,6 @@ function initForm(numSets) {
 	// Set up JQuery UI widgets
 	$("#tabs").tabs({ activate: onActivate });
 	for (let set = 1; set <= gNumSets; set++) {
-		if (gIsAndroid) {
-			// Use alternative arrows on move-left/move-right buttons
-			$(`#moveSetL${set}`).html("&#x25C0; Move Set");
-			$(`#moveSetR${set}`).html("Move Set &#x25B6;");
-		}
 		$(`#moveSetL${set}`).click(function (e) {
 			swapSets(set, set - 1);
 			$("#tabs").tabs("option", "active", set - 2);
@@ -692,7 +687,7 @@ function showClockOffsetTime() {
 
 // Compile options for export
 //
-function compileExportOptions() {
+function compileExportOptions(passwords) {
 	let options = {};
 
 	// Per-set options
@@ -726,6 +721,7 @@ function compileExportOptions() {
 
 	// General options
 	for (let name in GENERAL_OPTIONS) {
+		if (!passwords && (name == "password" || name == "orp")) continue;
 		let type = GENERAL_OPTIONS[name].type;
 		let id = GENERAL_OPTIONS[name].id;
 		if (id) {
@@ -798,7 +794,9 @@ function applyImportOptions(options) {
 // Export options to file
 //
 function exportOptions() {
-	let options = compileExportOptions();
+	let exportPasswords = getElement("exportPasswords").checked;
+
+	let options = compileExportOptions(exportPasswords);
 
 	// Convert options to text lines
 	let lines = [];
@@ -889,7 +887,7 @@ function importOptions() {
 // Export options to sync storage
 //
 function exportOptionsSync(event) {
-	let options = compileExportOptions();
+	let options = compileExportOptions(true);
 
 	browser.storage.sync.set(options, onExported);
 

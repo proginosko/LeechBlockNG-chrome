@@ -1268,7 +1268,7 @@ function applyOverride(endTime) {
 	updateIcon();
 }
 
-// Reset rollover time for all sets applicable to active tab
+// Reset rollover time for set applicable to active tab
 //
 function resetRolloverTime() {
 	//log("resetRolloverTime");
@@ -1280,8 +1280,30 @@ function resetRolloverTime() {
 	// Get block set for currently active time limit
 	let set = gTabs[gActiveTabId].secsLeftSet;
 	if (set) {
-		// Reset rollover time
+		// Reset rollover time for current period
 		gOptions[`timedata${set}`][5] = 0;
+	}
+}
+
+// Discard remaining time for set applicable to active tab
+//
+function discardRemainingTime() {
+	//log("discardRemainingTime");
+
+	if (!gGotOptions || !gActiveTabId) {
+		return;
+	}
+
+	// Get block set for currently active time limit
+	let set = gTabs[gActiveTabId].secsLeftSet;
+	if (set) {
+		// Set used time to time limit
+		let limitMins = gOptions[`limitMins${set}`];
+		gOptions[`timedata${set}`][3] = (limitMins * 60);
+		// Reset rollover time for current period
+		gOptions[`timedata${set}`][5] = 0;
+		// Reset rollover time for next period
+		gOptions[`timedata${set}`][6] = 0;
 	}
 }
 
@@ -1303,7 +1325,7 @@ function openExtensionPage(url) {
 
 // Open page blocked by delaying page
 //
-function openDelayedPage(id, url, set) {
+function openDelayedPage(id, url, set, autoLoad) {
 	//log("openDelayedPage: " + id + " " + url);
 
 	if (!gGotOptions || set < 1 || set > gNumSets) {
@@ -1318,8 +1340,10 @@ function openDelayedPage(id, url, set) {
 	gTabs[id].allowedPath = gOptions[`delayFirst${set}`] ? null : parsedURL.path;
 	gTabs[id].allowedSet = set;
 
-	// Redirect page
-	browser.tabs.update(id, { url: url });
+	if (autoLoad) {
+		// Redirect page
+		browser.tabs.update(id, { url: url });
+	}
 }
 
 // Add site to block set
@@ -1428,8 +1452,16 @@ function handleMessage(message, sender, sendResponse) {
 			break;
 
 		case "delayed":
-			// Redirect requested by delaying page
-			openDelayedPage(sender.tab.id, message.blockedURL, message.blockedSet);
+			// Delaying page countdown completed
+			let url = message.blockedURL;
+			let set = message.blockedSet;
+			let autoLoad = gOptions[`delayAutoLoad${set}`];
+			openDelayedPage(sender.tab.id, url, set, autoLoad);
+			break;
+
+		case "discard-time":
+			// Discard remaining time
+			discardRemainingTime();
 			break;
 
 		case "loaded":
