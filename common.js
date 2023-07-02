@@ -214,7 +214,6 @@ function getParsedURL(url) {
 //
 function cleanSites(sites) {
 	sites = sites.replace(/\s+/g, " ").replace(/(^ +)|( +$)/g, ""); // remove extra whitespace
-	sites = sites.replace(/^\w+:\/+/, "").replace(/ \w+:\/+/g, " "); // remove protocols
 	sites = sites.split(" ").sort().join(" "); // sort alphabetically
 	return sites;
 }
@@ -314,6 +313,12 @@ function checkPosIntFormat(value) {
 //
 function checkPosNegIntFormat(value) {
 	return (value == "") || /^-?[1-9][0-9]*$/.test(value);
+}
+
+// Check positive number format (including decimals as well as whole numbers, except 0)
+//
+function checkPosNumberFormat(value) {
+  return (value == "") || /^(0\.\d+|[1-9]\d*(\.\d+)?)$/.test(value);
 }
 
 // Check blocking page URL format
