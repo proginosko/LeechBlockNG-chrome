@@ -555,6 +555,7 @@ function checkTab(id, isBeforeNav, isRepeat) {
 			let closeTab = gOptions[`closeTab${set}`];
 			let activeBlock = gOptions[`activeBlock${set}`];
 			let allowOverride = gOptions[`allowOverride${set}`];
+			let allowOverLock = gOptions[`allowOverLock${set}`];
 			let showTimer = gOptions[`showTimer${set}`];
 			let allowKeywords = gOptions[`allowKeywords${set}`];
 
@@ -602,7 +603,8 @@ function checkTab(id, isBeforeNav, isRepeat) {
 			let lockdown = (timedata[4] > now);
 
 			// Check override condition
-			let override = (overrideEndTime > now) && allowOverride;
+			let override = (overrideEndTime > now)
+					&& allowOverride && (allowOverLock || !lockdown);
 
 			// Determine whether this page should now be blocked
 			let doBlock = lockdown
@@ -1207,6 +1209,9 @@ function getUnblockTime(set) {
 							0, mp.end);
 				}
 			}
+			
+			// Return end time for current time limit period
+			return new Date(timedata[2] * 1000 + limitPeriod * 1000);
 		}
 	}
 
