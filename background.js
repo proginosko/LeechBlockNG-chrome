@@ -4,8 +4,6 @@
 
 const browser = chrome;
 
-const TICK_TIME = 1000; // update every second
-
 const BLOCKABLE_URL = /^(http|file|chrome|edge|extension)/i;
 const CLOCKABLE_URL = /^(http|file)/i;
 const EXTENSION_URL = browser.runtime.getURL("");
@@ -31,6 +29,8 @@ var gFocusWindowId = 0;
 var gAllFocused = false;
 var gOverrideIcon = false;
 var gSaveSecsCount = 0;
+var gTickerID;
+var gTickerSecs = 1; // update every second by default
 
 // Initialize object to track tab (returns false if already initialized)
 //
@@ -91,7 +91,7 @@ function refreshMenus() {
 
 	browser.contextMenus.removeAll();
 
-	let context = gOptions["contextMenu"] ? "all" : "browser_action";
+	let context = gOptions["contextMenu"] ? "all" : "action";
 
 	// Options
 	browser.contextMenus.create({
@@ -122,6 +122,7 @@ function refreshMenus() {
 	});
 
 	browser.contextMenus.create({
+		id: "separator",
 		type: "separator",
 		contexts: [context]
 	});
@@ -164,6 +165,19 @@ function refreshMenus() {
 			title: title,
 			contexts: [context]
 		});
+	}
+}
+
+// Refresh ticker for updates
+//
+function refreshTicker() {
+	let processTabsSecs = +gOptions["processTabsSecs"];
+
+	// Only restart ticker if interval has changed
+	if (processTabsSecs != gTickerSecs) {
+		gTickerSecs = processTabsSecs;
+		window.clearInterval(gTickerID);
+		gTickerID = window.setInterval(onInterval, gTickerSecs * 1000);
 	}
 }
 
@@ -214,6 +228,7 @@ function retrieveOptions(update) {
 
 		createRegExps();
 		refreshMenus();
+		refreshTicker();
 		loadSiteLists();
 		updateIcon();
 
@@ -954,10 +969,10 @@ function updateTimer(id) {
 	// Set tooltip
 	if (!gIsAndroid) {
 		if (secsLeft == Infinity) {
-			browser.browserAction.setTitle({ title: "LeechBlock", tabId: id });
+			browser.action.setTitle({ title: "LeechBlock", tabId: id });
 		} else {
 			let title = "LeechBlock [" + formatTime(secsLeft) + "]"
-			browser.browserAction.setTitle({ title: title, tabId: id });
+			browser.action.setTitle({ title: title, tabId: id });
 		}
 	}
 
@@ -966,10 +981,10 @@ function updateTimer(id) {
 		let m = Math.floor(secsLeft / 60);
 		let s = Math.floor(secsLeft) % 60;
 		let text = m + ":" + ((s < 10) ? "0" + s : s);
-		browser.browserAction.setBadgeBackgroundColor({ color: "#666" });
-		browser.browserAction.setBadgeText({ text: text, tabId: id });
+		browser.action.setBadgeBackgroundColor({ color: "#666" });
+		browser.action.setBadgeText({ text: text, tabId: id });
 	} else {
-		browser.browserAction.setBadgeText({ text: "", tabId: id });
+		browser.action.setBadgeText({ text: "", tabId: id });
 	}
 }
 
@@ -989,10 +1004,10 @@ function updateIcon() {
 
 	// Change icon only if override status has changed
 	if (!gOverrideIcon && overrideEndTime > now) {
-		browser.browserAction.setIcon({ path: OVERRIDE_ICON });
+		browser.action.setIcon({ path: OVERRIDE_ICON });
 		gOverrideIcon = true;
 	} else if (gOverrideIcon && overrideEndTime <= now) {
-		browser.browserAction.setIcon({ path: DEFAULT_ICON });
+		browser.action.setIcon({ path: DEFAULT_ICON });
 		gOverrideIcon = false;
 	}
 }
@@ -1640,6 +1655,10 @@ function onInterval() {
 	}
 }
 
+function onAlarm(alarmInfo) {
+	//log("onAlarm: " + alarmInfo.name);
+}
+
 /*** STARTUP CODE BEGINS HERE ***/
 
 browser.runtime.getPlatformInfo(
@@ -1647,7 +1666,7 @@ browser.runtime.getPlatformInfo(
 );
 
 let localePath = browser.i18n.getMessage("localePath");
-browser.browserAction.setPopup({ popup: localePath + "popup.html" });
+browser.action.setPopup({ popup: localePath + "popup.html" });
 
 if (browser.contextMenus) {
 	browser.contextMenus.onClicked.addListener(handleMenuClick);
@@ -1666,4 +1685,15 @@ if (browser.windows) {
 	//browser.windows.onFocusChanged.addListener(handleWinFocused);
 }
 
-window.setInterval(onInterval, TICK_TIME);
+gTickerID = window.setInterval(onInterval, gTickerSecs * 1000);
+
+// Use alarms to keep background script alive and ticker ticking...
+let now = Date.now();
+for (let alarm = 1; alarm <= 6; alarm++) {
+	let alarmInfo = {
+		when: now + (alarm * 10000),
+		periodInMinutes: 1
+	};
+	browser.alarms.create(`Alarm${alarm}`, alarmInfo);
+}
+browser.alarms.onAlarm.addListener(onAlarm);
