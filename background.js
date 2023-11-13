@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+importScripts("common.js");
+
 const browser = chrome;
 
 const BLOCKABLE_URL = /^(http|file|chrome|edge|extension)/i;
@@ -29,8 +31,6 @@ var gFocusWindowId = 0;
 var gAllFocused = false;
 var gOverrideIcon = false;
 var gSaveSecsCount = 0;
-var gTickerID;
-var gTickerSecs = 1; // update every second by default
 
 // Initialize object to track tab (returns false if already initialized)
 //
@@ -172,13 +172,9 @@ function refreshMenus() {
 //
 function refreshTicker() {
 	let processTabsSecs = +gOptions["processTabsSecs"];
-
-	// Only restart ticker if interval has changed
-	if (processTabsSecs != gTickerSecs) {
-		gTickerSecs = processTabsSecs;
-		window.clearInterval(gTickerID);
-		gTickerID = window.setInterval(onInterval, gTickerSecs * 1000);
-	}
+	
+	// Send message to ticker (offscreen document)
+	browser.runtime.sendMessage({ type: "ticker", tickerSecs: processTabsSecs });
 }
 
 // Retrieve options from storage
@@ -1527,6 +1523,11 @@ function handleMessage(message, sender, sendResponse) {
 			sendResponse();
 			break;
 
+		case "tick":
+			// Tick received from ticker (offscreen document)
+			handleTick();
+			break;
+
 	}
 }
 
@@ -1637,8 +1638,8 @@ function handleWinFocused(winId) {
 	gFocusWindowId = winId;
 }
 
-function onInterval() {
-	//log("onInterval");
+function handleTick() {
+	//log("handleTick");
 
 	updateFocusedWindowId();
 
@@ -1685,7 +1686,11 @@ if (browser.windows) {
 	//browser.windows.onFocusChanged.addListener(handleWinFocused);
 }
 
-gTickerID = window.setInterval(onInterval, gTickerSecs * 1000);
+browser.offscreen.createDocument({
+	url: browser.runtime.getURL("ticker.html"),
+	reasons: [ browser.offscreen.Reason.WORKERS ],
+	justification: "Ticker needs to run in offscreen document"
+});
 
 // Use alarms to keep background script alive and ticker ticking...
 let now = Date.now();
