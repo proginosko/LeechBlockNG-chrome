@@ -410,7 +410,7 @@ function processTabs(active) {
 
 	function onGot(tabs) {
 		if (browser.runtime.lastError) {
-			warn("Cannot get tabs: " + error);
+			warn("Cannot get tabs: " + browser.runtime.lastError.message);
 			return;
 		}
 
