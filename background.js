@@ -1658,6 +1658,14 @@ function onAlarm(alarmInfo) {
 	//log("onAlarm: " + alarmInfo.name);
 }
 
+async function createTicker() {
+	await browser.offscreen.createDocument({
+		url: browser.runtime.getURL("ticker.html"),
+		reasons: [ browser.offscreen.Reason.WORKERS ],
+		justification: "Ticker needs to run in offscreen document"
+	});
+}
+
 /*** STARTUP CODE BEGINS HERE ***/
 
 browser.runtime.getPlatformInfo(
@@ -1684,11 +1692,7 @@ if (browser.windows) {
 	//browser.windows.onFocusChanged.addListener(handleWinFocused);
 }
 
-browser.offscreen.createDocument({
-	url: browser.runtime.getURL("ticker.html"),
-	reasons: [ browser.offscreen.Reason.WORKERS ],
-	justification: "Ticker needs to run in offscreen document"
-});
+createTicker();
 
 // Use alarms to keep background script alive and ticker ticking...
 let now = Date.now();
