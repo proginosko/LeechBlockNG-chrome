@@ -421,7 +421,7 @@ function processTabs(active) {
 			clockPageTime(tab.id, false, false);
 			clockPageTime(tab.id, true, focus);
 
-			if (tab.url.startsWith("about")) {
+			if (/^(chrome|edge|extension)/i.test(tab.url)) {
 				gTabs[tab.id].loaded = true;
 				gTabs[tab.id].url = tab.url;
 			}
