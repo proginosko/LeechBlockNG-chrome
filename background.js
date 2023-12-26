@@ -44,6 +44,7 @@ function initTab(id) {
 			allowedSet: 0,
 			referrer: "",
 			url: "about:blank",
+			incog: false,
 			loaded: false
 		};
 		return true;
@@ -423,7 +424,7 @@ function processTabs(active) {
 
 			if (/^(chrome|edge|extension)/i.test(tab.url)) {
 				gTabs[tab.id].loaded = true;
-				gTabs[tab.id].url = tab.url;
+				gTabs[tab.id].url = getCleanURL(tab.url);
 			}
 
 			if (gTabs[tab.id].loaded) {
@@ -455,9 +456,6 @@ function checkTab(id, isBeforeNav, isRepeat) {
 
 	let url = gTabs[id].url;
 
-	// Remove view-source prefix if necessary
-	url = url.replace(/^view-source:/i, "");
-
 	gTabs[id].blockable = BLOCKABLE_URL.test(url);
 	gTabs[id].clockable = CLOCKABLE_URL.test(url);
 
@@ -465,12 +463,12 @@ function checkTab(id, isBeforeNav, isRepeat) {
 	// - about:blank
 	// - non-blockable URLs
 	// - blocking/delaying pages
-	// - LeechBlock website (documentation should always be available)
+	// - LeechBlock website (documentation should be available by default)
 	if (url == "about:blank"
 			|| !gTabs[id].blockable
 			|| url.startsWith(BLOCKED_PAGE_URL)
 			|| url.startsWith(DELAYED_PAGE_URL)
-			|| url.startsWith(LEECHBLOCK_URL)) {
+			|| (url.startsWith(LEECHBLOCK_URL) && gOptions["allowLBWebsite"])) {
 		return false; // not blocked
 	}
 
@@ -514,6 +512,11 @@ function checkTab(id, isBeforeNav, isRepeat) {
 			continue;
 		}
 
+		// Check incognito mode
+		let incogMode = gOptions[`incogMode${set}`];
+		let incog = gTabs[id].incog;
+		if ((incogMode == 1 && incog) || (incogMode == 2 && !incog)) continue;
+
 		// Get URL of page (possibly with hash part)
 		let pageURL = parsedURL.page;
 		let pageURLWithHash = parsedURL.page;
@@ -523,6 +526,7 @@ function checkTab(id, isBeforeNav, isRepeat) {
 				pageURL = pageURLWithHash;
 			}
 		}
+		let isInternalPage = /^about:(addons|support)/i.test(pageURL);
 
 		// Get regular expressions for matching sites to block/allow
 		let blockRE = gRegExps[set].block;
@@ -531,7 +535,7 @@ function checkTab(id, isBeforeNav, isRepeat) {
 		let keywordRE = gRegExps[set].keyword;
 		if (!blockRE && !referRE) continue; // no block for this set
 
-		if (keywordRE && isBeforeNav) continue; // too soon to check for keywords!
+		if (keywordRE && !isInternalPage && isBeforeNav) continue; // too soon to check for keywords!
 
 		// Get option for treating referrers as allow-conditions
 		let allowRefers = gOptions[`allowRefers${set}`];
@@ -563,6 +567,7 @@ function checkTab(id, isBeforeNav, isRepeat) {
 			let filterMute = gOptions[`filterMute${set}`];
 			let closeTab = gOptions[`closeTab${set}`];
 			let activeBlock = gOptions[`activeBlock${set}`];
+			let addHistory = gOptions[`addHistory${set}`];
 			let allowOverride = gOptions[`allowOverride${set}`];
 			let allowOverLock = gOptions[`allowOverLock${set}`];
 			let showTimer = gOptions[`showTimer${set}`];
@@ -612,7 +617,7 @@ function checkTab(id, isBeforeNav, isRepeat) {
 			let lockdown = (timedata[4] > now);
 
 			// Check override condition
-			let override = (overrideEndTime > now)
+			let override = !isInternalPage && (overrideEndTime > now)
 					&& allowOverride && (allowOverLock || !lockdown);
 
 			// Determine whether this page should now be blocked
@@ -674,6 +679,11 @@ function checkTab(id, isBeforeNav, isRepeat) {
 						gTabs[id].keyword = keyword;
 						gTabs[id].url = blockURL; // prevent reload loop on Chrome
 
+						if (addHistory && !isInternalPage) {
+							// Add blocked page to browser history
+							browser.history.addUrl({ url: pageURLWithHash });
+						}
+
 						// Get final URL for block page
 						blockURL = getLocalizedURL(blockURL)
 								.replace(/\$K/g, keyword ? keyword : "")
@@ -685,7 +695,7 @@ function checkTab(id, isBeforeNav, isRepeat) {
 					}
 				}
 
-				if (keywordRE) {
+				if (keywordRE && !isInternalPage) {
 					// Check for keyword(s) before blocking
 					let message = {
 						type: "keyword",
@@ -1267,12 +1277,40 @@ function applyOverride(endTime) {
 		return;
 	}
 
-	// Update option
-	gOptions["oret"] = endTime;
-
-	// Save updated option to storage
 	let options = {};
-	options["oret"] = endTime;
+
+	// Set override end time
+	options["oret"] = gOptions["oret"] = endTime;
+
+	if (endTime) {
+		// Get current time in seconds
+		let clockOffset = gOptions["clockOffset"];
+		let now = Math.floor(Date.now() / 1000) + (clockOffset * 60);
+
+		// Update override limit count (if specified)
+		let orln = gOptions["orln"];
+		let orlp = gOptions["orlp"];
+		let orlps = gOptions["orlps"];
+		let orlc = gOptions["orlc"];
+		if (orln && orlp) {
+			let periodStart = getTimePeriodStart(now, orlp);
+			if (orlps != periodStart) {
+				// We've entered a new time period, so start new count
+				orlps = periodStart;
+				orlc = 1;
+			} else {
+				// We haven't entered a new time period, so keep counting
+				orlc++;
+			}
+		} else {
+			orlps = 0;
+			orlc = 0;
+		}
+		options["orlps"] = gOptions["orlps"] = orlps;
+		options["orlc"] = gOptions["orlc"] = orlc;
+	}
+
+	// Save updated options to storage
 	gStorage.set(options, function () {
 		if (browser.runtime.lastError) {
 			warn("Cannot set options: " + browser.runtime.lastError.message);
@@ -1481,7 +1519,8 @@ function handleMessage(message, sender, sendResponse) {
 		case "loaded":
 			// Register that content script has been loaded
 			gTabs[sender.tab.id].loaded = true;
-			gTabs[sender.tab.id].url = message.url;
+			gTabs[sender.tab.id].url = getCleanURL(message.url);
+			gTabs[sender.tab.id].incog = message.incog;
 			break;
 
 		case "lockdown":
@@ -1554,7 +1593,7 @@ function handleTabUpdated(tabId, changeInfo, tab) {
 	let focus = tab.active && (gAllFocused || !gFocusWindowId || tab.windowId == gFocusWindowId);
 
 	if (changeInfo.url) {
-		gTabs[tabId].url = changeInfo.url;
+		gTabs[tabId].url = getCleanURL(changeInfo.url);
 	}
 
 	if (changeInfo.status && changeInfo.status == "complete") {
@@ -1623,7 +1662,7 @@ function handleBeforeNavigate(navDetails) {
 
 	if (navDetails.frameId == 0) {
 		gTabs[tabId].loaded = false
-		gTabs[tabId].url = navDetails.url;
+		gTabs[tabId].url = getCleanURL(navDetails.url);
 
 		// Check tab to see if page should be blocked
 		let blocked = checkTab(tabId, true, false);

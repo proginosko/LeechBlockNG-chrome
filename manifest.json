@@ -59,15 +59,17 @@
 
 	"permissions": [
 		"alarms",
-		"downloads",
 		"contextMenus",
+		"downloads",
+		"history",
 		"offscreen",
+		"menus",
 		"storage",
 		"tabs",
 		"unlimitedStorage",
 		"webNavigation"
 	],
 
-	"version": "1.6"
+	"version": "1.6.2"
 
 }

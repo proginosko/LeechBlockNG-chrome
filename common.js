@@ -38,6 +38,7 @@ const PER_SET_OPTIONS = {
 	conjMode: { type: "boolean", def: false, id: "conjMode" },
 	days: { type: "array", def: [false, true, true, true, true, true, false], id: "day" },
 	blockURL: { type: "string", def: DEFAULT_BLOCK_URL, id: "blockURL" },
+	incogMode: { type: "string", def: "0", id: "incogMode" },
 	applyFilter: { type: "boolean", def: false, id: "applyFilter" },
 	filterName: { type: "string", def: "grayscale", id: "filterName" },
 	filterMute: { type: "boolean", def: false, id: "filterMute" },
@@ -50,6 +51,7 @@ const PER_SET_OPTIONS = {
 	delayAutoLoad: { type: "boolean", def: true, id: "delayAutoLoad" },
 	delayCancel: { type: "boolean", def: true, id: "delayCancel" },
 	reloadSecs: { type: "string", def: "", id: "reloadSecs" },
+	addHistory: { type: "boolean", def: false, id: "addHistory" },
 	allowOverride: { type: "boolean", def: false, id: "allowOverride" },
 	allowOverLock: { type: "boolean", def: true, id: "allowOverLock" },
 	prevOpts: { type: "boolean", def: false, id: "prevOpts" },
@@ -80,10 +82,15 @@ const GENERAL_OPTIONS = {
 	timerLocation: { type: "string", def: "0", id: "timerLocation" }, // default: top left
 	timerBadge: { type: "boolean", def: true, id: "timerBadge" }, // default: enabled
 	orm: { type: "string", def: "", id: "overrideMins" }, // default: no prespecified override
+	orln: { type: "string", def: "", id: "overrideLimitNum" }, // default: no prespecified limit number
+	orlp: { type: "string", def: "", id: "overrideLimitPeriod" }, // default: no prespecified limit period
 	ora: { type: "string", def: "0", id: "overrideAccess" }, // default: no password or code
 	orcode: { type: "string", def: "", id: "overrideCode" }, // default: blank
 	orp: { type: "string", def: "", id: "overridePassword" }, // default: blank
 	orc: { type: "boolean", def: true, id: "overrideConfirm" }, // default: enabled
+	orlps: { type: "number", def: 0, id: null }, // default: no override limit period start time
+	orlc: { type: "number", def: 0, id: null }, // default: no override limit count
+	oret: { type: "number", def: 0, id: null }, // default: no override end time
 	warnSecs: { type: "string", def: "", id: "warnSecs" }, // default: no warning
 	warnImmediate: { type: "boolean", def: true, id: "warnImmediate" }, // default: warn only for immediate block
 	contextMenu: { type: "boolean", def: true, id: "contextMenu" }, // default: enabled
@@ -95,6 +102,7 @@ const GENERAL_OPTIONS = {
 	processTabsSecs: { type: "string", def: "1", id: "processTabsSecs" }, // default: every second
 	processActiveTabs: { type: "boolean", def: false, id: "processActiveTabs" }, // default: disabled
 	accessCodeImage: { type: "boolean", def: false, id: "accessCodeImage" }, // default: disabled
+	allowLBWebsite: { type: "boolean", def: true, id: "allowLBWebsite" }, // default: enabled
 	diagMode: { type: "boolean", def: false, id: "diagMode" }, // default: disabled
 	exportPasswords: { type: "boolean", def: false, id: "exportPasswords" }, // default: disabled
 	autoExportSync: { type: "boolean", def: true, id: "autoExportSync" }, // default: enabled
@@ -405,11 +413,11 @@ function cleanTimePeriods(times) {
 	return cleanTimes.join(",");
 }
 
-// Calculate start of time period from current time and time limit period
+// Calculate start of time period from current time and limit period
 //
 function getTimePeriodStart(now, limitPeriod, limitOffset) {
-	limitPeriod = +limitPeriod; // force value to number
-	limitOffset = +limitOffset; // force value to number
+	limitPeriod = limitPeriod ? +limitPeriod : 3600; // force value to number
+	limitOffset = limitOffset ? +limitOffset : 0; // force value to number
 
 	if (limitPeriod > 0) {
 		let periodStart = now - (now % limitPeriod);
@@ -534,4 +542,18 @@ function getLocalizedURL(url) {
 	return (ABSOLUTE_URL.test(url))
 			? url // no localization for absolute URL
 			: browser.i18n.getMessage("localePath") + url;
+}
+
+// Get clean version of URL (remove source/reader prefix)
+//
+function getCleanURL(url) {
+	if (url) {
+		if (url.startsWith("view-source:")) {
+			url = url.substring(12);
+		}
+		if (url.startsWith("about:reader?url=")) {
+			url = decodeURIComponent(url.substring(17));
+		}
+	}
+	return url;
 }
