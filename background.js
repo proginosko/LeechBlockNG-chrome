@@ -526,7 +526,7 @@ function checkTab(id, isBeforeNav, isRepeat) {
 				pageURL = pageURLWithHash;
 			}
 		}
-		let isInternalPage = /^about:(addons|support)/i.test(pageURL);
+		let isInternalPage = /^[a-z]+:\/\/(extensions|settings)/i.test(pageURL);
 
 		// Get regular expressions for matching sites to block/allow
 		let blockRE = gRegExps[set].block;

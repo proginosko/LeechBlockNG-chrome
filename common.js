@@ -551,8 +551,11 @@ function getCleanURL(url) {
 		if (url.startsWith("view-source:")) {
 			url = url.substring(12);
 		}
-		if (url.startsWith("about:reader?url=")) {
-			url = decodeURIComponent(url.substring(17));
+		if (url.startsWith("read:")) {
+			let index = url.indexOf("?url=");
+			if (index >= 0) {
+				url = decodeURIComponent(url.substring(index + 5));
+			}
 		}
 	}
 	return url;
