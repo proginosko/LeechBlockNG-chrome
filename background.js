@@ -45,7 +45,8 @@ function initTab(id) {
 			referrer: "",
 			url: "about:blank",
 			incog: false,
-			loaded: false
+			loaded: false,
+			loadedTime: 0
 		};
 		return true;
 	}
@@ -424,6 +425,7 @@ function processTabs(active) {
 
 			if (/^(chrome|edge|extension)/i.test(tab.url)) {
 				gTabs[tab.id].loaded = true;
+				gTabs[tab.id].loadedTime = Date.now();
 				gTabs[tab.id].url = getCleanURL(tab.url);
 			}
 
@@ -517,6 +519,14 @@ function checkTab(id, isBeforeNav, isRepeat) {
 		let incog = gTabs[id].incog;
 		if ((incogMode == 1 && incog) || (incogMode == 2 && !incog)) continue;
 
+		// Check for wait time (if specified)
+		let waitSecs = gOptions[`waitSecs${set}`];
+		let loadedTime = gTabs[id].loadedTime;
+		if (waitSecs && loadedTime) {
+			let loadTime = Math.floor(loadedTime / 1000) + (clockOffset * 60);
+			if ((now - loadTime) < waitSecs) continue; // too soon to check for block!
+		}
+
 		// Get URL of page (possibly with hash part)
 		let pageURL = parsedURL.page;
 		let pageURLWithHash = parsedURL.page;
@@ -545,6 +555,7 @@ function checkTab(id, isBeforeNav, isRepeat) {
 		// Get options for preventing access to extensions/settings pages
 		let prevExts = gOptions[`prevExts${set}`];
 		let prevSettings = gOptions[`prevSettings${set}`];
+		let prevOverride = gOptions[`prevOverride${set}`];
 
 		// Test URL against block/allow regular expressions
 		if (testURL(pageURL, referrer, blockRE, allowRE, referRE, allowRefers)
@@ -617,7 +628,7 @@ function checkTab(id, isBeforeNav, isRepeat) {
 			let lockdown = (timedata[4] > now);
 
 			// Check override condition
-			let override = !isInternalPage && (overrideEndTime > now)
+			let override = (prevOverride || !isInternalPage) && (overrideEndTime > now)
 					&& allowOverride && (allowOverLock || !lockdown);
 
 			// Determine whether this page should now be blocked
@@ -1519,6 +1530,7 @@ function handleMessage(message, sender, sendResponse) {
 		case "loaded":
 			// Register that content script has been loaded
 			gTabs[sender.tab.id].loaded = true;
+			gTabs[sender.tab.id].loadedTime = Date.now();
 			gTabs[sender.tab.id].url = getCleanURL(message.url);
 			gTabs[sender.tab.id].incog = message.incog;
 			break;
