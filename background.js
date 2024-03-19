@@ -1499,6 +1499,11 @@ function handleMessage(message, sender, sendResponse) {
 		return;
 	}
 
+	if (sender.documentLifecycle === "prerender") {
+		// ignore pages that have not been loaded yet
+		return;
+	}
+
 	//log("handleMessage: " + sender.tab.id + " " + message.type);
 
 	switch (message.type) {
