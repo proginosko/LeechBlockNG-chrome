@@ -1522,9 +1522,11 @@ function addSitesToSet(siteList, set) {
 	options[`allowRE${set}`] = regexps.allow;
 	options[`referRE${set}`] = regexps.refer;
 	options[`keywordRE${set}`] = regexps.keyword;
-	gStorage.set(options).catch(
-		function (error) { warn("Cannot set options: " + error); }
-	);
+	gStorage.set(options, function () {
+		if (browser.runtime.lastError) {
+			warn("Cannot set options: " + browser.runtime.lastError.message);
+		}
+	});
 }
 
 /*** EVENT HANDLERS BEGIN HERE ***/
