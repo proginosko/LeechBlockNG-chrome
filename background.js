@@ -45,6 +45,7 @@ function initTab(id) {
 			referrer: "",
 			url: "about:blank",
 			incog: false,
+			audible: false,
 			loaded: false,
 			loadedTime: 0
 		};
@@ -265,8 +266,7 @@ function loadSiteLists() {
 
 	function onLoad(set, sites) {
 		if (set && sites) {
-			sites = sites.replace(/\s+/g, " ").replace(/(^ +)|( +$)|(\w+:\/+)/g, "");
-			sites = sites.split(" ").sort().join(" "); // sort alphabetically
+			sites = cleanSites(sites);
 
 			// Get regular expressions to match sites
 			let regexps = getRegExpSites(sites, gOptions["matchSubdomains"]);
@@ -418,6 +418,8 @@ function processTabs(active) {
 			initTab(tab.id);
 
 			let focus = tab.active && (gAllFocused || !gFocusWindowId || tab.windowId == gFocusWindowId);
+
+			gTabs[tab.id].audible = tab.audible;
 
 			// Force update of time spent on this page
 			clockPageTime(tab.id, false, false);
@@ -690,7 +692,7 @@ function checkTab(id, isBeforeNav, isRepeat) {
 						gTabs[id].keyword = keyword;
 						gTabs[id].url = blockURL; // prevent reload loop on Chrome
 
-						if (addHistory && !isInternalPage) {
+						if (!gIsAndroid && addHistory && !isInternalPage) {
 							// Add blocked page to browser history
 							browser.history.addUrl({ url: pageURLWithHash });
 						}
@@ -851,13 +853,13 @@ function clockPageTime(id, open, focus) {
 
 	// Update time data if necessary
 	if (secsOpen > 0 || secsFocus > 0) {
-		updateTimeData(gTabs[id].url, gTabs[id].referrer, secsOpen, secsFocus);
+		updateTimeData(gTabs[id].url, gTabs[id].referrer, gTabs[id].audible, secsOpen, secsFocus);
 	}
 }
 
 // Update time data for specified page
 //
-function updateTimeData(url, referrer, secsOpen, secsFocus) {
+function updateTimeData(url, referrer, audible, secsOpen, secsFocus) {
 	//log("updateTimeData: " + url + " " + secsOpen + " " + secsFocus);
 
 	// Get parsed URL for this page
@@ -877,6 +879,10 @@ function updateTimeData(url, referrer, secsOpen, secsFocus) {
 		let allowRE = gRegExps[set].allow;
 		let referRE = gRegExps[set].refer;
 		if (!blockRE && !referRE) continue; // no block for this set
+
+		// Get option for counting time only when tab is playing audio
+		let countAudio = gOptions[`countAudio${set}`];
+		if (countAudio && !audible) continue; // no audio playing
 
 		// Get option for treating referrers as allow-conditions
 		let allowRefers = gOptions[`allowRefers${set}`];
@@ -1443,9 +1449,9 @@ function addSiteToSet(url, set, includePath) {
 	}
 	let patterns = sites.split(/\s+/);
 	if (patterns.indexOf(site) < 0) {
-		// Get sorted list of sites including new one
+		// Get clean list of sites including new one
 		patterns.push(site);
-		sites = patterns.sort().join(" ").replace(/(^ +)|( +$)/g, "");
+		sites = cleanSites(patterns.join(" "));
 
 		// Get regular expressions to match sites
 		let regexps = getRegExpSites(sites, gOptions["matchSubdomains"]);
@@ -1472,6 +1478,53 @@ function addSiteToSet(url, set, includePath) {
 			}
 		});
 	}	
+}
+
+// Add list of sites to block set
+//
+function addSitesToSet(siteList, set) {
+	//log("addSitesToSet: " + set);
+
+	if (!gGotOptions || set < 1 || set > gNumSets) {
+		return;
+	}
+
+	// Get sites for this set
+	let sites = gOptions[`sites${set}`];
+
+	// Add sites if not exceptions and not already included
+	let patterns = sites.split(/\s+/);
+	for (let site of siteList.split(/\s+/)) {
+		if (site.charAt(0) != "+" && patterns.indexOf(site) < 0) {
+			patterns.push(site);
+		}
+	}
+
+	// Get clean list of sites
+	sites = cleanSites(patterns.join(" "));
+
+	// Get regular expressions to match sites
+	let regexps = getRegExpSites(sites, gOptions["matchSubdomains"]);
+
+	// Update options
+	gOptions[`sites${set}`] = sites;
+	gOptions[`blockRE${set}`] = regexps.block;
+	gOptions[`allowRE${set}`] = regexps.allow;
+	gOptions[`referRE${set}`] = regexps.refer;
+	gOptions[`keywordRE${set}`] = regexps.keyword;
+
+	createRegExps();
+
+	// Save updated options to storage
+	let options = {};
+	options[`sites${set}`] = sites;
+	options[`blockRE${set}`] = regexps.block;
+	options[`allowRE${set}`] = regexps.allow;
+	options[`referRE${set}`] = regexps.refer;
+	options[`keywordRE${set}`] = regexps.keyword;
+	gStorage.set(options).catch(
+		function (error) { warn("Cannot set options: " + error); }
+	);
 }
 
 /*** EVENT HANDLERS BEGIN HERE ***/
@@ -1502,6 +1555,11 @@ function handleMessage(message, sender, sendResponse) {
 	//log("handleMessage: " + sender.tab.id + " " + message.type);
 
 	switch (message.type) {
+
+		case "add-sites":
+			// Add sites to block set
+			addSitesToSet(message.sites, message.set);
+			break;
 
 		case "blocked":
 			// Block info requested by blocking/delaying page

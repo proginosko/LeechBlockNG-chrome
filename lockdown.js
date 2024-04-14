@@ -159,8 +159,7 @@ function onActivate() {
 		}
 	});
 
-	// Request tab close
-	browser.runtime.sendMessage({ type: "close" });
+	$("#form").hide({ effect: "fade", complete: closePage });
 }
 
 // Handle cancel button click
@@ -168,6 +167,12 @@ function onActivate() {
 function onCancel() {
 	//log("onCancel");
 
+	closePage();
+}
+
+// Close page
+//
+function closePage() {
 	// Request tab close
 	browser.runtime.sendMessage({ type: "close" });
 }

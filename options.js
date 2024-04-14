@@ -27,6 +27,7 @@ var gSetDisabled;
 var gSetOrdering, gSetReordered;
 var gTabIndex = 0;
 var gNewOpen = true;
+var gSimplified = false;
 var gClockTimeOpts;
 
 // Initialize form (with specified number of block sets)
@@ -79,6 +80,8 @@ function initForm(numSets) {
 			swapSets(set, set + 1);
 			$("#tabs").tabs("option", "active", set);
 		});
+		$(`#simpOpts${set}`).click(function (e) { showSimplifiedOptions(true); });
+		$(`#fullOpts${set}`).click(function (e) { showSimplifiedOptions(false); });
 		$(`#setName${set}`).change(function (e) { updateBlockSetName(set, $(`#setName${set}`).val()); });
 		for (let name in SUB_OPTIONS) {
 			$(`#${name}${set}`).change(function (e) { updateSubOptions(set); });
@@ -114,6 +117,8 @@ function initForm(numSets) {
 		});
 		$(`#advOpts${set}`).css("display", "none");
 	}
+	$("#simpOptsGen").click(function (e) { showSimplifiedOptions(true); });
+	$("#fullOptsGen").click(function (e) { showSimplifiedOptions(false); });
 	$("#accessPasswordShow").change(accessPasswordShow);
 	$("#overridePasswordShow").change(overridePasswordShow);
 	$("#theme").change(function (e) { setTheme($("#theme").val()); });
@@ -129,10 +134,6 @@ function initForm(numSets) {
 	$("#saveOptions").click({ closeOptions: false }, saveOptions);
 	$("#saveOptionsClose").button();
 	$("#saveOptionsClose").click({ closeOptions: true }, saveOptions);
-
-	// Disable first move-left and last move-right buttons
-	getElement("moveSetL1").disabled = true;
-	getElement("moveSetR" + gNumSets).disabled = true;
 
 	if (gIsAndroid) {
 		// Hide sync options (sync storage not supported on Android yet)
@@ -169,12 +170,32 @@ function swapSets(set1, set2) {
 
 	// Swap set options and update form
 	swapSetOptions(set1, set2);
+	updateMoveSetButtons();
 	updateBlockSetName(set1, $(`#setName${set1}`).val());
 	updateBlockSetName(set2, $(`#setName${set2}`).val());
 	$(`#showAdvOpts${set1}`).css("display", "initial");
 	$(`#showAdvOpts${set2}`).css("display", "initial");
 	$(`#advOpts${set1}`).css("display", "none");	
 	$(`#advOpts${set2}`).css("display", "none");	
+}
+
+// Show simplified or full options
+//
+function showSimplifiedOptions(simplify) {
+	if (simplify) {
+		// Show simplified options
+		$(".simplifiable").css("display", "none");
+		$("fieldset[id^='advOpts'").css("display", "none");
+		$("button[id^='simpOpts']").hide();
+		$("button[id^='fullOpts']").show();
+	} else {
+		// Show full options
+		$(".simplifiable").css("display", "");
+		$("button[id^='simpOpts']").show();
+		$("button[id^='fullOpts']").hide();
+	}
+
+	gSimplified = simplify;
 }
 
 // Update block set name on tab
@@ -317,7 +338,7 @@ function saveOptions(event) {
 		return false;
 	}
 
-	let options = {};
+	let options = { simplified: gSimplified };
 
 	// General options
 	for (let name in GENERAL_OPTIONS) {
@@ -456,6 +477,8 @@ function retrieveOptions() {
 		initForm(options["numSets"]);
 
 		setTheme(options["theme"]);
+
+		showSimplifiedOptions(options["simplified"]);
 
 		// Get clock time format
 		gClockTimeOpts = {};
@@ -599,6 +622,8 @@ function retrieveOptions() {
 				}
 			}
 		}
+
+		updateMoveSetButtons();
 
 		confirmAccess(options);
 	}
@@ -1148,6 +1173,19 @@ function updateSubOptions(set) {
 			let comp2 = getElement(`${subname}${set}`);
 			comp2.disabled = comp1.disabled || !comp1.checked;
 		}
+	}
+}
+
+// Update enabled/disabled state of move set buttons
+//
+function updateMoveSetButtons() {
+	for (let set = 1; set <= gNumSets; set++) {
+		// Move-left button
+		let msl_disabled = (set == 1 || gSetDisabled[set] || gSetDisabled[set - 1]);
+		getElement(`moveSetL${set}`).disabled = msl_disabled;
+		// Move-right button
+		let msr_disabled = (set == gNumSets || gSetDisabled[set] || gSetDisabled[set + 1]);
+		getElement(`moveSetR${set}`).disabled = msr_disabled;
 	}
 }
 
