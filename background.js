@@ -419,6 +419,7 @@ function processTabs(active) {
 
 			let focus = tab.active && (gAllFocused || !gFocusWindowId || tab.windowId == gFocusWindowId);
 
+			gTabs[tab.id].incog = tab.incognito;
 			gTabs[tab.id].audible = tab.audible;
 
 			// Force update of time spent on this page
@@ -1597,7 +1598,6 @@ function handleMessage(message, sender, sendResponse) {
 			gTabs[sender.tab.id].loaded = true;
 			gTabs[sender.tab.id].loadedTime = Date.now();
 			gTabs[sender.tab.id].url = getCleanURL(message.url);
-			gTabs[sender.tab.id].incog = message.incog;
 			break;
 
 		case "lockdown":
