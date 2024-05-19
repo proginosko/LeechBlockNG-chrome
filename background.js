@@ -1555,7 +1555,7 @@ function handleMessage(message, sender, sendResponse) {
 	}
 
 	if (sender.documentLifecycle === "prerender") {
-		// ignore pages that have not been loaded yet
+		// Ignore prerendered pages
 		return;
 	}
 
