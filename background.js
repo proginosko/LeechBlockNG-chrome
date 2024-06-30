@@ -1057,6 +1057,9 @@ function createBlockInfo(id, url) {
 		blockedURL += "#" + parsedURL.hash;
 	}
 
+	// Get disable link option
+	let disableLink = gOptions["disableLink"];
+
 	// Get keyword match (if applicable)
 	let keywordMatch = gOptions[`showKeyword${blockedSet}`] ? gTabs[id].keyword : null;
 
@@ -1096,6 +1099,7 @@ function createBlockInfo(id, url) {
 		blockedSet: blockedSet,
 		blockedSetName: blockedSetName,
 		blockedURL: blockedURL,
+		disableLink: disableLink,
 		keywordMatch: keywordMatch,
 		unblockTime: unblockTime,
 		delaySecs: delaySecs,
