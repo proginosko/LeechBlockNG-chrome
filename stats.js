@@ -11,6 +11,7 @@ function getElement(id) { return document.getElementById(id); }
 
 var gFormHTML;
 var gNumSets;
+var gClockOffset;
 var gClockTimeOpts;
 
 // Initialize form (with specified number of block sets)
@@ -79,8 +80,8 @@ function refreshPage() {
 		}
 
 		// Get current time in seconds
-		let clockOffset = options["clockOffset"];
-		let now = Math.floor(Date.now() / 1000) + (clockOffset * 60);
+		gClockOffset = options["clockOffset"];
+		let now = Math.floor(Date.now() / 1000) + (gClockOffset * 60);
 
 		for (let set = 1; set <= gNumSets; set++) {
 			let setName = options[`setName${set}`];

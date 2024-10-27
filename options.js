@@ -5,6 +5,7 @@
 const browser = chrome;
 
 const DEFAULT_OPTIONS_FILE = "LeechBlockOptions.txt";
+const DEFAULT_JSON_FILE = "LeechBlockOptions.json";
 
 const SUB_OPTIONS = {
 	"applyFilter" : [ "filterName", "filterMute" ],
@@ -127,6 +128,7 @@ function initForm(numSets) {
 	$("#clockOffsetTime").click(showClockOffsetTime);
 	$("#exportOptions").click(exportOptions);
 	$("#importOptions").click(importOptions);
+	$("#exportOptionsJSON").click(exportOptionsJSON);
 	$("#exportOptionsSync").click(exportOptionsSync);
 	$("#importOptionsSync").click(importOptionsSync);
 	$("#openDiagnostics").click(openDiagnostics);
@@ -139,6 +141,8 @@ function initForm(numSets) {
 		// Hide sync options (sync storage not supported on Android yet)
 		getElement("syncOpts1").style.display = "none";
 		getElement("syncOpts2").style.display = "none";
+		// Disable export to JSON button
+		getElement("exportOptionsJSON").disabled = true;
 	}
 
 	// Set active tab
@@ -216,6 +220,7 @@ function saveOptions(event) {
 		let limitMins = $(`#limitMins${set}`).val();
 		let limitOffset = $(`#limitOffset${set}`).val();
 		let delaySecs = $(`#delaySecs${set}`).val();
+		let delayAllowMins = $(`#delayAllowMins${set}`).val();
 		let reloadSecs = $(`#reloadSecs${set}`).val();
 		let waitSecs = $(`#waitSecs${set}`).val();
 		let blockURL = $(`#blockURL${set}`).val();
@@ -243,6 +248,12 @@ function saveOptions(event) {
 			$("#tabs").tabs("option", "active", (set - 1));
 			$(`#delaySecs${set}`).focus();
 			$("#alertBadSeconds").dialog("open");
+			return false;
+		}
+		if (!checkPosIntFormat(delayAllowMins)) {
+			$("#tabs").tabs("option", "active", (set - 1));
+			$(`#delayAllowMins${set}`).focus();
+			$("#alertBadMinutes").dialog("open");
 			return false;
 		}
 		if (!checkPosIntFormat(reloadSecs)) {
@@ -320,6 +331,13 @@ function saveOptions(event) {
 		$("#tabs").tabs("option", "active", gNumSets);
 		$("#clockOffset").focus();
 		$("#alertBadClockOffset").dialog("open");
+		return false;
+	}
+	let ignoreJumpSecs = $("#ignoreJumpSecs").val();
+	if (!checkPosIntFormat(ignoreJumpSecs)) {
+		$("#tabs").tabs("option", "active", gNumSets);
+		$("#ignoreJumpSecs").focus();
+		$("#alertBadSeconds").dialog("open");
 		return false;
 	}
 
@@ -851,7 +869,7 @@ function applyImportOptions(options) {
 	}
 }
 
-// Export options to file
+// Export options to text file
 //
 function exportOptions() {
 	let exportPasswords = getElement("exportPasswords").checked;
@@ -900,7 +918,7 @@ function exportOptions() {
 	}
 }
 
-// Import options from file
+// Import options from text file
 //
 function importOptions() {
 	let file = getElement("importFile").files[0];
@@ -960,6 +978,36 @@ function importOptions() {
 
 		$("#tabs").tabs("option", "active", gNumSets);
 		$("#alertImportSuccess").dialog("open");
+	}
+}
+
+// Export options to JSON file
+//
+function exportOptionsJSON() {
+	let exportPasswords = getElement("exportPasswords").checked;
+
+	let options = compileExportOptions(exportPasswords);
+
+	// Convert options to JSON string
+	let json = JSON.stringify(options);
+
+	// Create blob and download it
+	let blob = new Blob([json], { type: "text/plain", endings: "native" });
+	let url = URL.createObjectURL(blob);
+	let downloadOptions = {
+		url: url,
+		filename: DEFAULT_JSON_FILE,
+		saveAs: true
+	};
+	browser.downloads.download(downloadOptions).then(onSuccess, onError);
+
+	function onSuccess() {
+		$("#alertExportSuccess").dialog("open");
+	}
+
+	function onError(error) {
+		warn("Cannot download options: " + error);
+		$("#alertExportError").dialog("open");
 	}
 }
 

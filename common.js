@@ -38,6 +38,7 @@ const PER_SET_OPTIONS = {
 	conjMode: { type: "boolean", def: false, id: "conjMode" },
 	days: { type: "array", def: [false, true, true, true, true, true, false], id: "day" },
 	blockURL: { type: "string", def: DEFAULT_BLOCK_URL, id: "blockURL" },
+	customMsg: { type: "string", def: "", id: "customMsg" },
 	incogMode: { type: "string", def: "0", id: "incogMode" },
 	applyFilter: { type: "boolean", def: false, id: "applyFilter" },
 	filterName: { type: "string", def: "grayscale", id: "filterName" },
@@ -49,6 +50,7 @@ const PER_SET_OPTIONS = {
 	showKeyword: { type: "boolean", def: true, id: "showKeyword" },
 	delayFirst: { type: "boolean", def: true, id: "delayFirst" },
 	delaySecs: { type: "string", def: "60", id: "delaySecs" },
+	delayAllowMins: { type: "string", def: "", id: "delayAllowMins" },
 	delayAutoLoad: { type: "boolean", def: true, id: "delayAutoLoad" },
 	delayCancel: { type: "boolean", def: true, id: "delayCancel" },
 	reloadSecs: { type: "string", def: "", id: "reloadSecs" },
@@ -103,6 +105,7 @@ const GENERAL_OPTIONS = {
 	clockTimeFormat: { type: "string", def: "0", id: "clockTimeFormat" }, // default: locale default
 	saveSecs: { type: "string", def: "10", id: "saveSecs" }, // default: every 10 seconds
 	clockOffset: { type: "string", def: "", id: "clockOffset" }, // default: no offset
+	ignoreJumpSecs: { type: "string", def: "", id: "ignoreJumpSecs" }, // default: do not ignore time jumps
 	allFocused: { type: "boolean", def: false, id: "allFocused" }, // default: disabled
 	processTabsSecs: { type: "string", def: "1", id: "processTabsSecs" }, // default: every second
 	processActiveTabs: { type: "boolean", def: false, id: "processActiveTabs" }, // default: disabled
