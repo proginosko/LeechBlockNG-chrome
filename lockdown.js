@@ -48,29 +48,17 @@ function refreshPage() {
 
 	$("#form").hide();
 
-	browser.storage.local.get("sync", onGotSync);
+	browser.storage.local.get("sync").then(onGotSync, onError);
 
 	function onGotSync(options) {
-		if (browser.runtime.lastError) {
-			warn("Cannot get options: " + browser.runtime.lastError.message);
-			$("#alertRetrieveError").dialog("open");
-			return;
-		}
-
 		gStorage = options["sync"]
 				? browser.storage.sync
 				: browser.storage.local;
 
-		gStorage.get(onGot);
+		gStorage.get().then(onGot, onError);
 	}
 
 	function onGot(options) {
-		if (browser.runtime.lastError) {
-			warn("Cannot get options: " + browser.runtime.lastError.message);
-			$("#alertRetrieveError").dialog("open");
-			return;
-		}
-
 		cleanOptions(options);
 
 		// Initialize form
@@ -104,6 +92,11 @@ function refreshPage() {
 		}
 
 		$("#form").show();
+	}
+
+	function onError(error) {
+		warn("Cannot get options: " + error);
+		$("#alertRetrieveError").dialog("open");
 	}
 }
 
@@ -153,11 +146,9 @@ function onActivate() {
 	for (let set = 1; set <= gNumSets; set++) {
 		options[`lockdown${set}`] = getElement(`blockSet${set}`).checked;
 	}
-	gStorage.set(options, function () {
-		if (browser.runtime.lastError) {
-			warn("Cannot set options: " + browser.runtime.lastError.message);
-		}
-	});
+	gStorage.set(options).catch(
+		function (error) { warn("Cannot set options: " + error); }
+	);
 
 	$("#form").hide({ effect: "fade", complete: closePage });
 }

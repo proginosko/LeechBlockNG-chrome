@@ -136,4 +136,4 @@ function reloadBlockedPage() {
 }
 
 // Request block info from extension
-browser.runtime.sendMessage({ type: "blocked" }, processBlockInfo);
+browser.runtime.sendMessage({ type: "blocked" }).then(processBlockInfo);

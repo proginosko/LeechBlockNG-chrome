@@ -9,25 +9,17 @@ const SUPPORT_URL = "https://www.proginosko.com/leechblock/support/";
 // Initialize page
 //
 function initializePage() {
-	browser.storage.local.get("sync", onGotSync);
+	browser.storage.local.get("sync").then(onGotSync);
 
 	function onGotSync(options) {
-		if (browser.runtime.lastError) {
-			return;
-		}
-
 		if (options["sync"]) {
-			browser.storage.sync.get("theme", onGot);
+			browser.storage.sync.get("theme").then(onGot);
 		} else {
-			browser.storage.local.get("theme", onGot);
+			browser.storage.local.get("theme").then(onGot);
 		}
 	}
 
 	function onGot(options) {
-		if (browser.runtime.lastError) {
-			return;
-		}
-
 		let theme = options["theme"];
 		let link = document.getElementById("themeLink");
 		if (link) {
@@ -66,7 +58,7 @@ function openStats() {
 function openExtensionPage(url) {
 	let fullURL = browser.runtime.getURL(url);
 
-	browser.tabs.query({ url: fullURL }, onGot);
+	browser.tabs.query({ url: fullURL }).then(onGot, onError);
 
 	function onGot(tabs) {
 		if (tabs.length > 0) {
@@ -74,6 +66,11 @@ function openExtensionPage(url) {
 		} else {
 			browser.tabs.create({ url: fullURL });
 		}
+		window.close();
+	}
+
+	function onError(error) {
+		browser.tabs.create({ url: fullURL });
 		window.close();
 	}
 }

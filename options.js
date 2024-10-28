@@ -423,14 +423,13 @@ function saveOptions(event) {
 	if (options["sync"]) {
 		// Set sync option in local storage and all options in sync storage
 		browser.storage.local.set({ sync: true });
-		browser.storage.sync.set(options, function () {
-			if (browser.runtime.lastError) {
-				warn("Cannot set options: " + browser.runtime.lastError.message);
-			} else {
+		browser.storage.sync.set(options).then(
+			function () {
 				browser.runtime.sendMessage(message);
 				$("#form").hide({ effect: "fade", complete: complete });
-			}
-		});
+			},
+			function (error) { warn("Cannot set options: " + error); }
+		);
 	} else {
 		// Export options to sync storage if selected
 		if (options["autoExportSync"] && !gIsAndroid) {
@@ -438,14 +437,13 @@ function saveOptions(event) {
 		}
 
 		// Set all options in local storage
-		browser.storage.local.set(options, function () {
-			if (browser.runtime.lastError) {
-				warn("Cannot set options: " + browser.runtime.lastError.message);
-			} else {
+		browser.storage.local.set(options).then(
+			function () {
 				browser.runtime.sendMessage(message);
 				$("#form").hide({ effect: "fade", complete: complete });
-			}
-		});
+			},
+			function (error) { warn("Cannot set options: " + error); }
+		);
 	}
 
 	return true;
@@ -463,31 +461,19 @@ function closeOptions() {
 function retrieveOptions() {
 	//log("retrieveOptions");
 
-	browser.storage.local.get("sync", onGotSync);
+	browser.storage.local.get("sync").then(onGotSync, onError);
 
 	function onGotSync(options) {
-		if (browser.runtime.lastError) {
-			warn("Cannot get options: " + browser.runtime.lastError.message);
-			$("#alertRetrieveError").dialog("open");
-			return;
-		}
-
 		if(options["sync"]) {
 			// Get all options from sync storage
-			browser.storage.sync.get(onGot);
+			browser.storage.sync.get().then(onGot, onError);
 		} else {
 			// Get all options from local storage
-			browser.storage.local.get(onGot);
+			browser.storage.local.get().then(onGot, onError);
 		}
 	}
 
 	function onGot(options) {
-		if (browser.runtime.lastError) {
-			warn("Cannot get options: " + browser.runtime.lastError.message);
-			$("#alertRetrieveError").dialog("open");
-			return;
-		}
-
 		cleanOptions(options);
 		cleanTimeData(options);
 
@@ -644,6 +630,11 @@ function retrieveOptions() {
 		updateMoveSetButtons();
 
 		confirmAccess(options);
+	}
+
+	function onError(error) {
+		warn("Cannot get options: " + error);
+		$("#alertRetrieveError").dialog("open");
 	}
 }
 
@@ -904,17 +895,16 @@ function exportOptions() {
 			filename: DEFAULT_OPTIONS_FILE,
 			saveAs: true
 		};
-		browser.downloads.download(downloadOptions, onDownloaded);
+		browser.downloads.download(downloadOptions).then(onSuccess, onError);
 	}
-	
-	function onDownloaded() {
-		if (browser.runtime.lastError) {
-			warn("Cannot download options: " + browser.runtime.lastError.message);
-			$("#alertExportError").dialog("open");
-			return;
-		}
 
+	function onSuccess() {
 		$("#alertExportSuccess").dialog("open");
+	}
+
+	function onError(error) {
+		warn("Cannot download options: " + error);
+		$("#alertExportError").dialog("open");
 	}
 }
 
@@ -1016,43 +1006,41 @@ function exportOptionsJSON() {
 function exportOptionsSync(event) {
 	let options = compileExportOptions(true);
 
-	browser.storage.sync.set(options, onExported);
+	browser.storage.sync.set(options).then(onSuccess, onError);
 
-	function onExported() {
-		if (browser.runtime.lastError) {
-			warn("Cannot export options to sync storage: " + browser.runtime.lastError.message);
-			if (event) {
-				$("#alertExportSyncError").dialog("open");
-			}
-			return;
-		}
-
+	function onSuccess() {
 		if (event) {
 			$("#alertExportSuccess").dialog("open");
 		}
 	}
+
+	function onError(error) {
+		warn("Cannot export options to sync storage: " + error);
+		if (event) {
+			$("#alertExportSyncError").dialog("open");
+		}
+	};
 }
 
 // Import options from sync storage
 //
 function importOptionsSync(event) {
-	browser.storage.sync.get(onImported);
+	browser.storage.sync.get().then(onGot, onError);
 
-	function onImported(options) {
-		if (browser.runtime.lastError) {
-			warn("Cannot import options from sync storage: " + browser.runtime.lastError.message);
-			if (event) {
-				$("#alertImportSyncError").dialog("open");
-			}
-			return;
-		}
-
+	function onGot(options) {
 		cleanOptions(options);
 		applyImportOptions(options);
 
 		if (event) {
 			$("#tabs").tabs("option", "active", gNumSets);
 			$("#alertImportSuccess").dialog("open");
+		}
+	}
+
+	function onError(error) {
+		warn("Cannot import options from sync storage: " + error);
+		if (event) {
+			$("#alertImportSyncError").dialog("open");
 		}
 	}
 }
@@ -1295,7 +1283,7 @@ function handleKeyDown(event) {
 
 /*** STARTUP CODE BEGINS HERE ***/
 
-browser.runtime.getPlatformInfo(
+browser.runtime.getPlatformInfo().then(
 	function (info) { gIsAndroid = (info.os == "android"); }
 );
 

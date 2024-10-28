@@ -188,29 +188,17 @@ function refreshTicker() {
 function retrieveOptions(update) {
 	//log("retrieveOptions: " + update);
 
-	browser.storage.local.get("sync", onGotSync);
+	browser.storage.local.get("sync").then(onGotSync, onError);
 
 	function onGotSync(options) {
-		if (browser.runtime.lastError) {
-			gGotOptions = false;
-			warn("Cannot get options: " + browser.runtime.lastError.message);
-			return;
-		}
-
 		gStorage = options["sync"]
 				? browser.storage.sync
 				: browser.storage.local;
 
-		gStorage.get(onGot);
+		gStorage.get().then(onGot, onError);
 	}
 
 	function onGot(options) {
-		if (browser.runtime.lastError) {
-			gGotOptions = false;
-			warn("Cannot get options: " + browser.runtime.lastError.message);
-			return;
-		}
-
 		// Copy retrieved options (exclude timedata if update)
 		for (let option in options) {
 			if (!update || !/^timedata/.test(option)) {
@@ -240,6 +228,11 @@ function retrieveOptions(update) {
 		for (let set = 1; set <= gNumSets; set++) {
 			gSavedTimeData[set] = gOptions[`timedata${set}`].toString();
 		}
+	}
+
+	function onError(error) {
+		gGotOptions = false;
+		warn("Cannot get options: " + error);
 	}
 }
 
@@ -292,11 +285,9 @@ function loadSiteLists() {
 			options[`allowRE${set}`] = regexps.allow;
 			options[`referRE${set}`] = regexps.refer;
 			options[`keywordRE${set}`] = regexps.keyword;
-			gStorage.set(options, function () {
-				if (browser.runtime.lastError) {
-					warn("Cannot set options: " + browser.runtime.lastError.message);
-				}
-			});
+			gStorage.set(options).catch(
+				function (error) { warn("Cannot set options: " + error); }
+			);
 		}
 	}
 }
@@ -321,11 +312,9 @@ function saveTimeData() {
 		}
 	}
 	if (touched) {
-		gStorage.set(options, function () {
-			if (browser.runtime.lastError) {
-				warn("Cannot save time data: " + browser.runtime.lastError.message);
-			}
-		});
+		gStorage.set(options).catch(
+			function (error) { warn("Cannot save time data: " + error); }
+		);
 	}
 }
 
@@ -386,13 +375,12 @@ function updateFocusedWindowId() {
 		return; // no support for windows!
 	}
 
-	browser.windows.getCurrent(
+	browser.windows.getCurrent().then(
 		function (win) {
-			if (browser.runtime.lastError) {
-				warn("Cannot get current window: " + browser.runtime.lastError.message);
-			} else {
-				gFocusWindowId = win.focused ? win.id : browser.windows.WINDOW_ID_NONE;
-			}
+			gFocusWindowId = win.focused ? win.id : browser.windows.WINDOW_ID_NONE;
+		},
+		function (error) {
+			warn("Cannot get current window: " + error);
 		}
 	);
 }
@@ -406,18 +394,13 @@ function processTabs(active) {
 
 	if (active) {
 		// Process only active tabs
-		browser.tabs.query({ active: true }, onGot);
+		browser.tabs.query({ active: true }).then(onGot, onError);
 	} else {
 		// Process all tabs
-		browser.tabs.query({}, onGot);
+		browser.tabs.query({}).then(onGot, onError);
 	}
 
 	function onGot(tabs) {
-		if (browser.runtime.lastError) {
-			warn("Cannot get tabs: " + browser.runtime.lastError.message);
-			return;
-		}
-
 		for (let tab of tabs) {
 			initTab(tab.id);
 
@@ -446,9 +429,13 @@ function processTabs(active) {
 			} else if (CLOCKABLE_URL.test(tab.url)) {
 				// Ping tab to see if content script has loaded
 				let message = { type: "ping" };
-				browser.tabs.sendMessage(tab.id, message);
+				browser.tabs.sendMessage(tab.id, message).catch(function (error) {});
 			}
 		}
+	}
+
+	function onError(error) {
+		warn("Cannot get tabs: " + error);
 	}
 }
 
@@ -699,7 +686,9 @@ function checkTab(id, isBeforeNav, isRepeat) {
 							type: "filter",
 							name: filterName
 						};
-						browser.tabs.sendMessage(id, message);
+						browser.tabs.sendMessage(id, message).catch(
+							function (error) {}
+						);
 					} else {
 						gTabs[id].keyword = keyword;
 						gTabs[id].url = blockURL; // prevent reload loop on Chrome
@@ -726,13 +715,14 @@ function checkTab(id, isBeforeNav, isRepeat) {
 						type: "keyword",
 						keywordRE: keywordRE
 					};
-					browser.tabs.sendMessage(id, message,
+					browser.tabs.sendMessage(id, message).then(
 						function (keyword) {
 							if ((!allowKeywords && typeof keyword == "string")
 									|| (allowKeywords && keyword == null)) {
 								applyBlock(keyword);
 							}
-						}
+						},
+						function (error) {}
 					);
 				} else {
 					applyBlock();
@@ -754,7 +744,9 @@ function checkTab(id, isBeforeNav, isRepeat) {
 					type: "filter",
 					name: null
 				};
-				browser.tabs.sendMessage(id, message);
+				browser.tabs.sendMessage(id, message).catch(
+					function (error) {}
+				);
 			}
 
 			// Update seconds left before block
@@ -806,11 +798,9 @@ function checkWarning(id) {
 				type: "alert",
 				text: text
 			};
-			browser.tabs.sendMessage(id, message, function () {
-				if (browser.runtime.lastError) {
-					gTabs[id].warned = false;
-				}
-			});
+			browser.tabs.sendMessage(id, message).catch(
+				function (error) { gTabs[id].warned = false; }
+			);
 		}
 	}
 }
@@ -998,7 +988,7 @@ function updateTimer(id) {
 	} else {
 		message.text = formatTime(secsLeft); // show timer with time left
 	}
-	browser.tabs.sendMessage(id, message);
+	browser.tabs.sendMessage(id, message).catch(function (error) {});
 
 	// Set tooltip
 	if (!gIsAndroid) {
@@ -1345,11 +1335,9 @@ function applyOverride(endTime) {
 	}
 
 	// Save updated options to storage
-	gStorage.set(options, function () {
-		if (browser.runtime.lastError) {
-			warn("Cannot set options: " + browser.runtime.lastError.message);
-		}
-	});
+	gStorage.set(options).catch(
+		function (error) { warn("Cannot set options: " + error); }
+	);
 
 	updateIcon();
 }
@@ -1398,7 +1386,7 @@ function discardRemainingTime() {
 function openExtensionPage(url) {
 	let fullURL = browser.runtime.getURL(url);
 
-	browser.tabs.query({ url: fullURL }, onGot);
+	browser.tabs.query({ url: fullURL }).then(onGot, onError);
 
 	function onGot(tabs) {
 		if (tabs.length > 0) {
@@ -1406,6 +1394,10 @@ function openExtensionPage(url) {
 		} else {
 			browser.tabs.create({ url: fullURL });
 		}
+	}
+
+	function onError(error) {
+		browser.tabs.create({ url: fullURL });
 	}
 }
 
@@ -1499,11 +1491,9 @@ function addSiteToSet(url, set, includePath) {
 		options[`allowRE${set}`] = regexps.allow;
 		options[`referRE${set}`] = regexps.refer;
 		options[`keywordRE${set}`] = regexps.keyword;
-		gStorage.set(options, function () {
-			if (browser.runtime.lastError) {
-				warn("Cannot set options: " + browser.runtime.lastError.message);
-			}
-		});
+		gStorage.set(options).catch(
+			function (error) { warn("Cannot set options: " + error); }
+		);
 	}	
 }
 
@@ -1549,11 +1539,9 @@ function addSitesToSet(siteList, set) {
 	options[`allowRE${set}`] = regexps.allow;
 	options[`referRE${set}`] = regexps.refer;
 	options[`keywordRE${set}`] = regexps.keyword;
-	gStorage.set(options, function () {
-		if (browser.runtime.lastError) {
-			warn("Cannot set options: " + browser.runtime.lastError.message);
-		}
-	});
+	gStorage.set(options).catch(
+		function (error) { warn("Cannot set options: " + error); }
+	);
 }
 
 /*** EVENT HANDLERS BEGIN HERE ***/
@@ -1811,7 +1799,7 @@ async function createTicker() {
 
 /*** STARTUP CODE BEGINS HERE ***/
 
-browser.runtime.getPlatformInfo(
+browser.runtime.getPlatformInfo().then(
 	function (info) { gIsAndroid = (info.os == "android"); }
 );
 

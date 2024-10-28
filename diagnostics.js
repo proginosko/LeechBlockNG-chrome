@@ -35,29 +35,17 @@ function initForm() {
 function initializePage() {
 	//log("initializePage");
 
-	browser.storage.local.get("sync", onGotSync);
+	browser.storage.local.get("sync").then(onGotSync, onError);
 
 	function onGotSync(options) {
-		if (browser.runtime.lastError) {
-			warn("Cannot get options: " + browser.runtime.lastError.message);
-			$("#alertRetrieveError").dialog("open");
-			return;
-		}
-
 		if (options["sync"]) {
-			browser.storage.sync.get(onGot);
+			browser.storage.sync.get().then(onGot, onError);
 		} else {
-			browser.storage.local.get(onGot);
+			browser.storage.local.get().then(onGot, onError);
 		}
 	}
 
 	function onGot(options) {
-		if (browser.runtime.lastError) {
-			warn("Cannot get options: " + browser.runtime.lastError.message);
-			$("#alertRetrieveError").dialog("open");
-			return;
-		}
-
 		gOptions = options;
 
 		cleanOptions(gOptions);
@@ -68,6 +56,11 @@ function initializePage() {
 		setTheme(gOptions["theme"]);
 
 		$("#form").show();
+	}
+
+	function onError(error) {
+		warn("Cannot get options: " + error);
+		$("#alertRetrieveError").dialog("open");
 	}
 }
 
