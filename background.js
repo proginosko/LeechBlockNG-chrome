@@ -31,6 +31,7 @@ var gFocusWindowId = 0;
 var gClockOffset = 0;
 var gIgnoreJumpSecs = 0;
 var gAllFocused = false;
+var gUseDocFocus = true;
 var gOverrideIcon = false;
 var gSaveSecsCount = 0;
 
@@ -49,6 +50,7 @@ function initTab(id) {
 			url: "about:blank",
 			incog: false,
 			audible: false,
+			focused: false,
 			loaded: false,
 			loadedTime: 0
 		};
@@ -217,6 +219,7 @@ function retrieveOptions(update) {
 		gClockOffset = +gOptions["clockOffset"];
 		gIgnoreJumpSecs = +gOptions["ignoreJumpSecs"];
 		gAllFocused = gOptions["allFocused"];
+		gUseDocFocus = gOptions["useDocFocus"];
 
 		createRegExps();
 		refreshMenus();
@@ -404,7 +407,8 @@ function processTabs(active) {
 		for (let tab of tabs) {
 			initTab(tab.id);
 
-			let focus = tab.active && (gAllFocused || !gFocusWindowId || tab.windowId == gFocusWindowId);
+			let focus = tab.active && (gAllFocused || !gFocusWindowId || tab.windowId == gFocusWindowId)
+					&& (!gIsAndroid || !gUseDocFocus || gTabs[tab.id].focused);
 
 			gTabs[tab.id].incog = tab.incognito;
 			gTabs[tab.id].audible = tab.audible;
@@ -1522,11 +1526,20 @@ function addSitesToSet(siteList, set) {
 	// Get sites for this set
 	let sites = gOptions[`sites${set}`];
 
-	// Add sites if not exceptions and not already included
+	// Get keyword info
+	let keywordRE = gOptions[`keywordRE${set}`];
+	let allowKeywords = gOptions[`allowKeywords${set}`];
+
+	// Add sites to list
 	let patterns = sites.split(/\s+/);
 	for (let site of siteList.split(/\s+/)) {
-		if (site.charAt(0) != "+" && patterns.indexOf(site) < 0) {
-			patterns.push(site);
+		let firstChar = site.charAt(0);
+		// Add item only if not exception and not already in list
+		if (firstChar != "+" && patterns.indexOf(site) < 0) {
+			// Add keywords only if keywords already there (and not as allow-condition)
+			if (firstChar != "~" || (keywordRE && !allowKeywords)) {
+				patterns.push(site);
+			}
 		}
 	}
 
@@ -1660,6 +1673,11 @@ function handleMessage(message, sender, sendResponse) {
 			discardRemainingTime();
 			break;
 
+		case "focus":
+			// Tab focus event received
+			gTabs[sender.tab.id].focused = message.focus;
+			break;
+
 		case "loaded":
 			// Register that content script has been loaded
 			gTabs[sender.tab.id].loaded = true;
@@ -1735,7 +1753,8 @@ function handleTabUpdated(tabId, changeInfo, tab) {
 		return;
 	}
 
-	let focus = tab.active && (gAllFocused || !gFocusWindowId || tab.windowId == gFocusWindowId);
+	let focus = tab.active && (gAllFocused || !gFocusWindowId || tab.windowId == gFocusWindowId)
+			&& (!gIsAndroid || !gUseDocFocus || gTabs[tab.id].focused);
 
 	gTabs[tab.id].incog = tab.incognito;
 	gTabs[tab.id].audible = tab.audible;
@@ -1764,6 +1783,8 @@ function handleTabActivated(activeInfo) {
 	gPrevActiveTabId = activeInfo.previousTabId;
 
 	initTab(tabId);
+
+	gTabs[tabId].focused = true;
 
 	if (!gGotOptions) {
 		return;
