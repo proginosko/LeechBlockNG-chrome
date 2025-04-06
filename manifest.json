@@ -84,11 +84,13 @@
 		"open_in_tab": true
 	},
 
+	"optional_permissions": [
+		"history"
+	],
+	
 	"permissions": [
 		"alarms",
 		"contextMenus",
-		"downloads",
-		"history",
 		"offscreen",
 		"storage",
 		"tabs",
@@ -96,6 +98,6 @@
 		"webNavigation"
 	],
 
-	"version": "1.6.8.2"
+	"version": "1.6.9"
 
 }
