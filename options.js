@@ -24,7 +24,7 @@ function unescape(str) { return str.replace(/\\n/g, "\n"); }
 
 var gIsAndroid = false;
 var gAccessConfirmed = false;
-var gAccessRequiredInput;
+var gAccessHashCode;
 var gFormHTML;
 var gNumSets, gNumSetsMin;
 var gSetDisabled;
@@ -91,9 +91,23 @@ function initForm(numSets) {
 			$(`#${name}${set}`).change(function (e) { updateSubOptions(set); });
 		}
 		$(`#allDay${set}`).click(function (e) { $(`#times${set}`).val(ALL_DAY_TIMES); });
-		$(`#defaultPage${set}`).click(function (e) { $(`#blockURL${set}`).val(DEFAULT_BLOCK_URL); });
-		$(`#delayingPage${set}`).click(function (e) { $(`#blockURL${set}`).val(DELAYED_BLOCK_URL); });
-		$(`#blankPage${set}`).click(function (e) { $(`#blockURL${set}`).val("about:blank"); });
+		$(`#blockURL${set}`).change(function (e) { updatePasswordPageOptions(set); });
+		$(`#defaultPage${set}`).click(function (e) {
+			$(`#blockURL${set}`).val(DEFAULT_BLOCK_URL);
+			updatePasswordPageOptions(set);
+		});
+		$(`#delayingPage${set}`).click(function (e) {
+			$(`#blockURL${set}`).val(DELAYED_BLOCK_URL);
+			updatePasswordPageOptions(set);
+		});
+		$(`#passwordPage${set}`).click(function (e) {
+			$(`#blockURL${set}`).val(PASSWORD_BLOCK_URL);
+			updatePasswordPageOptions(set);
+		});
+		$(`#blankPage${set}`).click(function (e) {
+			$(`#blockURL${set}`).val("about:blank");
+			updatePasswordPageOptions(set);
+		});
 		$(`#resetOpts${set}`).click(function (e) {
 			resetSetOptions(set);
 			$("#alertResetOptions").dialog("open");
@@ -206,6 +220,13 @@ function showSimplifiedOptions(simplify) {
 //
 function updateBlockSetName(set, name) {
 	getElement(`blockSetName${set}`).innerText = name ? name : `Block Set ${set}`;
+}
+
+// Update show/hide password page options
+//
+function updatePasswordPageOptions(set) {
+	let show = $(`#blockURL${set}`).val() == PASSWORD_BLOCK_URL;
+	$(`#passwordPageOpts${set}`).css("display", show ? "" : "none");
 }
 
 // Save options to local storage (returns true if success)
@@ -612,6 +633,9 @@ function retrieveOptions() {
 			// Apply custom set name to tab (if specified)
 			updateBlockSetName(set, options[`setName${set}`]);
 
+			// Update show/hide password page options
+			updatePasswordPageOptions(set);
+
 			// Update enabled/disabled state of sub-options
 			updateSubOptions(set);
 
@@ -658,7 +682,7 @@ function confirmAccess(options) {
 	let hpp = options["hpp"];
 
 	if (oa == 1 && password) {
-		gAccessRequiredInput = password;
+		gAccessHashCode = hashCode32(password);
 		if (hpp) {
 			$("#promptPasswordInput").attr("type", "password");
 		} else {
@@ -675,7 +699,7 @@ function confirmAccess(options) {
 		if (oa > 3) {
 			code += createAccessCode(64);
 		}
-		gAccessRequiredInput = code;
+		gAccessHashCode = hashCode32(code);
 		displayAccessCode(code, options["accessCodeImage"]);
 		$("#promptAccessCodeInput").val("");
 		$("#promptAccessCode").dialog("open");
@@ -839,6 +863,9 @@ function applyImportOptions(options) {
 
 		// Apply custom set name to tab (if specified)
 		updateBlockSetName(set, options[`setName${set}`]);
+
+		// Update show/hide password page options
+		updatePasswordPageOptions(set);
 
 		// Update enabled/disabled state of sub-options
 		updateSubOptions(set);
@@ -1107,6 +1134,9 @@ function resetSetOptions(set) {
 
 	// Update enabled/disabled state of sub-options
 	updateSubOptions(set);
+
+	// Update show/hide password page options
+	updatePasswordPageOptions(set);
 }
 
 // Disable (or re-enable) options for block set
@@ -1217,7 +1247,7 @@ function initAccessControlPrompt(prompt) {
 	let dialogButtons = {
 		OK: function () {
 			let input = $(`#${prompt}Input`);
-			if (input.val() == gAccessRequiredInput) {
+			if (hashCode32(input.val()) == gAccessHashCode) {
 				gAccessConfirmed = true;
 				$("#form").show({ effect: "fade" });
 				$(`#${prompt}`).dialog("close");

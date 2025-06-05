@@ -48,9 +48,14 @@
 	"content_scripts": [
 		{
 			"matches": ["<all_urls>"],
+			"exclude_matches": ["*://*/*lb-custom*"],
 			"css": ["content.css"],
 			"js": ["content.js"],
 			"run_at": "document_start"
+		},
+		{
+			"matches": ["*://*/*lb-custom*"],
+			"js": ["blocked.js"]
 		}
 	],
 
@@ -98,6 +103,6 @@
 		"webNavigation"
 	],
 
-	"version": "1.6.9"
+	"version": "1.7"
 
 }

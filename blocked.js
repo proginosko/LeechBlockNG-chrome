@@ -5,13 +5,27 @@
 const browser = chrome;
 
 var gBlockedURL;
+var gBlockedSet;
+var gHashCode;
 
-// Processes info for blocking/delaying page
+// Create 32-bit integer hash code from string
+//
+function hashCode32(str) {
+	let hash = 0;
+	for (let i = 0; i < str.length; i++) {
+		hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+	}
+	return hash;
+}
+
+// Processes info for blocking page
 //
 function processBlockInfo(info) {
 	if (!info) return;
 
 	gBlockedURL = info.blockedURL;
+	gBlockedSet = info.blockedSet;
+	gHashCode = info.password ? hashCode32(info.password) : 0;
 
 	// Set theme
 	let themeLink = document.getElementById("themeLink");
@@ -54,9 +68,17 @@ function processBlockInfo(info) {
 	if (keywordMatched && keywordMatch) {
 		if (info.keywordMatch) {
 			keywordMatch.innerText = info.keywordMatch;
+			keywordMatched.style.display = "";
 		} else {
 			keywordMatched.style.display = "none";
 		}
+	}
+
+	let passwordInput = document.getElementById("lbPasswordInput");
+	let passwordSubmit = document.getElementById("lbPasswordSubmit");
+	if (passwordInput && passwordSubmit) {
+		passwordInput.focus();
+		passwordSubmit.onclick = onSubmitPassword;
 	}
 
 	let customMsgDiv = document.getElementById("lbCustomMsgDiv");
@@ -64,6 +86,7 @@ function processBlockInfo(info) {
 	if (customMsgDiv && customMsg) {
 		if (info.customMsg) {
 			customMsg.innerText = info.customMsg;
+			customMsgDiv.style.display = "";
 		} else {
 			customMsgDiv.style.display = "none";
 		}
@@ -80,8 +103,6 @@ function processBlockInfo(info) {
 
 		// Start countdown timer
 		let countdown = {
-			blockedURL: info.blockedURL,
-			blockedSet: info.blockedSet,
 			delaySecs: info.delaySecs,
 			delayCancel: info.delayCancel
 		};
@@ -126,10 +147,30 @@ function onCountdownTimer(countdown) {
 		// Notify extension that delay countdown has completed
 		let message = {
 			type: "delayed",
-			blockedURL: countdown.blockedURL,
-			blockedSet: countdown.blockedSet
+			blockedURL: gBlockedURL,
+			blockedSet: gBlockedSet
 		};
 		browser.runtime.sendMessage(message);
+	}
+}
+
+// Handle submit button on password page
+//
+function onSubmitPassword() {
+	let passwordInput = document.getElementById("lbPasswordInput");
+	if (hashCode32(passwordInput.value) == gHashCode) {
+		// Notify extension that password was successfully entered
+		let message = {
+			type: "password",
+			blockedURL: gBlockedURL,
+			blockedSet: gBlockedSet
+		};
+		browser.runtime.sendMessage(message);
+	} else {
+		// Clear input field and flash background
+		passwordInput.value = "";
+		passwordInput.classList.add("error");
+		window.setTimeout(() => { passwordInput.classList.remove("error"); }, 400);
 	}
 }
 
