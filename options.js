@@ -1428,42 +1428,66 @@ function initializePage() {
   }
 
   function initializeAiFeatures() {
+	console.log("[LBNG AI] initializeAiFeatures() called");
 	
-	// Use event delegation on the form (which doesn't get replaced)
+	// Use event delegation on the form
 	const form = document.getElementById("form");
 	if (!form) {
 	  console.error("[LBNG AI] Form not found!");
 	  return;
 	}
   
-	// Simple duration parser
-	function parseDuration(text) {
-	  let minutes = 0;
-	  const hourMatch = text.match(/(\d+\.?\d*)\s*(hr|hour)/i);
-	  const minMatch = text.match(/(\d+)\s*(min|minute)/i);
-	  if (hourMatch) minutes += parseFloat(hourMatch[1]) * 60;
-	  if (minMatch) minutes += parseInt(minMatch[1], 10);
-	  return Math.round(minutes);
-	}
+	console.log("[LBNG AI] Attaching delegated click listener to form...");
   
 	// Event delegation: listen on parent, filter for button
 	form.addEventListener("click", (event) => {
 	  if (event.target.id === "aiSetPlanButton") {
 		event.preventDefault();
+		console.log("[LBNG AI] ✅✅✅ BUTTON CLICKED VIA DELEGATION! ✅✅✅");
 		
 		const userPlanInput = document.getElementById("aiUserPlan");
+		const durationInput = document.getElementById("aiDuration");
+		const durationUnitSelect = document.getElementById("aiDurationUnit");
 		const aiPlannerStatus = document.getElementById("aiPlannerStatus");
 		
-		if (!userPlanInput) {
-		  console.error("[LBNG AI] Input not found!");
+		if (!userPlanInput || !durationInput || !durationUnitSelect) {
+		  console.error("[LBNG AI] Required inputs not found!");
 		  return;
 		}
 		
-		const userPlan = userPlanInput.value.trim();
-		const durationMinutes = parseDuration(userPlan);
+		const userGoal = userPlanInput.value.trim();
+		const durationValue = parseInt(durationInput.value, 10);
+		const durationUnit = durationUnitSelect.value;
+		
+		// Convert to minutes
+		let durationMinutes = durationValue;
+		if (durationUnit === "hours") {
+		  durationMinutes = durationValue * 60;
+		}
   
-		if (!userPlan || durationMinutes <= 0) {
-		  alert("Please enter a clear goal and duration (e.g., 'code for 1 hour').");
+		console.log("[LBNG AI] User input:", { 
+		  userGoal, 
+		  durationValue, 
+		  durationUnit, 
+		  durationMinutes 
+		});
+  
+		// Validation
+		if (!userGoal) {
+		  alert("Please enter what you want to focus on (e.g., 'coding my project').");
+		  userPlanInput.focus();
+		  return;
+		}
+  
+		if (!durationValue || durationValue < 1) {
+		  alert("Please enter a valid duration (at least 1 minute).");
+		  durationInput.focus();
+		  return;
+		}
+  
+		if (durationMinutes > 480) { // Max 8 hours
+		  alert("Maximum focus session is 8 hours. Please enter a shorter duration.");
+		  durationInput.focus();
 		  return;
 		}
   
@@ -1473,9 +1497,17 @@ function initializePage() {
 		}
 		event.target.disabled = true;
   
+		console.log("[LBNG AI] Sending message to background script...");
+  
 		chrome.runtime.sendMessage(
-		  { type: "startAiLockdown", goal: userPlan, duration: durationMinutes },
+		  { 
+			type: "startAiLockdown", 
+			goal: userGoal, 
+			duration: durationMinutes 
+		  },
 		  (response) => {
+			console.log("[LBNG AI] Response received:", response);
+			
 			if (chrome.runtime.lastError) {
 			  console.error("[LBNG AI] Runtime error:", chrome.runtime.lastError);
 			  if (aiPlannerStatus) {
@@ -1487,9 +1519,13 @@ function initializePage() {
 			
 			if (response && response.success) {
 			  if (aiPlannerStatus) {
-				aiPlannerStatus.textContent = "✅ Focus session started! Get to work!";
+				const formattedDuration = durationUnit === "hours" 
+				  ? `${durationValue} ${durationValue === 1 ? 'hour' : 'hours'}`
+				  : `${durationMinutes} ${durationMinutes === 1 ? 'minute' : 'minutes'}`;
+				
+				aiPlannerStatus.textContent = `✅ Focus session started for ${formattedDuration}! Get to work!`;
 			  }
-			  setTimeout(() => window.location.reload(), 1500);
+			  setTimeout(() => window.location.reload(), 2000);
 			} else {
 			  if (aiPlannerStatus) {
 				aiPlannerStatus.textContent = `❌ Error: ${
@@ -1502,6 +1538,9 @@ function initializePage() {
 		);
 	  }
 	});
+  
+	console.log("[LBNG AI] ✅ Delegated click listener attached successfully");
+  
 	// Function to display current lockdown status
 	function checkStatus() {
 	  const aiActiveLockdownStatus = document.getElementById("aiActiveLockdownStatus");
@@ -1515,7 +1554,20 @@ function initializePage() {
 			data.aiLockdownEndTime > Date.now()
 		  ) {
 			const timeLeft = Math.round((data.aiLockdownEndTime - Date.now()) / 60000);
-			aiActiveLockdownStatus.innerHTML = `<strong>Active Focus Session:</strong> ${data.aiLockdownGoal}<br><em>About ${timeLeft} minutes remaining.</em>`;
+			const hours = Math.floor(timeLeft / 60);
+			const minutes = timeLeft % 60;
+			
+			let timeString;
+			if (hours > 0) {
+			  timeString = `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+			  if (minutes > 0) {
+				timeString += ` and ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`;
+			  }
+			} else {
+			  timeString = `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`;
+			}
+			
+			aiActiveLockdownStatus.innerHTML = `<strong>🎯 Active Focus Session:</strong> ${data.aiLockdownGoal}<br><em>About ${timeString} remaining.</em>`;
 		  } else {
 			aiActiveLockdownStatus.textContent = "No active focus session.";
 		  }

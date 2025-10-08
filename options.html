@@ -360,14 +360,30 @@
 					<div id="paneGeneral">
 						<fieldset>
 							<legend>AI Dynamic Focus Planner</legend>
-							<p>Tell the AI your goal and for how long. It will start a dynamic lockdown to keep you on task.</p>
-							<p><em>Examples: "code on my project for 2 hours", "write my history essay for 90 minutes"</em></p>
+							<p>Tell the AI your goal, and it will create a smart blocklist to keep you focused.</p>
+							
 							<p>
-								<input type="text" id="aiUserPlan" size="60" placeholder="Enter your goal and duration...">
+								<label for="aiUserPlan">What do you want to focus on?</label>
+							</p>
+							<p>
+								<input type="text" id="aiUserPlan" size="60" placeholder="Example: coding my project, writing an essay, studying for exam">
+							</p>
+							
+							<p>
+								<label for="aiDuration">How long do you want to focus?</label>
+							</p>
+							<p>
+								<input type="number" id="aiDuration" min="1" max="480" value="60" style="width: 4em;"> 
+								<select id="aiDurationUnit">
+									<option value="minutes" selected>minutes</option>
+									<option value="hours">hours</option>
+								</select>
+								
 								<button id="aiSetPlanButton" type="button">Start Focus Session</button>
 							</p>
+							
 							<p id="aiPlannerStatus" style="display:none; color: green;"></p>
-							<p id="aiActiveLockdownStatus"></p> <!-- To show current lockdown status -->
+							<p id="aiActiveLockdownStatus"></p>
 						</fieldset>
 		
 						<fieldset>
