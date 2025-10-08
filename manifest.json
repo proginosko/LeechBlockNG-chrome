@@ -8,14 +8,13 @@
       "64": "icons/leechblock64.png"
     },
     "default_popup": "popup.html",
-    "default_title": "LeechBlock"
+    "default_title": "AI Block"
   },
 
   "author": "James Anderson",
 
   "background": {
-    "service_worker": "background.js",
-	"type": "module"
+    "service_worker": "background.js"
   },
 
   "commands": {

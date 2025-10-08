@@ -1325,59 +1325,81 @@ window.addEventListener("DOMContentLoaded", retrieveOptions);
 
 window.addEventListener("keydown", handleKeyDown);
 
+/**
+ * Sends a message to the background script to get AI suggestions.
+ * @param {string} plan - The user's input plan.
+ * @returns {Promise<string[]>} - A promise that resolves to an array of websites.
+ */
+function requestAiSuggestions(plan) {
+    return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({ type: 'getAiSuggestions', plan: plan }, (response) => {
+            if (chrome.runtime.lastError) {
+                // Handle errors like the background script being unavailable
+                return reject(chrome.runtime.lastError);
+            }
+            if (response && response.success) {
+                resolve(response.websites);
+            } else {
+                // Handle errors reported by the background script
+                reject(new Error(response.error || "Failed to get AI suggestions."));
+            }
+        });
+    });
+}
 
-document.addEventListener('DOMContentLoaded', () => {
-    // ... other existing options.js code ...
+window.addEventListener("DOMContentLoaded", () => {
+    // We must wait for the main retrieveOptions() to finish before we can add our listeners
+    // to elements that might not exist yet. Using a small timeout is a simple way to do this.
+    setTimeout(() => {
+        const setPlanButton = document.getElementById('aiSetPlanButton'); // Make sure your button has this ID in options.html
+        const userPlanInput = document.getElementById('aiUserPlan');     // And your input has this ID
+        const aiPlannerStatus = document.getElementById('aiPlannerStatus');
 
-    const setPlanButton = document.getElementById('setPlanButton');
-    const userPlanInput = document.getElementById('userPlan');
-    const aiPlannerStatus = document.getElementById('aiPlannerStatus'); // Get the new status element
-
-    setPlanButton.addEventListener('click', async () => {
-        const userPlan = userPlanInput.value;
-        if (!userPlan) {
-            alert("Please enter a plan first.");
+        if (!setPlanButton) {
+            console.warn("AI Planner button not found. Ensure it has id='aiSetPlanButton'");
             return;
         }
 
-        // 1. Show loading state and disable the button
-        aiPlannerStatus.style.display = 'block';
-        setPlanButton.disabled = true;
-        setPlanButton.textContent = 'Generating...';
-
-        try {
-            const websitesToBlock = await getBlockingRules(userPlan);
-
-            if (websitesToBlock && websitesToBlock.length > 0) {
-                chrome.storage.local.get('settings', (data) => {
-                    let settings = data.settings || {};
-
-                    // **THE FIX:** Safely create the block list if it doesn't exist
-                    if (!settings.blockSets) {
-                        settings.blockSets = [];
-                    }
-                    if (!settings.blockSets[0]) {
-                        settings.blockSets[0] = { sites: '' };
-                    }
-
-                    // Add the AI-generated sites to the first block set
-                    settings.blockSets[0].sites = websitesToBlock.join('\n');
-                    
-                    chrome.storage.local.set({ settings }, () => {
-                        alert('✅ Your plan is set! Distracting websites have been added to Block Set 1.');
-                    });
-                });
-            } else {
-                alert("🤔 The AI couldn't determine which websites to block. Please try rephrasing your plan.");
+        setPlanButton.addEventListener('click', async () => {
+            const userPlan = userPlanInput.value;
+            if (!userPlan) {
+                $("#alertNoPlan").dialog("open"); // Using LeechBlock's existing alert system
+                return;
             }
-        } catch (error) {
-            console.error("Failed to get blocking rules from AI:", error);
-            alert("❌ An error occurred while generating the plan. Please check the console for details.");
-        } finally {
-            // 2. Hide loading state and re-enable the button
-            aiPlannerStatus.style.display = 'none';
-            setPlanButton.disabled = false;
-            setPlanButton.textContent = 'Set Plan';
-        }
-    });
+
+            // 1. Show loading state
+            aiPlannerStatus.textContent = 'Generating suggestions...';
+            aiPlannerStatus.style.display = 'block';
+            setPlanButton.disabled = true;
+
+            try {
+                const newWebsites = await requestAiSuggestions(userPlan);
+
+                if (newWebsites && newWebsites.length > 0) {
+                    // THE CORRECT WAY: Update the UI, don't write to storage directly.
+                    
+                    // a. Get the existing sites from the textarea for Block Set 1
+                    const sitesTextArea = $('#sites1');
+                    const existingSites = sitesTextArea.val().split(/[\s\n]+/).filter(Boolean);
+
+                    // b. Combine old and new sites, removing duplicates
+                    const combinedSites = [...new Set([...existingSites, ...newWebsites])];
+
+                    // c. Update the textarea with the new, combined list
+                    sitesTextArea.val(combinedSites.join('\n'));
+
+                    aiPlannerStatus.textContent = '✅ Success! Sites added to the list for Block Set 1. Click "Save Options" to apply.';
+                    
+                } else {
+                    aiPlannerStatus.textContent = "🤔 The AI couldn't find any sites to suggest. Try rephrasing your plan.";
+                }
+            } catch (error) {
+                console.error("Failed to get blocking rules from AI:", error);
+                aiPlannerStatus.textContent = "❌ An error occurred. Check the Service Worker console for details.";
+            } finally {
+                // 2. Re-enable the button (but leave the status message)
+                setPlanButton.disabled = false;
+            }
+        });
+    }, 500); // 500ms delay to ensure the main script has initialized the form.
 });

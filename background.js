@@ -1659,6 +1659,17 @@ function handleMessage(message, sender, sendResponse) {
 
 	switch (message.type) {
 
+		case "getAiSuggestions":
+            getBlockingRules(message.plan)
+                .then(websites => {
+                    sendResponse({ success: true, websites: websites });
+					console.log("getBlockingRules: " + websites);
+                })
+                .catch(error => {
+                    console.error("Error in getBlockingRulesFromPlan:", error);
+                    sendResponse({ success: false, error: error.message });
+                });
+            return true; // IMPORTANT: Required for async sendResponse.
 		case "add-sites":
 			// Add sites to block set
 			addSitesToSet(message.sites, message.set);
@@ -1767,10 +1778,38 @@ function handleTabCreated(tab) {
 	}
 }
 
-function handleTabUpdated(tabId, changeInfo, tab) {
+async function handleTabUpdated(tabId, changeInfo, tab) {
 	//log("handleTabUpdated: " + tabId);
 
 	initTab(tabId);
+
+	// =================================================================
+	// START: NEW AI CLASSIFICATION LOGIC
+	// We run this check only when the page has finished loading.
+	if (gGotOptions && changeInfo.status === 'complete' && tab.url && CLOCKABLE_URL.test(tab.url)) {
+		const isDistraction = await classifyUrl(tab.url);
+
+		if (isDistraction) {
+			const aiBlockSet = gOptions['aiBlockSet'] || 1; // Default to Block Set 1 if not configured
+			log(`AI classified ${tab.url} as a distraction. Blocking with Set ${aiBlockSet}.`);
+			
+			// Construct the correct blocking URL, mimicking the logic in checkTab()
+			let pageURLWithHash = getParsedURL(tab.url).pageWithHash;
+			let blockURL = gOptions[`blockURL${aiBlockSet}`];
+			blockURL = getLocalizedURL(blockURL)
+					.replace(/\$K/g, "AI") // Use "AI" as the keyword
+					.replace(/\$S/g, aiBlockSet)
+					.replace(/\$U/g, pageURLWithHash);
+			
+			// Redirect the tab to our block page
+			browser.tabs.update(tabId, { url: blockURL });
+			
+			// Stop further processing for this update, since we've blocked it.
+			return; 
+		}
+	}
+	// END: NEW AI CLASSIFICATION LOGIC
+	// =================================================================
 
 	if (!gGotOptions) {
 		return;
@@ -1789,7 +1828,7 @@ function handleTabUpdated(tabId, changeInfo, tab) {
 	if (changeInfo.status && changeInfo.status == "complete") {
 		clockPageTime(tab.id, true, focus);
 
-		// Check tab to see if page should be blocked
+		// Check tab to see if page should be blocked by conventional rules
 		let blocked = checkTab(tab.id, false, false);
 
 		if (!blocked && tab.active) {
@@ -1943,20 +1982,4 @@ for (let alarm = 1; alarm <= 6; alarm++) {
 	browser.alarms.create(`Alarm${alarm}`, alarmInfo);
 }
 browser.alarms.onAlarm.addListener(onAlarm);
-
-
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-    if (changeInfo.status === 'complete' && tab.url) {
-        const isDistraction = await classifyUrl(tab.url);
-        if (isDistraction) {
-            // Here you would trigger the LeechBlockNG blocking page.
-            // For now, let's just log it to the console.
-            console.log(`AI classified ${tab.url} as a distraction.`);
-
-            // To actually block the site, you would need to redirect the user
-            // to the blocked.html page provided by LeechBlockNG.
-            chrome.tabs.update(tabId, { url: 'blocked.html' });
-        }
-    }
-});
   
