@@ -132,7 +132,7 @@ Respond with ONLY one word: "ALLOW" or "BLOCK"
 
 Answer:`;
 
-  const model = "gemini-2.5-flash"; // ✅ UPDATED MODEL
+  const model = "gemini-2.5-flash"; // UPDATED MODEL
   const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   
   console.log(`[LBNG AI Services] Using API endpoint: ${API_URL}`);
@@ -214,7 +214,7 @@ Answer:`;
     const decision = text.trim().toUpperCase();
     const isAllowed = decision.includes("ALLOW");
 
-    console.log("[LBNG AI Services] ✅ YouTube analysis result:", {
+    console.log("[LBNG AI Services] YouTube analysis result:", {
       title,
       goal: userGoal,
       rawResponse: text,

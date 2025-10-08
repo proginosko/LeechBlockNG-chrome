@@ -1,14 +1,15 @@
-// youtube-content.js - UPDATED VERSION
 
 console.log("[LBNG YouTube] Content script loaded");
 
 let analysisInProgress = false;
 let overlayElement = null;
 let currentVideoId = null;
+let blockPending = false;
+let lastExtractedTitle = ""; //
+// ... (keep all the overlay functions the same) ...
 
-// Create and show loading overlay IMMEDIATELY
 function showLoadingOverlay(immediate = false) {
-    if (overlayElement) return; // Already showing
+    if (overlayElement) return;
 
     overlayElement = document.createElement('div');
     overlayElement.id = 'lbng-youtube-overlay';
@@ -75,7 +76,6 @@ function showLoadingOverlay(immediate = false) {
     console.log("[LBNG YouTube] Overlay shown");
 }
 
-// Remove loading overlay
 function hideLoadingOverlay() {
     if (overlayElement) {
         overlayElement.remove();
@@ -84,7 +84,6 @@ function hideLoadingOverlay() {
     }
 }
 
-// Update overlay with goal text
 function updateOverlayGoal(goal) {
     const goalText = document.getElementById('lbng-goal-text');
     if (goalText && goal) {
@@ -92,13 +91,11 @@ function updateOverlayGoal(goal) {
     }
 }
 
-// Extract video ID from URL
 function getVideoIdFromUrl(url) {
     const urlParams = new URLSearchParams(new URL(url).search);
     return urlParams.get('v');
 }
 
-// Extract video information from the page
 function extractVideoInfo() {
     const videoId = getVideoIdFromUrl(window.location.href);
     
@@ -110,7 +107,6 @@ function extractVideoInfo() {
     let channelName = '';
     let description = '';
 
-    // Try multiple selectors for title
     const titleSelectors = [
         'meta[name="title"]',
         'h1.ytd-watch-metadata yt-formatted-string',
@@ -126,7 +122,6 @@ function extractVideoInfo() {
         }
     }
 
-    // Try multiple selectors for channel
     const channelSelectors = [
         'ytd-channel-name a',
         'ytd-video-owner-renderer ytd-channel-name a',
@@ -142,7 +137,6 @@ function extractVideoInfo() {
         }
     }
 
-    // Get description from meta tag
     const descElement = document.querySelector('meta[name="description"]');
     if (descElement) {
         description = descElement.getAttribute('content') || '';
@@ -157,7 +151,7 @@ function extractVideoInfo() {
     };
 }
 
-// Main analysis function
+// FIXED: Better metadata change detection
 async function analyzeCurrentVideo() {
     if (analysisInProgress) {
         console.log("[LBNG YouTube] Analysis already in progress");
@@ -170,34 +164,62 @@ async function analyzeCurrentVideo() {
         return;
     }
     
-    if (videoId === currentVideoId) {
+    if (videoId === currentVideoId && !blockPending) {
         console.log("[LBNG YouTube] Same video, skipping re-analysis");
         return;
     }
     
     currentVideoId = videoId;
     analysisInProgress = true;
+    blockPending = false;
     
     console.log("[LBNG YouTube] Starting analysis for video:", videoId);
 
     showLoadingOverlay(true);
 
-    // ✅ IMPROVED: Wait longer and retry if needed
+    // IMPROVED: Wait for metadata to actually change
     let videoInfo = null;
     let attempts = 0;
-    const maxAttempts = 4; // Try up to 4 times
+    const maxAttempts = 6; // Increased from 4 to 6
     
     while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, attempts === 0 ? 500 : 1000));
+        // Longer initial delay for YouTube's SPA to settle
+        const delay = attempts === 0 ? 800 : 600;
+        await new Promise(resolve => setTimeout(resolve, delay));
         
         videoInfo = extractVideoInfo();
         
         if (videoInfo && videoInfo.title && videoInfo.title.trim().length > 0) {
-            console.log("[LBNG YouTube] ✅ Got video metadata on attempt", attempts + 1);
-            break; // Got title, proceed
+            // CHECK: Has the title actually changed from the last video?
+            if (videoInfo.title !== lastExtractedTitle || attempts === 0) {
+                console.log("[LBNG YouTube] ✅ Got NEW video metadata on attempt", attempts + 1);
+                console.log("[LBNG YouTube] Title:", videoInfo.title);
+                lastExtractedTitle = videoInfo.title;
+                
+                // VERIFY: Wait a bit more and check if title is stable
+                if (attempts < 2) {
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    const recheck = extractVideoInfo();
+                    if (recheck && recheck.title === videoInfo.title) {
+                        console.log("[LBNG YouTube] ✅ Title verified stable");
+                        break; // Title is stable, proceed
+                    } else {
+                        console.log("[LBNG YouTube] ⚠️ Title changed during verification, waiting...");
+                        attempts++;
+                        continue;
+                    }
+                } else {
+                    break; // After 2 attempts, trust the title
+                }
+            } else {
+                console.log("[LBNG YouTube] ⏳ Title unchanged from previous video, waiting... attempt", attempts + 1);
+                console.log("[LBNG YouTube] Current:", videoInfo.title);
+                console.log("[LBNG YouTube] Previous:", lastExtractedTitle);
+            }
+        } else {
+            console.log("[LBNG YouTube] ⏳ No title yet... attempt", attempts + 1);
         }
         
-        console.log("[LBNG YouTube] ⏳ Waiting for metadata... attempt", attempts + 1);
         attempts++;
     }
 
@@ -208,7 +230,6 @@ async function analyzeCurrentVideo() {
         return;
     }
 
-    // ✅ If still no title after all attempts, allow but don't cache
     if (!videoInfo.title || videoInfo.title.trim().length === 0) {
         console.log("[LBNG YouTube] No title available after", maxAttempts, "attempts, allowing");
         hideLoadingOverlay();
@@ -216,9 +237,14 @@ async function analyzeCurrentVideo() {
         return;
     }
 
-    console.log("[LBNG YouTube] Video info extracted:", videoInfo);
+    // FINAL CHECK: If title still matches previous video, something is wrong
+    if (attempts >= maxAttempts && videoInfo.title === lastExtractedTitle && lastExtractedTitle !== "") {
+        console.warn("[LBNG YouTube] ⚠️ Title never changed from previous video - YouTube metadata may be stuck");
+        console.warn("[LBNG YouTube] Proceeding anyway, but result may be inaccurate");
+    }
 
-    // Send to background for analysis
+    console.log("[LBNG YouTube] Final video info:", videoInfo);
+
     try {
         const response = await chrome.runtime.sendMessage({
             type: 'analyzeYouTubeContent',
@@ -229,8 +255,10 @@ async function analyzeCurrentVideo() {
 
         if (response && response.shouldBlock) {
             console.log("[LBNG YouTube] ❌ Content blocked:", response.reason);
+            
+            blockPending = true;
             const blockURL = response.blockURL || chrome.runtime.getURL('blocked.html');
-            window.location.href = blockURL;
+            window.location.replace(blockURL);
         } else {
             console.log("[LBNG YouTube] ✅ Content allowed:", response?.reason);
             hideLoadingOverlay();
@@ -242,7 +270,7 @@ async function analyzeCurrentVideo() {
 
     analysisInProgress = false;
 }
-// Detect video page IMMEDIATELY
+
 function isVideoPage() {
     return window.location.pathname === '/watch' && window.location.search.includes('v=');
 }
@@ -250,38 +278,64 @@ function isVideoPage() {
 // Check on script load
 if (isVideoPage()) {
     console.log("[LBNG YouTube] Video page detected on load");
-    // Show overlay IMMEDIATELY, even before page loads
     showLoadingOverlay(true);
-    // Start analysis
     analyzeCurrentVideo();
 }
 
-// Listen for URL changes (YouTube is a SPA)
+// IMPROVED: Better SPA navigation detection
 let lastUrl = location.href;
-new MutationObserver(() => {
+const urlObserver = new MutationObserver(() => {
     const currentUrl = location.href;
     if (currentUrl !== lastUrl) {
+        console.log("[LBNG YouTube] URL changed:", lastUrl, "→", currentUrl);
         lastUrl = currentUrl;
-        console.log("[LBNG YouTube] URL changed to:", currentUrl);
         
         // Reset state
         analysisInProgress = false;
         currentVideoId = null;
+        blockPending = false;
+        // DON'T reset lastExtractedTitle - we need it for comparison!
         hideLoadingOverlay();
         
-        // Check if new URL is a watch page
         if (isVideoPage()) {
-            // Show overlay immediately for new video
-            showLoadingOverlay(true);
-            analyzeCurrentVideo();
+            console.log("[LBNG YouTube] New video page detected, analyzing...");
+            // Longer delay for YouTube's SPA to settle
+            setTimeout(() => {
+                showLoadingOverlay(true);
+                analyzeCurrentVideo();
+            }, 200);
+        } else {
+            // Not a video page, reset title tracking
+            lastExtractedTitle = "";
         }
     }
-}).observe(document, { subtree: true, childList: true });
+});
 
-// Listen for messages from background
+urlObserver.observe(document, { subtree: true, childList: true });
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'updateOverlayGoal') {
         updateOverlayGoal(message.goal);
         sendResponse({ success: true });
     }
+});
+
+window.addEventListener('popstate', () => {
+    console.log("[LBNG YouTube] Popstate event - checking URL");
+    setTimeout(() => {
+        if (location.href !== lastUrl) {
+            lastUrl = location.href;
+            analysisInProgress = false;
+            currentVideoId = null;
+            blockPending = false;
+            hideLoadingOverlay();
+            
+            if (isVideoPage()) {
+                showLoadingOverlay(true);
+                analyzeCurrentVideo();
+            } else {
+                lastExtractedTitle = "";
+            }
+        }
+    }, 200);
 });
