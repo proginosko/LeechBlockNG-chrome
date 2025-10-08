@@ -48,7 +48,7 @@ async function classifyUrlForGoal(url, userGoal) {
       return false;
   }
 
-  const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+  const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
   const prompt = `A user is trying to focus on the goal: "${userGoal}". Is visiting the website at the URL "${url}" a distraction from this specific goal? Answer with only a single word: "Yes" or "No".`;
 
   try {
