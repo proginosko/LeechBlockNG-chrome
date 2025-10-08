@@ -170,7 +170,6 @@ async function analyzeCurrentVideo() {
         return;
     }
     
-    // If same video, don't re-analyze
     if (videoId === currentVideoId) {
         console.log("[LBNG YouTube] Same video, skipping re-analysis");
         return;
@@ -181,24 +180,37 @@ async function analyzeCurrentVideo() {
     
     console.log("[LBNG YouTube] Starting analysis for video:", videoId);
 
-    // SHOW OVERLAY IMMEDIATELY - don't wait
     showLoadingOverlay(true);
 
-    // Give page a moment to load metadata
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // Extract video info
-    let videoInfo = extractVideoInfo();
+    // ✅ IMPROVED: Wait longer and retry if needed
+    let videoInfo = null;
+    let attempts = 0;
+    const maxAttempts = 4; // Try up to 4 times
     
-    // If title not available yet, wait a bit more
-    if (!videoInfo || !videoInfo.title) {
-        console.log("[LBNG YouTube] Waiting for video metadata to load...");
-        await new Promise(resolve => setTimeout(resolve, 1500));
+    while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, attempts === 0 ? 500 : 1000));
+        
         videoInfo = extractVideoInfo();
+        
+        if (videoInfo && videoInfo.title && videoInfo.title.trim().length > 0) {
+            console.log("[LBNG YouTube] ✅ Got video metadata on attempt", attempts + 1);
+            break; // Got title, proceed
+        }
+        
+        console.log("[LBNG YouTube] ⏳ Waiting for metadata... attempt", attempts + 1);
+        attempts++;
     }
 
     if (!videoInfo || !videoInfo.videoId) {
         console.log("[LBNG YouTube] Could not extract video info, allowing by default");
+        hideLoadingOverlay();
+        analysisInProgress = false;
+        return;
+    }
+
+    // ✅ If still no title after all attempts, allow but don't cache
+    if (!videoInfo.title || videoInfo.title.trim().length === 0) {
+        console.log("[LBNG YouTube] No title available after", maxAttempts, "attempts, allowing");
         hideLoadingOverlay();
         analysisInProgress = false;
         return;
@@ -216,26 +228,20 @@ async function analyzeCurrentVideo() {
         console.log("[LBNG YouTube] Analysis response:", response);
 
         if (response && response.shouldBlock) {
-            // Content is a distraction - redirect
             console.log("[LBNG YouTube] ❌ Content blocked:", response.reason);
-            
-            // Keep overlay visible during redirect
             const blockURL = response.blockURL || chrome.runtime.getURL('blocked.html');
             window.location.href = blockURL;
         } else {
-            // Content is allowed - remove overlay
             console.log("[LBNG YouTube] ✅ Content allowed:", response?.reason);
             hideLoadingOverlay();
         }
     } catch (error) {
         console.error("[LBNG YouTube] Analysis error:", error);
-        // On error, hide overlay and allow (fail open)
         hideLoadingOverlay();
     }
 
     analysisInProgress = false;
 }
-
 // Detect video page IMMEDIATELY
 function isVideoPage() {
     return window.location.pathname === '/watch' && window.location.search.includes('v=');

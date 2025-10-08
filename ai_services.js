@@ -146,7 +146,7 @@ Answer:`;
       ],
       generationConfig: {
         temperature: 0.3,
-        maxOutputTokens: 500,
+        maxOutputTokens: 4000,
       },
     };
 
@@ -172,7 +172,7 @@ Answer:`;
     const data = await response.json();
     console.log("[LBNG AI Services] Full API Response:", JSON.stringify(data, null, 2));
 
-    // ✅ MORE ROBUST TEXT EXTRACTION
+    // MORE ROBUST TEXT EXTRACTION
     let text = null;
     
     // Try to extract text from various possible locations

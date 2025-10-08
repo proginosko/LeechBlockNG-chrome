@@ -1744,125 +1744,120 @@ function handleMessage(message, sender, sendResponse) {
         }
       })();
       return true; // Keep channel open for async response
-    case "analyzeYouTubeContent":
-      (async () => {
-        try {
-          console.log(
-            "[LBNG Background] analyzeYouTubeContent received:",
-            message.videoInfo
-          );
-
-          // Check if AI lockdown is active
-          const lockdownData = await browser.storage.local.get([
-            "aiLockdownActive",
-            "aiLockdownEndTime",
-            "aiLockdownGoal",
-            "apiKey",
-            "isAiEnabled",
-          ]);
-
-          console.log("[LBNG Background] Lockdown state:", lockdownData);
-
-          // If no active AI lockdown, allow everything
-          if (
-            !lockdownData.aiLockdownActive ||
-            Date.now() > lockdownData.aiLockdownEndTime
-          ) {
-            console.log(
-              "[LBNG Background] No active AI lockdown, allowing content"
-            );
-            sendResponse({
-              shouldBlock: false,
-              reason: "No active focus session",
-            });
-            return;
-          }
-
-          // Check if AI is enabled
-          if (!lockdownData.isAiEnabled || !lockdownData.apiKey) {
-            console.log("[LBNG Background] AI not enabled, allowing content");
-            sendResponse({
-              shouldBlock: false,
-              reason: "AI features disabled",
-            });
-            return;
-          }
-
-          const userGoal = lockdownData.aiLockdownGoal;
-          const videoInfo = message.videoInfo;
-
-          // Check cache first
-          const cacheKey = `yt:${videoInfo.videoId}:${userGoal}`;
-          const cached = youtubeAnalysisCache.get(cacheKey);
-
-          if (cached && Date.now() - cached.timestamp < 3600000) {
-            // 1 hour cache
-            console.log(
-              "[LBNG Background] Using cached YouTube analysis:",
-              cached
-            );
-            sendResponse({
-              shouldBlock: !cached.isAllowed,
-              reason: cached.reason,
-              fromCache: true,
-            });
-            return;
-          }
-
-          // Send update to content script about goal
-          browser.tabs
-            .sendMessage(sender.tab.id, {
-              type: "updateOverlayGoal",
-              goal: userGoal,
-            })
-            .catch(() => {}); // Ignore errors
-
-          // Perform AI analysis
-          console.log("[LBNG Background] Analyzing YouTube content with AI...");
-          const result = await analyzeYouTubeContent(
-            videoInfo,
-            userGoal,
-            lockdownData.apiKey
-          );
-
-          console.log("[LBNG Background] YouTube analysis complete:", result);
-
-          // Cache the result
-          youtubeAnalysisCache.set(cacheKey, {
-            isAllowed: result.isAllowed,
-            reason: result.reason,
-            timestamp: Date.now(),
-          });
-
-          // If blocking, prepare block URL
-          let blockURL = null;
-          if (!result.isAllowed) {
-            const aiBlockSet = gOptions["aiBlockSet"] || 1;
-            blockURL = gOptions[`blockURL${aiBlockSet}`] || DEFAULT_BLOCK_URL;
-            blockURL = getLocalizedURL(blockURL)
-              .replace(/\$K/g, "YouTube: " + result.reason)
-              .replace(/\$S/g, aiBlockSet)
-              .replace(/\$U/g, videoInfo.url);
-          }
-
-          sendResponse({
-            shouldBlock: !result.isAllowed,
-            reason: result.reason,
-            blockURL: blockURL,
-          });
-        } catch (error) {
-          console.error(
-            "[LBNG Background] Error in analyzeYouTubeContent:",
-            error
-          );
-          // Fail open - allow content on error
-          sendResponse({
-            shouldBlock: false,
-            reason: "Analysis error: " + error.message,
-          });
-        }
-      })();
-      return true; // Keep channel open for async response
+      case "analyzeYouTubeContent":
+        (async () => {
+            try {
+                console.log("[LBNG Background] analyzeYouTubeContent received:", message.videoInfo);
+    
+                const lockdownData = await browser.storage.local.get([
+                    "aiLockdownActive",
+                    "aiLockdownEndTime",
+                    "aiLockdownGoal",
+                    "apiKey",
+                    "isAiEnabled",
+                ]);
+    
+                console.log("[LBNG Background] Lockdown state:", lockdownData);
+    
+                if (!lockdownData.aiLockdownActive || Date.now() > lockdownData.aiLockdownEndTime) {
+                    console.log("[LBNG Background] No active AI lockdown, allowing content");
+                    sendResponse({
+                        shouldBlock: false,
+                        reason: "No active focus session",
+                    });
+                    return;
+                }
+    
+                if (!lockdownData.isAiEnabled || !lockdownData.apiKey) {
+                    console.log("[LBNG Background] AI not enabled, allowing content");
+                    sendResponse({
+                        shouldBlock: false,
+                        reason: "AI features disabled",
+                    });
+                    return;
+                }
+    
+                const userGoal = lockdownData.aiLockdownGoal;
+                const videoInfo = message.videoInfo;
+    
+                // CHECK FOR INCOMPLETE DATA - don't use cache if title is missing
+                const hasCompleteData = videoInfo.title && videoInfo.title.trim().length > 0;
+                
+                // Check cache only if we have complete data
+                const cacheKey = `yt:${videoInfo.videoId}:${userGoal}`;
+                const cached = youtubeAnalysisCache.get(cacheKey);
+    
+                if (hasCompleteData && cached && Date.now() - cached.timestamp < 3600000) {
+                    console.log("[LBNG Background] Using cached YouTube analysis:", cached);
+                    sendResponse({
+                        shouldBlock: !cached.isAllowed,
+                        reason: cached.reason,
+                        fromCache: true,
+                    });
+                    return;
+                }
+    
+                // IF NO TITLE YET - tell content script to wait and retry
+                if (!hasCompleteData) {
+                    console.log("[LBNG Background] Video metadata not ready yet, telling content script to retry");
+                    sendResponse({
+                        shouldBlock: false,
+                        reason: "Metadata not ready",
+                        retry: true, // Signal to retry
+                    });
+                    return;
+                }
+    
+                // Send update to content script about goal
+                browser.tabs.sendMessage(sender.tab.id, {
+                    type: "updateOverlayGoal",
+                    goal: userGoal,
+                }).catch(() => {});
+    
+                // Perform AI analysis
+                console.log("[LBNG Background] Analyzing YouTube content with AI...");
+                const result = await analyzeYouTubeContent(
+                    videoInfo,
+                    userGoal,
+                    lockdownData.apiKey
+                );
+    
+                console.log("[LBNG Background] YouTube analysis complete:", result);
+    
+                // ONLY CACHE if we got a real analysis (not "no title" fallback)
+                if (result.reason !== "No title to analyze") {
+                    youtubeAnalysisCache.set(cacheKey, {
+                        isAllowed: result.isAllowed,
+                        reason: result.reason,
+                        timestamp: Date.now(),
+                    });
+                }
+    
+                // If blocking, prepare block URL
+                let blockURL = null;
+                if (!result.isAllowed) {
+                    const aiBlockSet = gOptions["aiBlockSet"] || 1;
+                    blockURL = gOptions[`blockURL${aiBlockSet}`] || DEFAULT_BLOCK_URL;
+                    blockURL = getLocalizedURL(blockURL)
+                        .replace(/\$K/g, "YouTube: " + result.reason)
+                        .replace(/\$S/g, aiBlockSet)
+                        .replace(/\$U/g, videoInfo.url);
+                }
+    
+                sendResponse({
+                    shouldBlock: !result.isAllowed,
+                    reason: result.reason,
+                    blockURL: blockURL,
+                });
+            } catch (error) {
+                console.error("[LBNG Background] Error in analyzeYouTubeContent:", error);
+                sendResponse({
+                    shouldBlock: false,
+                    reason: "Analysis error: " + error.message,
+                });
+            }
+        })();
+        return true;
     case "add-sites":
       // Add sites to block set
       addSitesToSet(message.sites, message.set);
