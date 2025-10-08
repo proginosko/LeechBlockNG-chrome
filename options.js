@@ -1388,120 +1388,158 @@ function handleKeyDown(event) {
 
 // This function will be called once the DOM is ready.
 function initializePage() {
-  browser.runtime.getPlatformInfo().then((info) => {
-    gIsAndroid = info.os == "android";
-  });
-
-  // Save original HTML of the form BEFORE initializing any widgets. This is critical.
-  gFormHTML = $("#form").html();
-
-  // Initialize jQuery UI alert dialogs
-  $("div[id^='alert']").dialog({
-    autoOpen: false,
-    modal: true,
-    width: 600,
-    buttons: {
-      OK: function () {
-        $(this).dialog("close");
-      },
-    },
-  });
-
-  // Initialize access control prompt dialogs
-  initAccessControlPrompt("promptPassword");
-  initAccessControlPrompt("promptAccessCode");
-
-  // THIS IS THE MAIN FUNCTION. It loads settings and builds the dynamic UI.
-  // We will attach our AI listeners AFTER this completes successfully.
-  retrieveOptions()
-    .then(() => {
-      // Now that the UI is guaranteed to be built, we can safely attach our listeners.
-      console.log("[LBNG] Main options loaded. Initializing AI listeners.");
-      initializeAiFeatures();
-    })
-    .catch((error) => {
-      console.error("[LBNG] Failed to retrieve options:", error);
-    });
-}
-
-function initializeAiFeatures() {
-  const setPlanButton = document.getElementById("aiSetPlanButton");
-  const userPlanInput = document.getElementById("aiUserPlan");
-  const aiPlannerStatus = document.getElementById("aiPlannerStatus");
-  const aiActiveLockdownStatus = document.getElementById(
-    "aiActiveLockdownStatus"
-  );
-
-  if (!setPlanButton || !userPlanInput) {
-    console.warn("AI Planner UI elements not found. Check HTML IDs.");
-    return;
+	browser.runtime.getPlatformInfo().then((info) => {
+	  gIsAndroid = info.os == "android";
+	});
+  
+	// Save original HTML of the form BEFORE initializing any widgets. This is critical.
+	gFormHTML = $("#form").html();
+  
+	// Initialize jQuery UI alert dialogs
+	$("div[id^='alert']").dialog({
+	  autoOpen: false,
+	  modal: true,
+	  width: 600,
+	  buttons: {
+		OK: function () {
+		  $(this).dialog("close");
+		},
+	  },
+	});
+  
+	// Initialize access control prompt dialogs
+	initAccessControlPrompt("promptPassword");
+	initAccessControlPrompt("promptAccessCode");
+  
+	// Load settings and build the dynamic UI
+	retrieveOptions()
+	  .then(() => {
+		console.log("[LBNG] Main options loaded.");
+		
+		// IMPORTANT: Wait for jQuery UI tabs to finish rendering
+		// Then attach AI listeners AFTER everything is stable
+		setTimeout(() => {
+		  console.log("[LBNG] Initializing AI listeners (delayed)...");
+		  initializeAiFeatures();
+		}, 500);
+	  })
+	  .catch((error) => {
+		console.error("[LBNG] Failed to retrieve options:", error);
+	  });
   }
 
-  // Simple duration parser
-  function parseDuration(text) {
-    let minutes = 0;
-    const hourMatch = text.match(/(\d+\.?\d*)\s*(hr|hour)/i);
-    const minMatch = text.match(/(\d+)\s*(min|minute)/i);
-    if (hourMatch) minutes += parseFloat(hourMatch[1]) * 60;
-    if (minMatch) minutes += parseInt(minMatch[1], 10);
-    return Math.round(minutes);
+  function initializeAiFeatures() {
+	console.log("[LBNG AI] initializeAiFeatures() called");
+	
+	// Use event delegation on the form (which doesn't get replaced)
+	const form = document.getElementById("form");
+	if (!form) {
+	  console.error("[LBNG AI] Form not found!");
+	  return;
+	}
+  
+	console.log("[LBNG AI] Attaching delegated click listener to form...");
+  
+	// Simple duration parser
+	function parseDuration(text) {
+	  let minutes = 0;
+	  const hourMatch = text.match(/(\d+\.?\d*)\s*(hr|hour)/i);
+	  const minMatch = text.match(/(\d+)\s*(min|minute)/i);
+	  if (hourMatch) minutes += parseFloat(hourMatch[1]) * 60;
+	  if (minMatch) minutes += parseInt(minMatch[1], 10);
+	  return Math.round(minutes);
+	}
+  
+	// Event delegation: listen on parent, filter for button
+	form.addEventListener("click", (event) => {
+	  if (event.target.id === "aiSetPlanButton") {
+		event.preventDefault();
+		console.log("[LBNG AI] ✅✅✅ BUTTON CLICKED VIA DELEGATION! ✅✅✅");
+		
+		const userPlanInput = document.getElementById("aiUserPlan");
+		const aiPlannerStatus = document.getElementById("aiPlannerStatus");
+		
+		if (!userPlanInput) {
+		  console.error("[LBNG AI] Input not found!");
+		  return;
+		}
+		
+		const userPlan = userPlanInput.value.trim();
+		const durationMinutes = parseDuration(userPlan);
+  
+		console.log("[LBNG AI] User input:", { userPlan, durationMinutes });
+  
+		if (!userPlan || durationMinutes <= 0) {
+		  alert("Please enter a clear goal and duration (e.g., 'code for 1 hour').");
+		  return;
+		}
+  
+		if (aiPlannerStatus) {
+		  aiPlannerStatus.textContent = "🤖 Generating your focus plan...";
+		  aiPlannerStatus.style.display = "block";
+		}
+		event.target.disabled = true;
+  
+		console.log("[LBNG AI] Sending message to background script...");
+  
+		chrome.runtime.sendMessage(
+		  { type: "startAiLockdown", goal: userPlan, duration: durationMinutes },
+		  (response) => {
+			console.log("[LBNG AI] Response received:", response);
+			
+			if (chrome.runtime.lastError) {
+			  console.error("[LBNG AI] Runtime error:", chrome.runtime.lastError);
+			  if (aiPlannerStatus) {
+				aiPlannerStatus.textContent = `❌ Error: ${chrome.runtime.lastError.message}`;
+			  }
+			  event.target.disabled = false;
+			  return;
+			}
+			
+			if (response && response.success) {
+			  if (aiPlannerStatus) {
+				aiPlannerStatus.textContent = "✅ Focus session started! Get to work!";
+			  }
+			  setTimeout(() => window.location.reload(), 1500);
+			} else {
+			  if (aiPlannerStatus) {
+				aiPlannerStatus.textContent = `❌ Error: ${
+				  response ? response.error : "No response from background script"
+				}`;
+			  }
+			}
+			event.target.disabled = false;
+		  }
+		);
+	  }
+	});
+  
+	console.log("[LBNG AI] ✅ Delegated click listener attached successfully");
+  
+	// Function to display current lockdown status
+	function checkStatus() {
+	  const aiActiveLockdownStatus = document.getElementById("aiActiveLockdownStatus");
+	  if (!aiActiveLockdownStatus) return;
+	  
+	  chrome.storage.local.get(
+		["aiLockdownActive", "aiLockdownEndTime", "aiLockdownGoal"],
+		(data) => {
+		  if (
+			data.aiLockdownActive &&
+			data.aiLockdownEndTime > Date.now()
+		  ) {
+			const timeLeft = Math.round((data.aiLockdownEndTime - Date.now()) / 60000);
+			aiActiveLockdownStatus.innerHTML = `<strong>Active Focus Session:</strong> ${data.aiLockdownGoal}<br><em>About ${timeLeft} minutes remaining.</em>`;
+		  } else {
+			aiActiveLockdownStatus.textContent = "No active focus session.";
+		  }
+		}
+	  );
+	}
+	
+	checkStatus();
+	setInterval(checkStatus, 10000);
   }
-
-  setPlanButton.addEventListener("click", () => {
-    const userPlan = userPlanInput.value;
-    const durationMinutes = parseDuration(userPlan);
-
-    if (!userPlan || durationMinutes <= 0) {
-      alert(
-        "Please enter a clear goal and duration (e.g., 'code for 1 hour')."
-      );
-      return;
-    }
-
-    aiPlannerStatus.textContent = "🤖 Generating your focus plan...";
-    aiPlannerStatus.style.display = "block";
-    setPlanButton.disabled = true;
-
-    chrome.runtime.sendMessage(
-      { type: "startAiLockdown", goal: userPlan, duration: durationMinutes },
-      (response) => {
-        if (response && response.success) {
-          aiPlannerStatus.textContent =
-            "✅ Focus session started! Get to work!";
-          setTimeout(() => window.location.reload(), 1500);
-        } else {
-          aiPlannerStatus.textContent = `❌ Error: ${
-            response ? response.error : "API key may be invalid or missing."
-          }`;
-        }
-        setPlanButton.disabled = false;
-      }
-    );
-  });
-
-  // Function to display current lockdown status
-  function checkStatus() {
-    chrome.storage.local.get(
-      ["aiLockdownActive", "aiLockdownEndTime", "aiLockdownGoal"],
-      (data) => {
-        if (
-          aiActiveLockdownStatus &&
-          data.aiLockdownActive &&
-          data.aiLockdownEndTime > Date.now()
-        ) {
-          const timeLeft = Math.round(
-            (data.aiLockdownEndTime - Date.now()) / 60000
-          );
-          aiActiveLockdownStatus.innerHTML = `<strong>Active Focus Session:</strong> ${data.aiLockdownGoal}<br><em>About ${timeLeft} minutes remaining.</em>`;
-        } else if (aiActiveLockdownStatus) {
-          aiActiveLockdownStatus.textContent = "No active focus session.";
-        }
-      }
-    );
-  }
-  checkStatus();
-  setInterval(checkStatus, 10000);
-}
 
 // Add the final event listeners
 window.addEventListener("DOMContentLoaded", initializePage);

@@ -17,7 +17,7 @@ async function getInitialBlocklistForGoal(userGoal) {
       return [];
   }
   
-  const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+  const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
   const prompt = `A user's goal is to "${userGoal}". What are 10 common websites that would be a distraction from this specific goal? Return only a space-separated list of the base domain names (e.g., "youtube.com twitter.com espn.com"). Do not include any other text, explanation, or commas.`;
 
   try {
