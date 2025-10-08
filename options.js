@@ -1419,7 +1419,6 @@ function initializePage() {
 		// IMPORTANT: Wait for jQuery UI tabs to finish rendering
 		// Then attach AI listeners AFTER everything is stable
 		setTimeout(() => {
-		  console.log("[LBNG] Initializing AI listeners (delayed)...");
 		  initializeAiFeatures();
 		}, 500);
 	  })
@@ -1429,7 +1428,6 @@ function initializePage() {
   }
 
   function initializeAiFeatures() {
-	console.log("[LBNG AI] initializeAiFeatures() called");
 	
 	// Use event delegation on the form (which doesn't get replaced)
 	const form = document.getElementById("form");
@@ -1437,8 +1435,6 @@ function initializePage() {
 	  console.error("[LBNG AI] Form not found!");
 	  return;
 	}
-  
-	console.log("[LBNG AI] Attaching delegated click listener to form...");
   
 	// Simple duration parser
 	function parseDuration(text) {
@@ -1454,7 +1450,6 @@ function initializePage() {
 	form.addEventListener("click", (event) => {
 	  if (event.target.id === "aiSetPlanButton") {
 		event.preventDefault();
-		console.log("[LBNG AI] ✅✅✅ BUTTON CLICKED VIA DELEGATION! ✅✅✅");
 		
 		const userPlanInput = document.getElementById("aiUserPlan");
 		const aiPlannerStatus = document.getElementById("aiPlannerStatus");
@@ -1467,8 +1462,6 @@ function initializePage() {
 		const userPlan = userPlanInput.value.trim();
 		const durationMinutes = parseDuration(userPlan);
   
-		console.log("[LBNG AI] User input:", { userPlan, durationMinutes });
-  
 		if (!userPlan || durationMinutes <= 0) {
 		  alert("Please enter a clear goal and duration (e.g., 'code for 1 hour').");
 		  return;
@@ -1480,13 +1473,9 @@ function initializePage() {
 		}
 		event.target.disabled = true;
   
-		console.log("[LBNG AI] Sending message to background script...");
-  
 		chrome.runtime.sendMessage(
 		  { type: "startAiLockdown", goal: userPlan, duration: durationMinutes },
 		  (response) => {
-			console.log("[LBNG AI] Response received:", response);
-			
 			if (chrome.runtime.lastError) {
 			  console.error("[LBNG AI] Runtime error:", chrome.runtime.lastError);
 			  if (aiPlannerStatus) {
@@ -1513,9 +1502,6 @@ function initializePage() {
 		);
 	  }
 	});
-  
-	console.log("[LBNG AI] ✅ Delegated click listener attached successfully");
-  
 	// Function to display current lockdown status
 	function checkStatus() {
 	  const aiActiveLockdownStatus = document.getElementById("aiActiveLockdownStatus");

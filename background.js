@@ -1679,18 +1679,12 @@ function handleMessage(message, sender, sendResponse) {
     case "startAiLockdown":
       (async () => {
         try {
-          console.log("[LBNG Background] startAiLockdown received:", message);
 
           const options = await gStorage.get([
             "apiKey",
             "aiBlockSet",
             "isAiEnabled",
           ]);
-          console.log("[LBNG Background] Retrieved options:", {
-            hasApiKey: !!options.apiKey,
-            aiBlockSet: options.aiBlockSet,
-            isAiEnabled: options.isAiEnabled,
-          });
 
           if (!options.isAiEnabled) {
             sendResponse({
@@ -1711,16 +1705,10 @@ function handleMessage(message, sender, sendResponse) {
           }
 
           const aiBlockSet = parseInt(options.aiBlockSet) || 1;
-          console.log("[LBNG Background] Using AI block set:", aiBlockSet);
-
-          console.log(
-            "[LBNG Background] Calling getInitialBlocklistForGoal..."
-          );
-          const initialSites = await getInitialBlocklistForGoal(
+		  const initialSites = await getInitialBlocklistForGoal(
             message.goal,
             options.apiKey
           );
-          console.log("[LBNG Background] Got initial sites:", initialSites);
 
           if (!initialSites || initialSites.length === 0) {
             sendResponse({
@@ -1730,15 +1718,10 @@ function handleMessage(message, sender, sendResponse) {
             return;
           }
 
-          console.log("[LBNG Background] Adding sites to block set...");
           addSitesToSet(initialSites.join(" "), aiBlockSet);
 
           const now = Math.floor(Date.now() / 1000);
           const endTime = now + message.duration * 60;
-          console.log(
-            "[LBNG Background] Applying lockdown until:",
-            new Date(endTime * 1000)
-          );
 
           applyLockdown(aiBlockSet, endTime);
 
