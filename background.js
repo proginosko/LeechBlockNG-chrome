@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 importScripts("common.js");
+importScripts("ai_services.js");
 
 const browser = chrome;
 
@@ -1942,3 +1943,20 @@ for (let alarm = 1; alarm <= 6; alarm++) {
 	browser.alarms.create(`Alarm${alarm}`, alarmInfo);
 }
 browser.alarms.onAlarm.addListener(onAlarm);
+
+
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+    if (changeInfo.status === 'complete' && tab.url) {
+        const isDistraction = await classifyUrl(tab.url);
+        if (isDistraction) {
+            // Here you would trigger the LeechBlockNG blocking page.
+            // For now, let's just log it to the console.
+            console.log(`AI classified ${tab.url} as a distraction.`);
+
+            // To actually block the site, you would need to redirect the user
+            // to the blocked.html page provided by LeechBlockNG.
+            chrome.tabs.update(tabId, { url: 'blocked.html' });
+        }
+    }
+});
+  

@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+
+ 
 const browser = chrome;
 
 const DEFAULT_OPTIONS_FILE = "LeechBlockOptions.txt";
@@ -1322,3 +1324,60 @@ initAccessControlPrompt("promptAccessCode");
 window.addEventListener("DOMContentLoaded", retrieveOptions);
 
 window.addEventListener("keydown", handleKeyDown);
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    // ... other existing options.js code ...
+
+    const setPlanButton = document.getElementById('setPlanButton');
+    const userPlanInput = document.getElementById('userPlan');
+    const aiPlannerStatus = document.getElementById('aiPlannerStatus'); // Get the new status element
+
+    setPlanButton.addEventListener('click', async () => {
+        const userPlan = userPlanInput.value;
+        if (!userPlan) {
+            alert("Please enter a plan first.");
+            return;
+        }
+
+        // 1. Show loading state and disable the button
+        aiPlannerStatus.style.display = 'block';
+        setPlanButton.disabled = true;
+        setPlanButton.textContent = 'Generating...';
+
+        try {
+            const websitesToBlock = await getBlockingRules(userPlan);
+
+            if (websitesToBlock && websitesToBlock.length > 0) {
+                chrome.storage.local.get('settings', (data) => {
+                    let settings = data.settings || {};
+
+                    // **THE FIX:** Safely create the block list if it doesn't exist
+                    if (!settings.blockSets) {
+                        settings.blockSets = [];
+                    }
+                    if (!settings.blockSets[0]) {
+                        settings.blockSets[0] = { sites: '' };
+                    }
+
+                    // Add the AI-generated sites to the first block set
+                    settings.blockSets[0].sites = websitesToBlock.join('\n');
+                    
+                    chrome.storage.local.set({ settings }, () => {
+                        alert('✅ Your plan is set! Distracting websites have been added to Block Set 1.');
+                    });
+                });
+            } else {
+                alert("🤔 The AI couldn't determine which websites to block. Please try rephrasing your plan.");
+            }
+        } catch (error) {
+            console.error("Failed to get blocking rules from AI:", error);
+            alert("❌ An error occurred while generating the plan. Please check the console for details.");
+        } finally {
+            // 2. Hide loading state and re-enable the button
+            aiPlannerStatus.style.display = 'none';
+            setPlanButton.disabled = false;
+            setPlanButton.textContent = 'Set Plan';
+        }
+    });
+});
