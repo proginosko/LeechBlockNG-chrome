@@ -1658,18 +1658,37 @@ function handleMessage(message, sender, sendResponse) {
 	//log("handleMessage: " + sender.tab.id + " " + message.type);
 
 	switch (message.type) {
-
-		case "getAiSuggestions":
-            getBlockingRules(message.plan)
-                .then(websites => {
-                    sendResponse({ success: true, websites: websites });
-					console.log("getBlockingRules: " + websites);
-                })
-                .catch(error => {
-                    console.error("Error in getBlockingRulesFromPlan:", error);
-                    sendResponse({ success: false, error: error.message });
-                });
-            return true; // IMPORTANT: Required for async sendResponse.
+		case 'startAiLockdown':
+			(async () => {
+				const options = await gStorage.get(['apiKey', 'aiBlockSet', 'isAiEnabled']);
+				if (!options.isAiEnabled || !options.apiKey) {
+					sendResponse({ success: false, error: "AI features are not enabled or API key is missing."});
+					return;
+				}
+				const aiBlockSet = options.aiBlockSet || 1;
+		
+				const initialSites = await getInitialBlocklistForGoal(message.goal);
+				if (initialSites.length === 0) {
+					sendResponse({ success: false, error: "AI could not generate an initial blocklist."});
+					return;
+				}
+		
+				addSitesToSet(initialSites.join(' '), aiBlockSet);
+		
+				const now = Math.floor(Date.now() / 1000);
+				const endTime = now + (message.duration * 60);
+				applyLockdown(aiBlockSet, endTime);
+		
+				await browser.storage.local.set({
+					aiLockdownActive: true,
+					aiLockdownEndTime: endTime * 1000,
+					aiLockdownGoal: message.goal
+				});
+		
+				log(`AI Focus Mode started for Set ${aiBlockSet}.`);
+				sendResponse({ success: true });
+			})();
+			return true;
 		case "add-sites":
 			// Add sites to block set
 			addSitesToSet(message.sites, message.set);
@@ -1779,37 +1798,22 @@ function handleTabCreated(tab) {
 }
 
 async function handleTabUpdated(tabId, changeInfo, tab) {
-	//log("handleTabUpdated: " + tabId);
-
 	initTab(tabId);
+    if (gGotOptions && changeInfo.status === 'complete' && tab.url && CLOCKABLE_URL.test(tab.url)) {
+        const aiState = await browser.storage.local.get(["aiLockdownActive", "aiLockdownEndTime", "aiLockdownGoal"]);
 
-	// =================================================================
-	// START: NEW AI CLASSIFICATION LOGIC
-	// We run this check only when the page has finished loading.
-	if (gGotOptions && changeInfo.status === 'complete' && tab.url && CLOCKABLE_URL.test(tab.url)) {
-		const isDistraction = await classifyUrl(tab.url);
-
-		if (isDistraction) {
-			const aiBlockSet = gOptions['aiBlockSet'] || 1; // Default to Block Set 1 if not configured
-			log(`AI classified ${tab.url} as a distraction. Blocking with Set ${aiBlockSet}.`);
-			
-			// Construct the correct blocking URL, mimicking the logic in checkTab()
-			let pageURLWithHash = getParsedURL(tab.url).pageWithHash;
-			let blockURL = gOptions[`blockURL${aiBlockSet}`];
-			blockURL = getLocalizedURL(blockURL)
-					.replace(/\$K/g, "AI") // Use "AI" as the keyword
-					.replace(/\$S/g, aiBlockSet)
-					.replace(/\$U/g, pageURLWithHash);
-			
-			// Redirect the tab to our block page
-			browser.tabs.update(tabId, { url: blockURL });
-			
-			// Stop further processing for this update, since we've blocked it.
-			return; 
-		}
-	}
-	// END: NEW AI CLASSIFICATION LOGIC
-	// =================================================================
+        if (aiState.aiLockdownActive && Date.now() < aiState.aiLockdownEndTime) {
+            const isDistraction = await classifyUrlForGoal(tab.url, aiState.aiLockdownGoal);
+            if (isDistraction) {
+                const aiBlockSet = gOptions['aiBlockSet'] || 1;
+                let pageURLWithHash = getParsedURL(tab.url).pageWithHash;
+                let blockURL = gOptions[`blockURL${aiBlockSet}`];
+                blockURL = getLocalizedURL(blockURL).replace(/\$K/g, "AI_DYNAMIC").replace(/\$S/g, aiBlockSet).replace(/\$U/g, pageURLWithHash);
+                browser.tabs.update(tabId, { url: blockURL });
+                return;
+            }
+        }
+    }
 
 	if (!gGotOptions) {
 		return;
@@ -1926,6 +1930,13 @@ function handleTick() {
 			gSaveSecsCount = 0;
 		}
 	}
+
+	browser.storage.local.get(["aiLockdownActive", "aiLockdownEndTime"], (data) => {
+		if (data.aiLockdownActive && Date.now() > data.aiLockdownEndTime) {
+			log("AI Focus session has ended. Clearing state.");
+			browser.storage.local.set({ aiLockdownActive: false, aiLockdownEndTime: 0, aiLockdownGoal: "" });
+		}
+	});
 }
 
 function onAlarm(alarmInfo) {

@@ -15,15 +15,6 @@
 	</head>
 
 	<body>
-
-		<div class="section">
-			<h2>AI Planner</h2>
-			<p>Tell the AI what you're planning to do, and it will block all distracting websites.</p>
-			<textarea id="aiUserPlan" rows="4" cols="50" placeholder="e.g., 'I am working on my history essay about the Roman Empire.'"></textarea>
-			<br>
-			<button id="aiSetPlanButton">Set Plan</button>
-			<p id="aiPlannerStatus" style="display: none; color: #007bff;">🤖 Generating your focus plan...</p>
-		</div>
 		<div id="form-container-options">
 
 			<form id="form" style="display: none;">
@@ -367,6 +358,37 @@
 						</fieldset>
 					</div>
 					<div id="paneGeneral">
+						<fieldset>
+							<legend>AI Dynamic Focus Planner</legend>
+							<p>Tell the AI your goal and for how long. It will start a dynamic lockdown to keep you on task.</p>
+							<p><em>Examples: "code on my project for 2 hours", "write my history essay for 90 minutes"</em></p>
+							<p>
+								<input type="text" id="aiUserPlan" size="60" placeholder="Enter your goal and duration...">
+								<button id="aiSetPlanButton" type="button">Start Focus Session</button>
+							</p>
+							<p id="aiPlannerStatus" style="display:none; color: green;"></p>
+							<p id="aiActiveLockdownStatus"></p> <!-- To show current lockdown status -->
+						</fieldset>
+		
+						<fieldset>
+							<legend>AI Settings</legend>
+							<p>
+								<input id="isAiEnabled" type="checkbox">
+								<label for="isAiEnabled">Enable AI features</label>
+							</p>
+							<p>
+								<label for="apiKey">Your Gemini API Key:</label>
+							</p>
+							<p>
+								<input id="apiKey" type="password" size="60">
+								<br>
+								<small>Your key is stored locally and is required for the AI Planner to function.</small>
+							</p>
+							<p>
+								<label for="aiBlockSet">AI will control this Block Set:</label>
+								<input id="aiBlockSet" type="number" min="1" max="6" value="1" style="width: 4em;">
+							</p>
+						</fieldset>
 						<p style="text-align: center;">
 							<button id="simpOptsGen" type="button">Show Simplified Options</button>
 							<button id="fullOptsGen" type="button" style="display: none;">Show Full Options</button>
@@ -738,8 +760,5 @@
 		<script src="/jquery-ui/jquery-ui.min.js"></script>
 		<script src="/common.js"></script>
 		<script src="/options.js"></script>
-		<script src="/ai_services.js"></script>
-
 	</body>
-
 </html>
