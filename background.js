@@ -41,6 +41,9 @@ var gUseDocFocus = true;
 var gOverrideIcon = false;
 var gSaveSecsCount = 0;
 
+
+const youtubeAnalysisCache = new Map();
+
 // Initialize object to track tab (returns false if already initialized)
 //
 function initTab(id) {
@@ -1679,7 +1682,6 @@ function handleMessage(message, sender, sendResponse) {
     case "startAiLockdown":
       (async () => {
         try {
-
           const options = await gStorage.get([
             "apiKey",
             "aiBlockSet",
@@ -1705,7 +1707,7 @@ function handleMessage(message, sender, sendResponse) {
           }
 
           const aiBlockSet = parseInt(options.aiBlockSet) || 1;
-		  const initialSites = await getInitialBlocklistForGoal(
+          const initialSites = await getInitialBlocklistForGoal(
             message.goal,
             options.apiKey
           );
@@ -1738,6 +1740,125 @@ function handleMessage(message, sender, sendResponse) {
           sendResponse({
             success: false,
             error: error.message || "Unknown error occurred",
+          });
+        }
+      })();
+      return true; // Keep channel open for async response
+    case "analyzeYouTubeContent":
+      (async () => {
+        try {
+          console.log(
+            "[LBNG Background] analyzeYouTubeContent received:",
+            message.videoInfo
+          );
+
+          // Check if AI lockdown is active
+          const lockdownData = await browser.storage.local.get([
+            "aiLockdownActive",
+            "aiLockdownEndTime",
+            "aiLockdownGoal",
+            "apiKey",
+            "isAiEnabled",
+          ]);
+
+          console.log("[LBNG Background] Lockdown state:", lockdownData);
+
+          // If no active AI lockdown, allow everything
+          if (
+            !lockdownData.aiLockdownActive ||
+            Date.now() > lockdownData.aiLockdownEndTime
+          ) {
+            console.log(
+              "[LBNG Background] No active AI lockdown, allowing content"
+            );
+            sendResponse({
+              shouldBlock: false,
+              reason: "No active focus session",
+            });
+            return;
+          }
+
+          // Check if AI is enabled
+          if (!lockdownData.isAiEnabled || !lockdownData.apiKey) {
+            console.log("[LBNG Background] AI not enabled, allowing content");
+            sendResponse({
+              shouldBlock: false,
+              reason: "AI features disabled",
+            });
+            return;
+          }
+
+          const userGoal = lockdownData.aiLockdownGoal;
+          const videoInfo = message.videoInfo;
+
+          // Check cache first
+          const cacheKey = `yt:${videoInfo.videoId}:${userGoal}`;
+          const cached = youtubeAnalysisCache.get(cacheKey);
+
+          if (cached && Date.now() - cached.timestamp < 3600000) {
+            // 1 hour cache
+            console.log(
+              "[LBNG Background] Using cached YouTube analysis:",
+              cached
+            );
+            sendResponse({
+              shouldBlock: !cached.isAllowed,
+              reason: cached.reason,
+              fromCache: true,
+            });
+            return;
+          }
+
+          // Send update to content script about goal
+          browser.tabs
+            .sendMessage(sender.tab.id, {
+              type: "updateOverlayGoal",
+              goal: userGoal,
+            })
+            .catch(() => {}); // Ignore errors
+
+          // Perform AI analysis
+          console.log("[LBNG Background] Analyzing YouTube content with AI...");
+          const result = await analyzeYouTubeContent(
+            videoInfo,
+            userGoal,
+            lockdownData.apiKey
+          );
+
+          console.log("[LBNG Background] YouTube analysis complete:", result);
+
+          // Cache the result
+          youtubeAnalysisCache.set(cacheKey, {
+            isAllowed: result.isAllowed,
+            reason: result.reason,
+            timestamp: Date.now(),
+          });
+
+          // If blocking, prepare block URL
+          let blockURL = null;
+          if (!result.isAllowed) {
+            const aiBlockSet = gOptions["aiBlockSet"] || 1;
+            blockURL = gOptions[`blockURL${aiBlockSet}`] || DEFAULT_BLOCK_URL;
+            blockURL = getLocalizedURL(blockURL)
+              .replace(/\$K/g, "YouTube: " + result.reason)
+              .replace(/\$S/g, aiBlockSet)
+              .replace(/\$U/g, videoInfo.url);
+          }
+
+          sendResponse({
+            shouldBlock: !result.isAllowed,
+            reason: result.reason,
+            blockURL: blockURL,
+          });
+        } catch (error) {
+          console.error(
+            "[LBNG Background] Error in analyzeYouTubeContent:",
+            error
+          );
+          // Fail open - allow content on error
+          sendResponse({
+            shouldBlock: false,
+            reason: "Analysis error: " + error.message,
           });
         }
       })();
@@ -1855,65 +1976,71 @@ function handleTabCreated(tab) {
 
 async function handleTabUpdated(tabId, changeInfo, tab) {
   initTab(tabId);
-  if (
-    gGotOptions &&
-    changeInfo.status === "complete" &&
-    tab.url &&
-    CLOCKABLE_URL.test(tab.url)
-  ) {
-    const aiState = await browser.storage.local.get([
-      "aiLockdownActive",
-      "aiLockdownEndTime",
-      "aiLockdownGoal",
-    ]);
+  
+  if (gGotOptions && changeInfo.status === 'complete' && tab.url && CLOCKABLE_URL.test(tab.url)) {
+      const aiState = await browser.storage.local.get([
+          "aiLockdownActive", 
+          "aiLockdownEndTime", 
+          "aiLockdownGoal"
+      ]);
 
-    if (aiState.aiLockdownActive && Date.now() < aiState.aiLockdownEndTime) {
-      const isDistraction = await classifyUrlForGoal(
-        tab.url,
-        aiState.aiLockdownGoal
-      );
-      if (isDistraction) {
-        const aiBlockSet = gOptions["aiBlockSet"] || 1;
-        let pageURLWithHash = getParsedURL(tab.url).pageWithHash;
-        let blockURL = gOptions[`blockURL${aiBlockSet}`];
-        blockURL = getLocalizedURL(blockURL)
-          .replace(/\$K/g, "AI_DYNAMIC")
-          .replace(/\$S/g, aiBlockSet)
-          .replace(/\$U/g, pageURLWithHash);
-        browser.tabs.update(tabId, { url: blockURL });
-        return;
+      // Match ANY YouTube URL (homepage, search, watch pages)
+      const isYouTube = /^https?:\/\/(www\.|m\.)?youtube\.com/.test(tab.url);
+      
+      if (isYouTube && aiState.aiLockdownActive && Date.now() < aiState.aiLockdownEndTime) {
+          console.log("[LBNG Background] YouTube detected during AI lockdown - bypassing conventional blocking");
+          
+          // For /watch pages, the content script will analyze the video
+          // For other pages (homepage, search), allow navigation
+          return; // Skip conventional blocking entirely for ALL YouTube pages
       }
-    }
+      
+      // For non-YouTube sites, use AI classification
+      if (!isYouTube && aiState.aiLockdownActive && Date.now() < aiState.aiLockdownEndTime) {
+          const isDistraction = await classifyUrlForGoal(tab.url, aiState.aiLockdownGoal);
+          if (isDistraction) {
+              const aiBlockSet = gOptions['aiBlockSet'] || 1;
+              let parsedURL = getParsedURL(tab.url);
+              let pageURLWithHash = parsedURL.page;
+              if (parsedURL.hash) {
+                  pageURLWithHash += '#' + parsedURL.hash;
+              }
+              let blockURL = gOptions[`blockURL${aiBlockSet}`];
+              blockURL = getLocalizedURL(blockURL)
+                  .replace(/\$K/g, "AI: Not relevant to your goal")
+                  .replace(/\$S/g, aiBlockSet)
+                  .replace(/\$U/g, pageURLWithHash);
+              browser.tabs.update(tabId, { url: blockURL });
+              return;
+          }
+      }
   }
 
   if (!gGotOptions) {
-    return;
+      return;
   }
 
-  let focus =
-    tab.active &&
-    (gAllFocused || !gFocusWindowId || tab.windowId == gFocusWindowId) &&
-    (!gIsAndroid || !gUseDocFocus || gTabs[tab.id].focused);
+  let focus = tab.active && (gAllFocused || !gFocusWindowId || tab.windowId == gFocusWindowId)
+          && (!gIsAndroid || !gUseDocFocus || gTabs[tab.id].focused);
 
-  gTabs[tab.id].incog = tab.incognito;
-  gTabs[tab.id].audible = tab.audible;
+  gTabs[tabId].incog = tab.incognito;
+  gTabs[tabId].audible = tab.audible;
 
   if (changeInfo.url) {
-    gTabs[tabId].url = getCleanURL(changeInfo.url);
+      gTabs[tabId].url = getCleanURL(changeInfo.url);
   }
 
   if (changeInfo.status && changeInfo.status == "complete") {
-    clockPageTime(tab.id, true, focus);
+      clockPageTime(tab.id, true, focus);
 
-    // Check tab to see if page should be blocked by conventional rules
-    let blocked = checkTab(tab.id, false, false);
+      // Check tab with conventional blocking rules
+      let blocked = checkTab(tab.id, false, false);
 
-    if (!blocked && tab.active) {
-      updateTimer(tab.id);
-    }
+      if (!blocked && tab.active) {
+          updateTimer(tab.id);
+      }
   }
 }
-
 function handleTabActivated(activeInfo) {
   let tabId = activeInfo.tabId;
   //log("handleTabActivated: " + tabId);

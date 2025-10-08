@@ -55,6 +55,11 @@
     {
       "matches": ["*://*/*lb-custom*"],
       "js": ["blocked.js"]
+    },
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["youtube-content.js"],
+      "run_at": "document_start"
     }
   ],
 
