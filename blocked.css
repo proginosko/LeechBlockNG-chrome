@@ -1,0 +1,73 @@
+:root {
+    --color-neutral-bg: #f8f5f2;
+    --color-surface: #fcfaf8;
+    --color-text: #2b2a29;
+    --color-text-muted: #6b625c;
+    --color-secondary: #efe7df;
+    --color-accent: #c4672a;
+    --color-accent-2: #d07a40;
+}
+
+body {
+    background: var(--color-neutral-bg);
+    color: var(--color-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+        "Oxygen", "Ubuntu", "Cantarell", sans-serif;
+    padding: 24px;
+}
+
+#lbLogoDiv {
+    text-align: center;
+    margin: 12px 0 20px;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+#lbLogoImg {
+    width: 120px;
+    height: 120px;
+}
+
+.brand-name {
+    margin-top: 8px;
+    font-weight: 700;
+    color: var(--color-text);
+    letter-spacing: 0.3px;
+}
+
+#lbWarningMsgDiv,
+#lbBlockedDiv,
+#lbCustomMsgDiv {
+    background: var(--color-surface);
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 900px;
+    margin: 12px auto;
+}
+
+.brand-roast {
+    margin: 6px 0 0 0;
+    color: var(--color-text-muted);
+    font-size: 4.95em;
+}
+
+a {
+    color: var(--color-accent);
+}
+a:hover {
+    color: var(--color-accent-2);
+}
+
+#lbBlockedURLLink {
+    color: var(--color-text);
+    text-decoration: none;
+}
+#lbBlockedSet,
+#lbKeywordMatched {
+    color: var(--color-text-muted);
+    font-size: 0.9em;
+}
+#lbUnblockText {
+    color: var(--color-text-muted);
+    font-size: 0.9em;
+}

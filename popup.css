@@ -1,50 +1,71 @@
-/* LeechBlock popup style */
+/* FocusHoot popup style */
 
-@media (prefers-color-scheme: light) {
-
-	body {
-		background-color: #fff;
-	}
-
-}
-
-@media (prefers-color-scheme: dark) {
-
-	body {
-		background-color: #222;
-	}
-
+:root {
+    --color-neutral-bg: #f8f5f2;
+    --color-surface: #fcfaf8;
+    --color-text: #575655;
+    --color-text-muted: #6b625c;
+    --color-secondary: #efe7df;
+    --color-accent: #c4672a;
+    --color-accent-2: #d07a40;
 }
 
 body {
-	color: #000;
-	font-size: 14px;
-	text-align: center;
+    color: var(--color-text);
+    background: var(--color-neutral-bg);
+    font-size: 14px;
+    text-align: center;
+    min-width: 260px;
+    padding: 12px 12px 16px;
+}
+
+.ph-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.ph-title {
+    margin: 0;
+    font-size: 16px;
+    color: var(--color-text);
+}
+.ph-logo {
+    border-radius: 8px;
 }
 
 #button-container {
-	display: inline-block;
-	width: 180px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
 }
 
 button {
-	display: inline;
-	width: 100%;
-	margin: 2px;
-	padding: 2px;
-	background: #eee;
-	border: 1px solid #888;
-	border-radius: 6px;
+    width: 100%;
+    padding: 8px 10px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-secondary);
+    border-radius: 8px;
+    color: var(--color-text);
+    cursor: pointer;
 }
 
 button:hover:enabled {
-	background: #ddd;
+    border-color: var(--color-accent);
+    background: #faeee4;
 }
 
 button:active:enabled {
-	background: #ccc;
+    background: #f4dfcd;
 }
 
-.logo {
-	width: 204px;
+/* Full-width rows */
+#button-container br {
+    display: none;
+}
+#button-container > button:nth-child(n + 21) {
+    grid-column: 1 / -1;
 }
