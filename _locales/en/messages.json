@@ -1,34 +1,32 @@
 {
+    "extensionName": {
+        "message": "FocusHoot",
+        "description": "Name of the extension."
+    },
 
-	"extensionName": {
-		"message": "LeechBlock NG",
-		"description": "Name of the extension."
-	},
+    "extensionDescription": {
+        "message": "FocusHoot is a simple productivity tool for blocking time-wasting sites.",
+        "description": "Description of the extension."
+    },
 
-	"extensionDescription": {
-		"message": "LeechBlock is a simple productivity tool for blocking time-wasting sites.",
-		"description": "Description of the extension."
-	},
+    "localePath": {
+        "message": "/",
+        "description": "Path to localized files."
+    },
 
-	"localePath": {
-		"message": "/",
-		"description": "Path to localized files."
-	},
+    "optionsMenuItem": { "message": "Options" },
 
-	"optionsMenuItem": { "message": "Options" },
+    "lockdownMenuItem": { "message": "Lockdown" },
 
-	"lockdownMenuItem": { "message": "Lockdown" },
+    "overrideMenuItem": { "message": "Override" },
 
-	"overrideMenuItem": { "message": "Override" },
+    "statisticsMenuItem": { "message": "Statistics" },
 
-	"statisticsMenuItem": { "message": "Statistics" },
+    "addSiteMenuItem": { "message": "Add Site" },
 
-	"addSiteMenuItem": { "message": "Add Site" },
+    "addSiteToBlockSetMenuItem": { "message": "Add Site to Block Set" },
 
-	"addSiteToBlockSetMenuItem": { "message": "Add Site to Block Set" },
+    "addPageMenuItem": { "message": "Add Page" },
 
-	"addPageMenuItem": { "message": "Add Page" },
-
-	"addPageToBlockSetMenuItem": { "message": "Add Page to Block Set" }
-
+    "addPageToBlockSetMenuItem": { "message": "Add Page to Block Set" }
 }
