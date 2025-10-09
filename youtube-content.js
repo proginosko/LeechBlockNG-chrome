@@ -326,6 +326,9 @@ function showLoadingOverlay(immediate = false) {
     overlayElement = document.createElement("div");
     overlayElement.id = "lbng-youtube-overlay";
     const owlSrc = chrome.runtime.getURL("images/owl-reply.png");
+    const dark =
+        window.matchMedia &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches;
     overlayElement.innerHTML = `
         <div style="
             position: fixed;
@@ -333,7 +336,9 @@ function showLoadingOverlay(immediate = false) {
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(43, 42, 41, 0.85);
+            background: ${
+                dark ? "rgba(12, 11, 10, 0.8)" : "rgba(43, 42, 41, 0.85)"
+            };
             z-index: 999999;
             display: flex;
             align-items: center;
@@ -341,23 +346,29 @@ function showLoadingOverlay(immediate = false) {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
         ">
             <div style="
-                background: #fcfaf8;
+                background: ${dark ? "#262320" : "#fcfaf8"};
                 padding: 40px;
                 border-radius: 12px;
                 text-align: center;
                 max-width: 450px;
-                border: 1px solid #efe7df;
+                border: 1px solid ${dark ? "#3a352f" : "#efe7df"};
             ">
                 <img src="${owlSrc}" alt="FocusHoot" width="64" height="64" style="display:inline-block; margin-bottom: 16px; animation: lbng-pulse 1.5s ease-in-out infinite;" />
-                <h2 style="margin: 0 0 6px 0; color: #2b2a29; font-size: 22px;">Hoot! Doing a quick focus check...</h2>
-                <div style="margin: 0 0 10px 0; color: #6b625c; font-size: 16px; font-weight: 600;">Analyzing Video Content</div>
-                <p style="color: #6b625c; margin: 0 0 20px 0; font-size: 14px; line-height: 1.5;" id="lbng-goal-text">
+                <h2 style="margin: 0 0 6px 0; color: ${
+                    dark ? "#f3f2f0" : "#2b2a29"
+                }; font-size: 22px;">Hoot! Doing a quick focus check...</h2>
+                <div style="margin: 0 0 10px 0; color: ${
+                    dark ? "#c9c3bd" : "#6b625c"
+                }; font-size: 16px; font-weight: 600;">Analyzing Video Content</div>
+                <p style="color: ${
+                    dark ? "#c9c3bd" : "#6b625c"
+                }; margin: 0 0 20px 0; font-size: 14px; line-height: 1.5;" id="lbng-goal-text">
                     Checking if this video matches your focus goal...
                 </p>
                 <div style="
                     width: 100%;
                     height: 4px;
-                    background: #efe7df;
+                    background: ${dark ? "#3a352f" : "#efe7df"};
                     border-radius: 2px;
                     overflow: hidden;
                     margin-top: 20px;
@@ -365,11 +376,15 @@ function showLoadingOverlay(immediate = false) {
                     <div style="
                         width: 100%;
                         height: 100%;
-                        background: linear-gradient(90deg, #c4672a 0%, #d07a40 100%);
+                        background: linear-gradient(90deg, ${
+                            dark ? "#e08946" : "#c4672a"
+                        } 0%, ${dark ? "#f09a59" : "#d07a40"} 100%);
                         animation: lbng-progress 1.2s ease-in-out infinite;
                     "></div>
                 </div>
-                <p style="color: #6b625c; margin: 20px 0 0 0; font-size: 12px;">
+                <p style="color: ${
+                    dark ? "#c9c3bd" : "#6b625c"
+                }; margin: 20px 0 0 0; font-size: 12px;">
                     This usually takes 2-3 seconds
                 </p>
             </div>
