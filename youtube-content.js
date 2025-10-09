@@ -45,75 +45,232 @@ async function checkFocusMode() {
 // APPLY YOUTUBE CONTENT FILTERS
 // ==========================================
 function applyYouTubeFilters() {
-    if (filterStyleElement) return; // Already applied
-    
-    console.log("[LBNG YouTube] 🎨 Applying content filters...");
-    
-    // Inject CSS to hide distractions
-    filterStyleElement = document.createElement('style');
-    filterStyleElement.id = 'lbng-youtube-filter';
-    filterStyleElement.textContent = `
-        /* Hide home feed recommendations */
-        ytd-browse[page-subtype="home"] #primary,
-        ytd-browse[page-subtype="subscriptions"] #primary {
-            display: none !important;
-        }
+  if (filterStyleElement) return; // Already applied
+  
+  console.log("[LBNG YouTube] 🎨 Applying Zen Mode filters...");
+  
+  // Inject CSS to hide distractions
+  filterStyleElement = document.createElement('style');
+  filterStyleElement.id = 'lbng-youtube-filter';
+  filterStyleElement.textContent = `
+      /* ===================================
+         LBNG YOUTUBE ZEN MODE
+         Complete distraction elimination
+         =================================== */
 
-        /* Hide Shorts everywhere */
-        ytd-reel-shelf-renderer,
-        ytd-rich-shelf-renderer[is-shorts],
-        ytd-guide-entry-renderer a[title="Shorts"],
-        ytd-mini-guide-entry-renderer a[title="Shorts"] {
-            display: none !important;
-        }
+      /* ========== HIDE SIDEBAR COMPLETELY ========== */
+      #guide,
+      #guide-wrapper,
+      #guide-content,
+      ytd-guide-renderer,
+      ytd-mini-guide-renderer,
+      tp-yt-app-drawer {
+          display: none !important;
+      }
 
-        /* Hide sidebar recommendations on video pages */
-        #related {
-            display: none !important;
-        }
+      /* Hide sidebar toggle button */
+      #guide-button,
+      ytd-guide-button {
+          display: none !important;
+      }
 
-        /* Hide end screens and suggestions */
-        .ytp-ce-element,
-        .ytp-endscreen-content,
-        .ytp-suggestion-set,
-        .ytp-autonav-endscreen-upnext-container {
-            display: none !important;
-        }
+      /* Expand content to use full width */
+      ytd-page-manager {
+          margin-left: 0 !important;
+      }
 
-        /* Hide autoplay in sidebar */
-        #secondary ytd-compact-autoplay-renderer {
-            display: none !important;
-        }
+      #primary,
+      #secondary {
+          margin-left: 0 !important;
+      }
 
-        /* Show focus mode message on home page */
-        ytd-browse[page-subtype="home"]::before {
-            content: "🎯 AI Focus Mode Active";
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            height: 60vh;
-            font-size: 32px;
-            font-weight: 600;
-            color: #606060;
-            font-family: "YouTube Sans", "Roboto", sans-serif;
-        }
+      /* ========== HOME PAGE ========== */
+      /* Hide entire home feed */
+      ytd-browse[page-subtype="home"] #primary,
+      ytd-browse[page-subtype="home"] ytd-two-column-browse-results-renderer,
+      ytd-browse[page-subtype="subscriptions"] #primary,
+      ytd-browse[page-subtype="subscriptions"] ytd-two-column-browse-results-renderer {
+          display: none !important;
+      }
 
-        ytd-browse[page-subtype="home"]::after {
-            content: "Use the search bar to find content relevant to your goal";
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            color: #909090;
-            margin-top: -50vh;
-            padding-top: 60px;
-            font-family: "YouTube Sans", "Roboto", sans-serif;
-        }
-    `;
-    
-    document.documentElement.appendChild(filterStyleElement);
-    console.log("[LBNG YouTube] ✅ Content filters applied");
+      /* Hide Shorts shelf everywhere */
+      ytd-reel-shelf-renderer,
+      ytd-rich-shelf-renderer[is-shorts],
+      ytd-guide-entry-renderer a[title="Shorts"],
+      ytd-mini-guide-entry-renderer a[title="Shorts"],
+      a[title="Shorts"] {
+          display: none !important;
+      }
+
+      /* ========== VIDEO PAGE ========== */
+      /* Hide sidebar recommendations */
+      #related,
+      #secondary {
+          display: none !important;
+      }
+
+      /* Make video player use full width */
+      #primary {
+          max-width: 100% !important;
+      }
+
+      #primary-inner {
+          padding-right: 0 !important;
+      }
+
+      /* Hide end screens and suggestions */
+      .ytp-ce-element,
+      .ytp-endscreen-content,
+      .ytp-suggestion-set,
+      .ytp-autonav-endscreen-upnext-container {
+          display: none !important;
+      }
+
+      /* Hide autoplay */
+      #secondary ytd-compact-autoplay-renderer,
+      ytd-compact-autoplay-renderer {
+          display: none !important;
+      }
+
+      /* ========== NOTIFICATIONS & DISTRACTIONS ========== */
+      /* Hide notification bell */
+      ytd-notification-topbar-button-renderer {
+          display: none !important;
+      }
+
+      /* Hide "Create" button */
+      ytd-topbar-menu-button-renderer:has(a[href*="/upload"]) {
+          display: none !important;
+      }
+
+      /* ========== TRENDING & EXPLORE ========== */
+      ytd-browse[page-subtype="trending"],
+      ytd-browse[page-subtype="explore"] {
+          display: none !important;
+      }
+
+      /* ========== ZEN MODE INDICATORS ========== */
+      /* Show focus mode message on home page */
+      ytd-browse[page-subtype="home"]::before {
+          content: "🧘‍♂️ Zen Mode Active";
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+          height: 60vh;
+          font-size: 40px;
+          font-weight: 700;
+          color: #606060;
+          font-family: "YouTube Sans", "Roboto", sans-serif;
+          margin-top: 10vh;
+      }
+
+      ytd-browse[page-subtype="home"]::after {
+          content: "Use the search bar above to find content relevant to your goal";
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          color: #909090;
+          margin-top: -45vh;
+          padding-top: 60px;
+          font-family: "YouTube Sans", "Roboto", sans-serif;
+      }
+
+      /* Subscriptions page message */
+      ytd-browse[page-subtype="subscriptions"]::before {
+          content: "🧘‍♂️ Zen Mode Active";
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+          height: 60vh;
+          font-size: 40px;
+          font-weight: 700;
+          color: #606060;
+          font-family: "YouTube Sans", "Roboto", sans-serif;
+          margin-top: 10vh;
+      }
+
+      ytd-browse[page-subtype="subscriptions"]::after {
+          content: "Subscription feeds are hidden during focus mode";
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          color: #909090;
+          margin-top: -45vh;
+          padding-top: 60px;
+          font-family: "YouTube Sans", "Roboto", sans-serif;
+      }
+
+      /* ========== KEEP ESSENTIAL ELEMENTS ========== */
+      /* Keep top bar (masthead) with search */
+      #masthead-container,
+      ytd-masthead,
+      #container.ytd-masthead,
+      #search,
+      #search-form,
+      #search-icon-legacy,
+      ytd-searchbox {
+          display: flex !important;
+          visibility: visible !important;
+      }
+
+      /* Keep YouTube logo clickable */
+      #logo,
+      ytd-logo,
+      #logo-icon {
+          display: flex !important;
+          visibility: visible !important;
+      }
+
+      /* Keep user account menu */
+      #avatar-btn,
+      ytd-topbar-menu-button-renderer:last-child {
+          display: flex !important;
+          visibility: visible !important;
+      }
+
+      /* ========== SEARCH RESULTS ========== */
+      /* Keep search results fully visible - they're intentional */
+      ytd-search {
+          display: block !important;
+      }
+
+      ytd-search #primary {
+          display: block !important;
+      }
+
+      /* ========== COMMENTS ========== */
+      /* Keep comments - can be educational */
+      #comments {
+          display: block !important;
+      }
+
+      /* ========== FOCUS MODE BADGE ========== */
+      /* Add visual indicator to top bar */
+      #masthead-container #end::after {
+          content: "🎯 FOCUS MODE";
+          position: absolute;
+          right: 80px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 6px 14px;
+          border-radius: 16px;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.5px;
+          box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+          z-index: 2100;
+          font-family: "YouTube Sans", "Roboto", sans-serif;
+      }
+  `;
+  
+  document.documentElement.appendChild(filterStyleElement);
+  console.log("[LBNG YouTube] ✅ Zen Mode filters applied");
 }
 
 // ==========================================
