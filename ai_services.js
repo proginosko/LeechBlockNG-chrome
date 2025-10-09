@@ -238,3 +238,209 @@ Answer:`;
     };
   }
 }
+
+/**
+ * Generate a playful roast for the blocked page
+ */
+async function generatePlayfulRoast(goal, blockedTitle, blockedChannel, blockCount, apiKey) {
+  console.log("[LBNG AI] Generating roast...");
+
+  const escalation = blockCount >= 5 ? "very firm" : blockCount >= 3 ? "firm" : "gentle";
+  
+  const prompt = `You are a witty, playful AI focus coach. A user is trying to focus on "${goal}" but just tried to watch:
+
+Title: "${blockedTitle}"
+Channel: "${blockedChannel || 'Unknown'}"
+This is block #${blockCount} in their session.
+
+Generate a SHORT (1-2 sentences max), ${escalation} but playful roast that:
+1. Points out the mismatch between their goal and what they clicked
+2. Is funny but motivating, not mean
+3. Uses 1-2 relevant emojis
+4. ${blockCount >= 3 ? 'Shows disappointment about repeat offenses' : 'Is lighthearted'}
+
+Examples:
+- "Ah yes, watching MrBeast destroy cars is DEFINITELY going to help you code better. Solid logic. 🚗💥"
+- "Plot twist: This entertainment video won't teach you English. Shocking, I know. 📚❌"
+- "Third distraction today? We're building a very impressive streak... of procrastination. 😤"
+
+Your roast (KEEP IT SHORT):`;
+
+  try {
+      const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+          {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                  contents: [{ parts: [{ text: prompt }] }],
+                  generationConfig: {
+                      temperature: 0.9,
+                      maxOutputTokens: 4000,
+                  },
+              }),
+          }
+      );
+
+      const data = await response.json();
+      const roast = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (roast) {
+          console.log("[LBNG AI] Roast generated:", roast);
+          return roast.trim();
+      }
+
+      return null;
+  } catch (error) {
+      console.error("[LBNG AI] Roast generation error:", error);
+      return null;
+  }
+}
+
+/**
+* Generate alternative video suggestions
+*/
+async function generateAlternativeVideos(goal, apiKey) {
+  console.log("[LBNG AI] Generating alternatives...");
+
+  const prompt = `A user wants to focus on: "${goal}"
+
+Suggest 3 specific, real YouTube video titles or search queries that would actually help them with this goal.
+
+Format your response as a simple numbered list:
+1. [Video title or search query]
+2. [Video title or search query]
+3. [Video title or search query]
+
+Be specific and practical. These should be real, helpful resources.`;
+
+  try {
+      const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+          {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                  contents: [{ parts: [{ text: prompt }] }],
+                  generationConfig: {
+                      temperature: 0.7,
+                      maxOutputTokens: 4000,
+                  },
+              }),
+          }
+      );
+
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (text) {
+          // Parse the numbered list
+          const lines = text.split('\n').filter(line => line.match(/^\d+\./));
+          const suggestions = lines.map(line => {
+              const title = line.replace(/^\d+\.\s*/, '').trim();
+              return {
+                  title,
+                  url: `https://www.youtube.com/results?search_query=${encodeURIComponent(title)}`,
+                  channel: 'Search Results'
+              };
+          });
+
+          console.log("[LBNG AI] Alternatives generated:", suggestions);
+          return suggestions;
+      }
+
+      return [];
+  } catch (error) {
+      console.error("[LBNG AI] Alternatives error:", error);
+      return [];
+  }
+}
+
+/**
+* Generate motivational quote
+*/
+async function generateMotivationalQuote(goal, blockCount, apiKey) {
+  console.log("[LBNG AI] Generating quote...");
+
+  const prompt = `Generate a SHORT (one sentence), motivational quote about focusing on "${goal}" and avoiding distractions.
+
+Make it inspiring but slightly humorous. No attribution needed.
+
+Examples:
+- "The only thing between you and ${goal} is an unclicked distraction."
+- "Future you is cheering for present you to stay focused."
+
+Your quote:`;
+
+  try {
+      const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+          {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                  contents: [{ parts: [{ text: prompt }] }],
+                  generationConfig: {
+                      temperature: 0.8,
+                      maxOutputTokens: 500,
+                  },
+              }),
+          }
+      );
+
+      const data = await response.json();
+      const quote = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      return quote ? quote.trim().replace(/^["']|["']$/g, '') : null;
+  } catch (error) {
+      console.error("[LBNG AI] Quote error:", error);
+      return null;
+  }
+}
+
+/**
+* Generate reflection advice
+*/
+async function generateReflectionAdvice(goal, reason, apiKey) {
+  console.log("[LBNG AI] Generating reflection advice...");
+
+  const reasonContext = {
+      'break': 'they needed a break',
+      'auto': 'they clicked without thinking (autopilot)',
+      'curious': 'they were just curious',
+      'thought-educational': 'they thought it would be educational'
+  };
+
+  const prompt = `A user trying to focus on "${goal}" just clicked a distraction because ${reasonContext[reason]}.
+
+Give them SHORT (2 sentences max), practical, friendly advice on how to handle this better next time.
+
+Be understanding but firm. Include one emoji.
+
+Your advice:`;
+
+  try {
+      const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+          {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                  contents: [{ parts: [{ text: prompt }] }],
+                  generationConfig: {
+                      temperature: 0.7,
+                      maxOutputTokens: 4000,
+                  },
+              }),
+          }
+      );
+
+      const data = await response.json();
+      const advice = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      return advice ? advice.trim() : null;
+  } catch (error) {
+      console.error("[LBNG AI] Reflection advice error:", error);
+      return null;
+  }
+}

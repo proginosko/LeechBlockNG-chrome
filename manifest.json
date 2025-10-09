@@ -107,6 +107,19 @@
     "unlimitedStorage",
     "webNavigation"
   ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "dynamic-blocked.html",
+        "dynamic-blocked.css",
+        "dynamic-blocked.js",
+        "blocked.html",
+        "delayed.html",
+        "password.html"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
 
   "version": "1.7"
 }

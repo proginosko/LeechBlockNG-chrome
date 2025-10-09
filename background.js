@@ -1726,10 +1726,17 @@ function handleMessage(message, sender, sendResponse) {
 
           applyLockdown(aiBlockSet, endTime);
 
+          // ✅ INITIALIZE STATS FOR NEW SESSION
           await browser.storage.local.set({
             aiLockdownActive: true,
             aiLockdownEndTime: endTime * 1000,
             aiLockdownGoal: message.goal,
+            aiBlockStats: {
+              // ✅ Reset stats
+              blocked: 0,
+              allowed: 0,
+              startTime: Date.now(),
+            },
           });
 
           log(`AI Focus Mode started for Set ${aiBlockSet}.`);
@@ -1742,7 +1749,7 @@ function handleMessage(message, sender, sendResponse) {
           });
         }
       })();
-      return true; // Keep channel open for async response
+      return true;
     case "analyzeYouTubeContent":
       (async () => {
         try {
@@ -1787,23 +1794,26 @@ function handleMessage(message, sender, sendResponse) {
           const userGoal = lockdownData.aiLockdownGoal;
           const videoInfo = message.videoInfo;
 
-          // CHECK FOR INCOMPLETE DATA - don't use cache if title is missing
           const hasCompleteData =
             videoInfo.title && videoInfo.title.trim().length > 0;
-
-          // Check cache only if we have complete data
           const cacheKey = `yt:${videoInfo.videoId}:${userGoal}`;
           const cached = youtubeAnalysisCache.get(cacheKey);
 
-          if (
-            hasCompleteData &&
-            cached &&
-            Date.now() - cached.timestamp < 3600000
-          ) {
-            console.log(
-              "[LBNG Background] Using cached YouTube analysis:",
-              cached
-            );
+          if (hasCompleteData && cached && Date.now() - cached.timestamp < 3600000) {
+            console.log("[LBNG Background] Using cached YouTube analysis:", cached);
+            
+            // ✅ REDIRECT IF CACHED RESULT IS BLOCK
+            if (!cached.isAllowed) {
+              const aiBlockSet = gOptions["aiBlockSet"] || 1;
+              let blockURL = browser.runtime.getURL('dynamic-blocked.html');
+              blockURL += `?S=${aiBlockSet}`;
+              blockURL += `&U=${encodeURIComponent(videoInfo.url)}`;
+              blockURL += `&K=${encodeURIComponent(videoInfo.title + ' | ' + videoInfo.channelName)}`;
+              
+              console.log("[LBNG Background] 🚫 Redirecting using cached result");
+              browser.tabs.update(sender.tab.id, { url: blockURL });
+            }
+            
             sendResponse({
               shouldBlock: !cached.isAllowed,
               reason: cached.reason,
@@ -1811,8 +1821,8 @@ function handleMessage(message, sender, sendResponse) {
             });
             return;
           }
+          
 
-          // IF NO TITLE YET - tell content script to wait and retry
           if (!hasCompleteData) {
             console.log(
               "[LBNG Background] Video metadata not ready yet, telling content script to retry"
@@ -1820,12 +1830,11 @@ function handleMessage(message, sender, sendResponse) {
             sendResponse({
               shouldBlock: false,
               reason: "Metadata not ready",
-              retry: true, // Signal to retry
+              retry: true,
             });
             return;
           }
 
-          // Send update to content script about goal
           browser.tabs
             .sendMessage(sender.tab.id, {
               type: "updateOverlayGoal",
@@ -1833,7 +1842,6 @@ function handleMessage(message, sender, sendResponse) {
             })
             .catch(() => {});
 
-          // Perform AI analysis
           console.log("[LBNG Background] Analyzing YouTube content with AI...");
           const result = await analyzeYouTubeContent(
             videoInfo,
@@ -1843,6 +1851,29 @@ function handleMessage(message, sender, sendResponse) {
 
           console.log("[LBNG Background] YouTube analysis complete:", result);
 
+          // ==========================================
+          // ✅ UPDATE STATS
+          // ==========================================
+          let statsData = await browser.storage.local.get("aiBlockStats");
+          let stats = statsData.aiBlockStats || {
+            blocked: 0,
+            allowed: 0,
+            startTime: Date.now(),
+          };
+
+          if (result.isAllowed) {
+            stats.allowed++;
+            console.log("[LBNG Background] 📊 Stats - Allowed:", stats.allowed);
+          } else {
+            stats.blocked++;
+            console.log("[LBNG Background] 📊 Stats - Blocked:", stats.blocked);
+          }
+
+          await browser.storage.local.set({ aiBlockStats: stats });
+
+          // ==========================================
+          // ✅ CACHE THE RESULT
+          // ==========================================
           if (
             result.reason !== "No title to analyze" &&
             !result.reason.includes("Analysis failed") &&
@@ -1864,21 +1895,30 @@ function handleMessage(message, sender, sendResponse) {
             );
           }
 
-          // If blocking, prepare block URL
-          let blockURL = null;
+          // ==========================================
+          // ✅ PERFORM REDIRECT IF BLOCKED
+          // ==========================================
           if (!result.isAllowed) {
             const aiBlockSet = gOptions["aiBlockSet"] || 1;
-            blockURL = gOptions[`blockURL${aiBlockSet}`] || DEFAULT_BLOCK_URL;
-            blockURL = getLocalizedURL(blockURL)
-              .replace(/\$K/g, "YouTube: " + result.reason)
-              .replace(/\$S/g, aiBlockSet)
-              .replace(/\$U/g, videoInfo.url);
+            let blockURL = browser.runtime.getURL("dynamic-blocked.html");
+            blockURL += `?S=${aiBlockSet}`;
+            blockURL += `&U=${encodeURIComponent(videoInfo.url)}`;
+            blockURL += `&K=${encodeURIComponent(
+              videoInfo.title + " | " + videoInfo.channelName
+            )}`;
+
+            console.log(
+              "[LBNG Background] 🚫 Redirecting to dynamic block page:",
+              blockURL
+            );
+
+            // ✅ THIS IS THE KEY FIX - BACKGROUND SCRIPT DOES THE REDIRECT
+            browser.tabs.update(sender.tab.id, { url: blockURL });
           }
 
           sendResponse({
             shouldBlock: !result.isAllowed,
             reason: result.reason,
-            blockURL: blockURL,
           });
         } catch (error) {
           console.error(
@@ -1892,6 +1932,118 @@ function handleMessage(message, sender, sendResponse) {
         }
       })();
       return true;
+    case "generateRoast":
+      (async () => {
+        try {
+          const { apiKey } = await browser.storage.local.get("apiKey");
+
+          if (!apiKey) {
+            sendResponse({ roast: null });
+            return;
+          }
+
+          const roast = await generatePlayfulRoast(
+            message.goal,
+            message.blockedTitle,
+            message.blockedChannel,
+            message.blockCount,
+            apiKey
+          );
+
+          sendResponse({ roast });
+        } catch (error) {
+          console.error("[LBNG Background] Roast generation error:", error);
+          sendResponse({ roast: null });
+        }
+      })();
+      return true;
+
+    case "generateAlternatives":
+      (async () => {
+        try {
+          const { apiKey } = await browser.storage.local.get("apiKey");
+
+          if (!apiKey) {
+            sendResponse({ suggestions: [] });
+            return;
+          }
+
+          const suggestions = await generateAlternativeVideos(
+            message.goal,
+            apiKey
+          );
+
+          sendResponse({ suggestions });
+        } catch (error) {
+          console.error("[LBNG Background] Alternatives error:", error);
+          sendResponse({ suggestions: [] });
+        }
+      })();
+      return true;
+
+    case "generateQuote":
+      (async () => {
+        try {
+          const { apiKey } = await browser.storage.local.get("apiKey");
+
+          if (!apiKey) {
+            sendResponse({ quote: null });
+            return;
+          }
+
+          const quote = await generateMotivationalQuote(
+            message.goal,
+            message.blockCount,
+            apiKey
+          );
+
+          sendResponse({ quote });
+        } catch (error) {
+          console.error("[LBNG Background] Quote error:", error);
+          sendResponse({ quote: null });
+        }
+      })();
+      return true;
+
+    case "generateReflectionResponse":
+      (async () => {
+        try {
+          const { apiKey } = await browser.storage.local.get("apiKey");
+
+          if (!apiKey) {
+            sendResponse({ advice: null });
+            return;
+          }
+
+          const advice = await generateReflectionAdvice(
+            message.goal,
+            message.reason,
+            apiKey
+          );
+
+          sendResponse({ advice });
+        } catch (error) {
+          console.error("[LBNG Background] Reflection error:", error);
+          sendResponse({ advice: null });
+        }
+      })();
+      return true;
+
+    case "endAiSession":
+      (async () => {
+        await browser.storage.local.set({
+          aiLockdownActive: false,
+          aiLockdownEndTime: 0,
+          aiLockdownGoal: "",
+        });
+        sendResponse({ success: true });
+      })();
+      break;
+    case "trackReflection":
+      // Optional: Track reflection reasons for analytics
+      console.log("[LBNG Background] Reflection tracked:", message.reason);
+      sendResponse({ success: true });
+      break;
     case "add-sites":
       // Add sites to block set
       addSitesToSet(message.sites, message.set);

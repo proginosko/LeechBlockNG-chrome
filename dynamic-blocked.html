@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Guardian - Distraction Blocked</title>
+    <link rel="stylesheet" href="dynamic-blocked.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="ai-avatar" id="aiAvatar">
+                <span class="emoji">😏</span>
+            </div>
+            <h1>AI Focus Guardian</h1>
+            <p class="subtitle">Protecting your productivity, one distraction at a time</p>
+        </div>
+
+        <!-- The Roast Section -->
+        <div class="roast-section">
+            <div class="roast-box">
+                <div class="roast-icon">💬</div>
+                <p class="roast-text" id="roastText">
+                    <span class="loading-dots">Generating your personalized reality check<span>.</span><span>.</span><span>.</span></span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Evidence Section -->
+        <div class="evidence">
+            <h3 class="section-title">📋 The Evidence</h3>
+            <div class="evidence-grid">
+                <div class="evidence-item goal">
+                    <div class="evidence-icon">🎯</div>
+                    <div class="evidence-content">
+                        <div class="evidence-label">Your Goal</div>
+                        <div class="evidence-value" id="userGoal">Loading...</div>
+                    </div>
+                </div>
+                <div class="evidence-item blocked">
+                    <div class="evidence-icon">🚫</div>
+                    <div class="evidence-content">
+                        <div class="evidence-label">What You Tried to Watch</div>
+                        <div class="evidence-value" id="blockedTitle">Loading...</div>
+                        <div class="evidence-meta" id="blockedChannel"></div>
+                    </div>
+                </div>
+                <div class="evidence-item time">
+                    <div class="evidence-icon">⏳</div>
+                    <div class="evidence-content">
+                        <div class="evidence-label">Session Time Remaining</div>
+                        <div class="evidence-value" id="timeLeft">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="stats">
+            <h3 class="section-title">📊 Today's Focus Report</h3>
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🛡️</div>
+                    <div class="stat-value" id="blockedCount">0</div>
+                    <div class="stat-label">Distractions Blocked</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⏱️</div>
+                    <div class="stat-value" id="focusTime">0m</div>
+                    <div class="stat-label">Focus Time Protected</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-value" id="allowedCount">0</div>
+                    <div class="stat-label">Productive Videos</div>
+                </div>
+                <div class="stat-card success-rate">
+                    <div class="stat-icon">📈</div>
+                    <div class="stat-value" id="successRate">0%</div>
+                    <div class="stat-label">Success Rate</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Streak Section (if applicable) -->
+        <div class="streak-section" id="streakSection" style="display: none;">
+            <div class="streak-box">
+                <div class="streak-icon">🔥</div>
+                <div class="streak-content">
+                    <div class="streak-value" id="streakValue">0h 0m</div>
+                    <div class="streak-label">Current Focus Streak</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alternatives Section -->
+        <div class="alternatives" id="alternativesSection">
+            <h3 class="section-title">💡 Watch These Instead</h3>
+            <div class="alternatives-content">
+                <p class="alternatives-intro">Based on your goal, these might actually help:</p>
+                <div class="suggestions-list" id="suggestionsList">
+                    <div class="suggestion-loading">
+                        <div class="spinner"></div>
+                        <p>Finding relevant content...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reflection Section -->
+        <div class="reflection">
+            <h3 class="section-title">❓ Quick Reflection</h3>
+            <p class="reflection-question">Why did you really click this?</p>
+            <div class="reflection-options">
+                <button class="reflection-btn" data-reason="break">
+                    <span class="btn-icon">☕</span>
+                    <span>Needed a break</span>
+                </button>
+                <button class="reflection-btn" data-reason="auto">
+                    <span class="btn-icon">🤖</span>
+                    <span>Wasn't thinking</span>
+                </button>
+                <button class="reflection-btn" data-reason="curious">
+                    <span class="btn-icon">🤔</span>
+                    <span>Just curious</span>
+                </button>
+                <button class="reflection-btn" data-reason="thought-educational">
+                    <span class="btn-icon">📚</span>
+                    <span>Thought it was educational</span>
+                </button>
+            </div>
+            <div class="reflection-response" id="reflectionResponse" style="display: none;">
+                <div class="response-icon">💭</div>
+                <p id="responseText"></p>
+            </div>
+        </div>
+
+        <!-- Motivational Quote -->
+        <div class="quote-section">
+            <div class="quote-box" id="quoteBox">
+                <div class="quote-icon">💎</div>
+                <p class="quote-text" id="quoteText">Loading wisdom...</p>
+                <p class="quote-author">— AI Focus Coach</p>
+            </div>
+        </div>
+
+        <!-- Actions (NO END SESSION BUTTON) -->
+        <div class="actions">
+            <button class="btn btn-primary" id="backBtn">
+                <span class="btn-icon">←</span>
+                <span>Back to YouTube Home</span>
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Stay focused. You've got this. 💪</p>
+        </div>
+    </div>
+
+    <script src="dynamic-blocked.js"></script>
+</body>
+</html>
