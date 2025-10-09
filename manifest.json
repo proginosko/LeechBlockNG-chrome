@@ -1,128 +1,127 @@
 {
-  "action": {
-    "browser_style": false,
-    "default_icon": {
-      "16": "icons/leechblock16.png",
-      "32": "icons/leechblock32.png",
-      "48": "icons/leechblock48.png",
-      "64": "icons/leechblock64.png"
+    "action": {
+        "browser_style": false,
+        "default_icon": {
+            "16": "icons/leechblock16.png",
+            "32": "icons/leechblock32.png",
+            "48": "icons/leechblock48.png",
+            "64": "icons/leechblock64.png"
+        },
+        "default_popup": "popup.html",
+        "default_title": "AI Block"
     },
-    "default_popup": "popup.html",
-    "default_title": "AI Block"
-  },
 
-  "author": "James Anderson",
+    "author": "James Anderson",
 
-  "background": {
-    "service_worker": "background.js"
-  },
+    "background": {
+        "service_worker": "background.js"
+    },
 
-  "commands": {
-    "lb-options": {
-      "description": "Open the options page"
+    "commands": {
+        "lb-options": {
+            "description": "Open the options page"
+        },
+        "lb-statistics": {
+            "description": "Open the statistics page"
+        },
+        "lb-lockdown": {
+            "description": "Activate lockdown"
+        },
+        "lb-override": {
+            "description": "Activate override"
+        },
+        "lb-cancel-override": {
+            "description": "Cancel override"
+        },
+        "lb-add-sites": {
+            "description": "Add sites to block set"
+        },
+        "lb-reset-rollover": {
+            "description": "Reset rollover time"
+        },
+        "lb-discard-time": {
+            "description": "Discard remaining time"
+        }
     },
-    "lb-statistics": {
-      "description": "Open the statistics page"
-    },
-    "lb-lockdown": {
-      "description": "Activate lockdown"
-    },
-    "lb-override": {
-      "description": "Activate override"
-    },
-    "lb-cancel-override": {
-      "description": "Cancel override"
-    },
-    "lb-add-sites": {
-      "description": "Add sites to block set"
-    },
-    "lb-reset-rollover": {
-      "description": "Reset rollover time"
-    },
-    "lb-discard-time": {
-      "description": "Discard remaining time"
-    }
-  },
 
-"content_scripts": [
-  {
-    "matches": ["<all_urls>"],
-    "exclude_matches": ["*://*/*lb-custom*"],
-    "css": ["content.css"],
-    "js": ["content.js"],
-    "run_at": "document_start"
-  },
-  {
-    "matches": ["*://*/*lb-custom*"],
-    "js": ["blocked.js"]
-  },
-  {
-    "matches": [
-      "https://www.youtube.com/*",
-      "https://m.youtube.com/*"
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "exclude_matches": ["*://*/*lb-custom*"],
+            "css": ["content.css"],
+            "js": ["content.js"],
+            "run_at": "document_start"
+        },
+        {
+            "matches": ["*://*/*lb-custom*"],
+            "js": ["blocked.js"]
+        },
+        {
+            "matches": ["https://www.youtube.com/*", "https://m.youtube.com/*"],
+            "js": ["youtube-content.js"],
+            "run_at": "document_start"
+        }
     ],
-    "js": ["youtube-content.js"],
-    "run_at": "document_start"
-  }
-],
 
-  "default_locale": "en",
+    "default_locale": "en",
 
-  "description": "__MSG_extensionDescription__",
+    "description": "__MSG_extensionDescription__",
 
-  "homepage_url": "https://www.proginosko.com/leechblock/",
+    "homepage_url": "https://www.proginosko.com/leechblock/",
 
-  "host_permissions": [
-    "<all_urls>",
-    "http://*/*",
-    "https://*/*",
-    "https://generativelanguage.googleapis.com/"
-  ],
+    "host_permissions": [
+        "<all_urls>",
+        "http://*/*",
+        "https://*/*",
+        "https://generativelanguage.googleapis.com/"
+    ],
 
-  "icons": {
-    "16": "icons/leechblock16.png",
-    "32": "icons/leechblock32.png",
-    "48": "icons/leechblock48.png",
-    "64": "icons/leechblock64.png",
-    "96": "icons/leechblock96.png",
-    "128": "icons/leechblock128.png"
-  },
+    "icons": {
+        "16": "icons/leechblock16.png",
+        "32": "icons/leechblock32.png",
+        "48": "icons/leechblock48.png",
+        "64": "icons/leechblock64.png",
+        "96": "icons/leechblock96.png",
+        "128": "icons/leechblock128.png"
+    },
 
-  "incognito": "split",
+    "incognito": "split",
 
-  "manifest_version": 3,
+    "manifest_version": 3,
 
-  "name": "__MSG_extensionName__",
+    "name": "__MSG_extensionName__",
 
-  "options_ui": {
-    "page": "options.html",
-    "open_in_tab": true
-  },
+    "options_ui": {
+        "page": "options.html",
+        "open_in_tab": true
+    },
 
-  "optional_permissions": ["history"],
+    "optional_permissions": ["history"],
 
-  "permissions": [
-    "alarms",
-    "contextMenus",
-    "offscreen",
-    "storage",
-    "tabs",
-    "unlimitedStorage",
-    "webNavigation"
-  ],
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "dynamic-blocked.html",
-        "dynamic-blocked.css",
-        "dynamic-blocked.js",
-        "blocked.html",
-        "delayed.html",
-        "password.html"
-      ],
-      "matches": ["<all_urls>"]
-    }
-  ],
+    "permissions": [
+        "alarms",
+        "contextMenus",
+        "offscreen",
+        "storage",
+        "tabs",
+        "unlimitedStorage",
+        "webNavigation"
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "dynamic-blocked.html",
+                "dynamic-blocked.css",
+                "dynamic-blocked.js",
+                "blocked.html",
+                "delayed.html",
+                "password.html",
+                "images/*",
+                "images/anger-level/*"
+            ],
+            "matches": ["<all_urls>"]
+        }
+    ],
 
-  "version": "1.7"
+    "version": "1.7"
 }
