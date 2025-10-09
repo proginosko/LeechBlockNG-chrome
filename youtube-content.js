@@ -4,15 +4,166 @@ let analysisInProgress = false;
 let overlayElement = null;
 let currentVideoId = null;
 let blockPending = false;
-let lastExtractedTitle = ""; //
-// ... (keep all the overlay functions the same) ...
+let lastExtractedTitle = "";
+let focusModeActive = false;
+let filterStyleElement = null;
 
+// ==========================================
+// CHECK IF AI FOCUS MODE IS ACTIVE
+// ==========================================
+async function checkFocusMode() {
+    try {
+        const data = await chrome.storage.local.get([
+            'aiLockdownActive',
+            'aiLockdownEndTime',
+            'aiLockdownGoal'
+        ]);
+        
+        const isActive = data.aiLockdownActive && Date.now() < data.aiLockdownEndTime;
+        
+        if (isActive !== focusModeActive) {
+            focusModeActive = isActive;
+            
+            if (focusModeActive) {
+                console.log("[LBNG YouTube] 🎯 AI Focus Mode ACTIVE");
+                applyYouTubeFilters();
+                blockShortsIfNeeded();
+            } else {
+                console.log("[LBNG YouTube] ✅ AI Focus Mode INACTIVE");
+                removeYouTubeFilters();
+            }
+        }
+        
+        return isActive;
+    } catch (error) {
+        console.error("[LBNG YouTube] Error checking focus mode:", error);
+        return false;
+    }
+}
+
+// ==========================================
+// APPLY YOUTUBE CONTENT FILTERS
+// ==========================================
+function applyYouTubeFilters() {
+    if (filterStyleElement) return; // Already applied
+    
+    console.log("[LBNG YouTube] 🎨 Applying content filters...");
+    
+    // Inject CSS to hide distractions
+    filterStyleElement = document.createElement('style');
+    filterStyleElement.id = 'lbng-youtube-filter';
+    filterStyleElement.textContent = `
+        /* Hide home feed recommendations */
+        ytd-browse[page-subtype="home"] #primary,
+        ytd-browse[page-subtype="subscriptions"] #primary {
+            display: none !important;
+        }
+
+        /* Hide Shorts everywhere */
+        ytd-reel-shelf-renderer,
+        ytd-rich-shelf-renderer[is-shorts],
+        ytd-guide-entry-renderer a[title="Shorts"],
+        ytd-mini-guide-entry-renderer a[title="Shorts"] {
+            display: none !important;
+        }
+
+        /* Hide sidebar recommendations on video pages */
+        #related {
+            display: none !important;
+        }
+
+        /* Hide end screens and suggestions */
+        .ytp-ce-element,
+        .ytp-endscreen-content,
+        .ytp-suggestion-set,
+        .ytp-autonav-endscreen-upnext-container {
+            display: none !important;
+        }
+
+        /* Hide autoplay in sidebar */
+        #secondary ytd-compact-autoplay-renderer {
+            display: none !important;
+        }
+
+        /* Show focus mode message on home page */
+        ytd-browse[page-subtype="home"]::before {
+            content: "🎯 AI Focus Mode Active";
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            height: 60vh;
+            font-size: 32px;
+            font-weight: 600;
+            color: #606060;
+            font-family: "YouTube Sans", "Roboto", sans-serif;
+        }
+
+        ytd-browse[page-subtype="home"]::after {
+            content: "Use the search bar to find content relevant to your goal";
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #909090;
+            margin-top: -50vh;
+            padding-top: 60px;
+            font-family: "YouTube Sans", "Roboto", sans-serif;
+        }
+    `;
+    
+    document.documentElement.appendChild(filterStyleElement);
+    console.log("[LBNG YouTube] ✅ Content filters applied");
+}
+
+// ==========================================
+// REMOVE YOUTUBE CONTENT FILTERS
+// ==========================================
+function removeYouTubeFilters() {
+    if (filterStyleElement) {
+        filterStyleElement.remove();
+        filterStyleElement = null;
+        console.log("[LBNG YouTube] ❌ Content filters removed");
+    }
+}
+
+// ==========================================
+// BLOCK YOUTUBE SHORTS
+// ==========================================
+async function blockShortsIfNeeded() {
+    const isShortsPage = window.location.pathname.startsWith('/shorts/');
+    
+    if (isShortsPage && focusModeActive) {
+        console.log("[LBNG YouTube] 🚫 Blocking YouTube Shorts");
+        
+        try {
+            const data = await chrome.storage.local.get(['aiLockdownGoal', 'aiBlockSet']);
+            const goal = data.aiLockdownGoal || 'your goal';
+            const aiBlockSet = data.aiBlockSet || 1;
+            
+            // Construct block URL
+            const blockURL = chrome.runtime.getURL('dynamic-blocked.html') +
+                `?S=${aiBlockSet}` +
+                `&U=${encodeURIComponent(window.location.href)}` +
+                `&K=${encodeURIComponent('YouTube Shorts | Distraction')}`;
+            
+            // Redirect to block page
+            window.location.replace(blockURL);
+        } catch (error) {
+            console.error("[LBNG YouTube] Error blocking Shorts:", error);
+        }
+    }
+}
+
+// ==========================================
+// OVERLAY FUNCTIONS
+// ==========================================
 function showLoadingOverlay(immediate = false) {
-  if (overlayElement) return;
+    if (overlayElement) return;
 
-  overlayElement = document.createElement("div");
-  overlayElement.id = "lbng-youtube-overlay";
-  overlayElement.innerHTML = `
+    overlayElement = document.createElement('div');
+    overlayElement.id = 'lbng-youtube-overlay';
+    overlayElement.innerHTML = `
         <div style="
             position: fixed;
             top: 0;
@@ -70,310 +221,335 @@ function showLoadingOverlay(immediate = false) {
             }
         </style>
     `;
-
-  document.documentElement.appendChild(overlayElement);
-  console.log("[LBNG YouTube] Overlay shown");
+    
+    document.documentElement.appendChild(overlayElement);
+    console.log("[LBNG YouTube] Overlay shown");
 }
 
 function hideLoadingOverlay() {
-  if (overlayElement) {
-    overlayElement.remove();
-    overlayElement = null;
-    console.log("[LBNG YouTube] Overlay hidden");
-  }
+    if (overlayElement) {
+        overlayElement.remove();
+        overlayElement = null;
+        console.log("[LBNG YouTube] Overlay hidden");
+    }
 }
 
 function updateOverlayGoal(goal) {
-  const goalText = document.getElementById("lbng-goal-text");
-  if (goalText && goal) {
-    goalText.innerHTML = `Checking if this video matches your goal:<br><strong>${goal}</strong>`;
-  }
+    const goalText = document.getElementById('lbng-goal-text');
+    if (goalText && goal) {
+        goalText.innerHTML = `Checking if this video matches your goal:<br><strong>${goal}</strong>`;
+    }
 }
 
+// ==========================================
+// VIDEO INFO EXTRACTION
+// ==========================================
 function getVideoIdFromUrl(url) {
-  const urlParams = new URLSearchParams(new URL(url).search);
-  return urlParams.get("v");
+    const urlParams = new URLSearchParams(new URL(url).search);
+    return urlParams.get('v');
 }
 
 function extractVideoInfo() {
-  const videoId = getVideoIdFromUrl(window.location.href);
-
-  if (!videoId) {
-    return null;
-  }
-
-  let title = "";
-  let channelName = "";
-  let description = "";
-
-  const titleSelectors = [
-    'meta[name="title"]',
-    "h1.ytd-watch-metadata yt-formatted-string",
-    "h1.title yt-formatted-string",
-    "h1 yt-formatted-string",
-  ];
-
-  for (const selector of titleSelectors) {
-    const element = document.querySelector(selector);
-    if (element) {
-      title = element.getAttribute("content") || element.textContent || "";
-      if (title) break;
+    const videoId = getVideoIdFromUrl(window.location.href);
+    
+    if (!videoId) {
+        return null;
     }
-  }
 
-  const channelSelectors = [
-    "ytd-channel-name a",
-    "ytd-video-owner-renderer ytd-channel-name a",
-    "#owner-name a",
-    'link[itemprop="name"]',
-  ];
+    let title = '';
+    let channelName = '';
+    let description = '';
 
-  for (const selector of channelSelectors) {
-    const element = document.querySelector(selector);
-    if (element) {
-      channelName =
-        element.getAttribute("content") || element.textContent || "";
-      if (channelName) break;
-    }
-  }
+    const titleSelectors = [
+        'meta[name="title"]',
+        'h1.ytd-watch-metadata yt-formatted-string',
+        'h1.title yt-formatted-string',
+        'h1 yt-formatted-string'
+    ];
 
-  const descElement = document.querySelector('meta[name="description"]');
-  if (descElement) {
-    description = descElement.getAttribute("content") || "";
-  }
-
-  return {
-    videoId,
-    url: window.location.href,
-    title: title.trim(),
-    channelName: channelName.trim(),
-    description: description.trim().substring(0, 300),
-  };
-}
-
-// FIXED: Better metadata change detection
-async function analyzeCurrentVideo() {
-  if (analysisInProgress) {
-    console.log("[LBNG YouTube] Analysis already in progress");
-    return;
-  }
-
-  const videoId = getVideoIdFromUrl(window.location.href);
-  if (!videoId) {
-    console.log("[LBNG YouTube] No video ID in URL");
-    return;
-  }
-
-  if (videoId === currentVideoId && !blockPending) {
-    console.log("[LBNG YouTube] Same video, skipping re-analysis");
-    return;
-  }
-
-  currentVideoId = videoId;
-  analysisInProgress = true;
-  blockPending = false;
-
-  console.log("[LBNG YouTube] Starting analysis for video:", videoId);
-
-  showLoadingOverlay(true);
-
-  // IMPROVED: Wait for metadata to actually change
-  let videoInfo = null;
-  let attempts = 0;
-  const maxAttempts = 6; // Increased from 4 to 6
-
-  while (attempts < maxAttempts) {
-    // Longer initial delay for YouTube's SPA to settle
-    const delay = attempts === 0 ? 800 : 600;
-    await new Promise((resolve) => setTimeout(resolve, delay));
-
-    videoInfo = extractVideoInfo();
-
-    if (videoInfo && videoInfo.title && videoInfo.title.trim().length > 0) {
-      // CHECK: Has the title actually changed from the last video?
-      if (videoInfo.title !== lastExtractedTitle || attempts === 0) {
-        console.log(
-          "[LBNG YouTube] ✅ Got NEW video metadata on attempt",
-          attempts + 1
-        );
-        console.log("[LBNG YouTube] Title:", videoInfo.title);
-        lastExtractedTitle = videoInfo.title;
-
-        // VERIFY: Wait a bit more and check if title is stable
-        if (attempts < 2) {
-          await new Promise((resolve) => setTimeout(resolve, 300));
-          const recheck = extractVideoInfo();
-          if (recheck && recheck.title === videoInfo.title) {
-            console.log("[LBNG YouTube] ✅ Title verified stable");
-            break; // Title is stable, proceed
-          } else {
-            console.log(
-              "[LBNG YouTube] ⚠️ Title changed during verification, waiting..."
-            );
-            attempts++;
-            continue;
-          }
-        } else {
-          break; // After 2 attempts, trust the title
+    for (const selector of titleSelectors) {
+        const element = document.querySelector(selector);
+        if (element) {
+            title = element.getAttribute('content') || element.textContent || '';
+            if (title) break;
         }
-      } else {
-        console.log(
-          "[LBNG YouTube] ⏳ Title unchanged from previous video, waiting... attempt",
-          attempts + 1
-        );
-        console.log("[LBNG YouTube] Current:", videoInfo.title);
-        console.log("[LBNG YouTube] Previous:", lastExtractedTitle);
-      }
-    } else {
-      console.log("[LBNG YouTube] ⏳ No title yet... attempt", attempts + 1);
     }
 
-    attempts++;
-  }
+    const channelSelectors = [
+        'ytd-channel-name a',
+        'ytd-video-owner-renderer ytd-channel-name a',
+        '#owner-name a',
+        'link[itemprop="name"]'
+    ];
 
-  if (!videoInfo || !videoInfo.videoId) {
-    console.log(
-      "[LBNG YouTube] Could not extract video info, allowing by default"
-    );
-    hideLoadingOverlay();
-    analysisInProgress = false;
-    return;
-  }
-
-  if (!videoInfo.title || videoInfo.title.trim().length === 0) {
-    console.log(
-      "[LBNG YouTube] No title available after",
-      maxAttempts,
-      "attempts, allowing"
-    );
-    hideLoadingOverlay();
-    analysisInProgress = false;
-    return;
-  }
-
-  // FINAL CHECK: If title still matches previous video, something is wrong
-  if (
-    attempts >= maxAttempts &&
-    videoInfo.title === lastExtractedTitle &&
-    lastExtractedTitle !== ""
-  ) {
-    console.warn(
-      "[LBNG YouTube] ⚠️ Title never changed from previous video - YouTube metadata may be stuck"
-    );
-    console.warn(
-      "[LBNG YouTube] Proceeding anyway, but result may be inaccurate"
-    );
-  }
-
-  console.log("[LBNG YouTube] Final video info:", videoInfo);
-
-  try {
-    const response = await chrome.runtime.sendMessage({
-      type: "analyzeYouTubeContent",
-      videoInfo: videoInfo,
-    });
-
-    console.log("[LBNG YouTube] Analysis response:", response);
-
-    if (response && response.shouldBlock) {
-      console.log("[LBNG YouTube] ❌ Content blocked:", response.reason);
-
-      // ✅ NEW: Just keep overlay visible - background script will redirect
-      blockPending = true;
-
-      // Update overlay to show blocking message
-      const goalText = document.getElementById("lbng-goal-text");
-      if (goalText) {
-        goalText.innerHTML = `<strong style="color: #e74c3c;">🚫 Video Blocked</strong><br>${
-          response.reason || "Not relevant to your goal"
-        }`;
-      }
-
-      // Background script will redirect to block page
-      // Keep overlay visible during redirect
-      console.log(
-        "[LBNG YouTube] Waiting for background script to redirect..."
-      );
-    } else {
-      console.log("[LBNG YouTube] ✅ Content allowed:", response?.reason);
-      hideLoadingOverlay();
+    for (const selector of channelSelectors) {
+        const element = document.querySelector(selector);
+        if (element) {
+            channelName = element.getAttribute('content') || element.textContent || '';
+            if (channelName) break;
+        }
     }
-  } catch (error) {
-    console.error("[LBNG YouTube] Analysis error:", error);
-    hideLoadingOverlay();
-  }
 
-  analysisInProgress = false;
+    const descElement = document.querySelector('meta[name="description"]');
+    if (descElement) {
+        description = descElement.getAttribute('content') || '';
+    }
+
+    return {
+        videoId,
+        url: window.location.href,
+        title: title.trim(),
+        channelName: channelName.trim(),
+        description: description.trim().substring(0, 300)
+    };
 }
 
-function isVideoPage() {
-  return (
-    window.location.pathname === "/watch" &&
-    window.location.search.includes("v=")
-  );
-}
-
-// Check on script load
-if (isVideoPage()) {
-  console.log("[LBNG YouTube] Video page detected on load");
-  showLoadingOverlay(true);
-  analyzeCurrentVideo();
-}
-
-// IMPROVED: Better SPA navigation detection
-let lastUrl = location.href;
-const urlObserver = new MutationObserver(() => {
-  const currentUrl = location.href;
-  if (currentUrl !== lastUrl) {
-    console.log("[LBNG YouTube] URL changed:", lastUrl, "→", currentUrl);
-    lastUrl = currentUrl;
-
-    // Reset state
-    analysisInProgress = false;
-    currentVideoId = null;
+// ==========================================
+// VIDEO ANALYSIS
+// ==========================================
+async function analyzeCurrentVideo() {
+    // Check if focus mode is active first
+    const isFocusActive = await checkFocusMode();
+    if (!isFocusActive) {
+        console.log("[LBNG YouTube] Focus mode not active, skipping analysis");
+        return;
+    }
+    
+    if (analysisInProgress) {
+        console.log("[LBNG YouTube] Analysis already in progress");
+        return;
+    }
+    
+    const videoId = getVideoIdFromUrl(window.location.href);
+    if (!videoId) {
+        console.log("[LBNG YouTube] No video ID in URL");
+        return;
+    }
+    
+    if (videoId === currentVideoId && !blockPending) {
+        console.log("[LBNG YouTube] Same video, skipping re-analysis");
+        return;
+    }
+    
+    currentVideoId = videoId;
+    analysisInProgress = true;
     blockPending = false;
-    // DON'T reset lastExtractedTitle - we need it for comparison!
-    hideLoadingOverlay();
+    
+    console.log("[LBNG YouTube] Starting analysis for video:", videoId);
 
-    if (isVideoPage()) {
-      console.log("[LBNG YouTube] New video page detected, analyzing...");
-      // Longer delay for YouTube's SPA to settle
-      setTimeout(() => {
+    showLoadingOverlay(true);
+
+    let videoInfo = null;
+    let attempts = 0;
+    const maxAttempts = 6;
+    
+    while (attempts < maxAttempts) {
+        const delay = attempts === 0 ? 800 : 600;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
+        videoInfo = extractVideoInfo();
+        
+        if (videoInfo && videoInfo.title && videoInfo.title.trim().length > 0) {
+            if (videoInfo.title !== lastExtractedTitle || attempts === 0) {
+                console.log("[LBNG YouTube] ✅ Got NEW video metadata on attempt", attempts + 1);
+                console.log("[LBNG YouTube] Title:", videoInfo.title);
+                lastExtractedTitle = videoInfo.title;
+                
+                if (attempts < 2) {
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    const recheck = extractVideoInfo();
+                    if (recheck && recheck.title === videoInfo.title) {
+                        console.log("[LBNG YouTube] ✅ Title verified stable");
+                        break;
+                    } else {
+                        console.log("[LBNG YouTube] ⚠️ Title changed during verification, waiting...");
+                        attempts++;
+                        continue;
+                    }
+                } else {
+                    break;
+                }
+            } else {
+                console.log("[LBNG YouTube] ⏳ Title unchanged from previous video, waiting... attempt", attempts + 1);
+            }
+        } else {
+            console.log("[LBNG YouTube] ⏳ No title yet... attempt", attempts + 1);
+        }
+        
+        attempts++;
+    }
+
+    if (!videoInfo || !videoInfo.videoId) {
+        console.log("[LBNG YouTube] Could not extract video info, allowing by default");
+        hideLoadingOverlay();
+        analysisInProgress = false;
+        return;
+    }
+
+    if (!videoInfo.title || videoInfo.title.trim().length === 0) {
+        console.log("[LBNG YouTube] No title available after", maxAttempts, "attempts, allowing");
+        hideLoadingOverlay();
+        analysisInProgress = false;
+        return;
+    }
+
+    console.log("[LBNG YouTube] Final video info:", videoInfo);
+
+    try {
+        const response = await chrome.runtime.sendMessage({
+            type: 'analyzeYouTubeContent',
+            videoInfo: videoInfo
+        });
+
+        console.log("[LBNG YouTube] Analysis response:", response);
+
+        if (response && response.shouldBlock) {
+            console.log("[LBNG YouTube] ❌ Content blocked:", response.reason);
+            
+            blockPending = true;
+            
+            const goalText = document.getElementById('lbng-goal-text');
+            if (goalText) {
+                goalText.innerHTML = `<strong style="color: #e74c3c;">🚫 Video Blocked</strong><br>${response.reason || 'Not relevant to your goal'}`;
+            }
+            
+            console.log("[LBNG YouTube] Waiting for background script to redirect...");
+            
+        } else {
+            console.log("[LBNG YouTube] ✅ Content allowed:", response?.reason);
+            hideLoadingOverlay();
+        }
+    } catch (error) {
+        console.error("[LBNG YouTube] Analysis error:", error);
+        hideLoadingOverlay();
+    }
+
+    analysisInProgress = false;
+}
+
+// ==========================================
+// PAGE TYPE DETECTION
+// ==========================================
+function isVideoPage() {
+    return window.location.pathname === '/watch' && window.location.search.includes('v=');
+}
+
+function isShortsPage() {
+    return window.location.pathname.startsWith('/shorts/');
+}
+
+function isHomePage() {
+    return window.location.pathname === '/' || window.location.pathname === '/feed/subscriptions';
+}
+
+// ==========================================
+// INITIALIZATION
+// ==========================================
+(async function init() {
+    // Check focus mode on load
+    await checkFocusMode();
+    
+    // Block Shorts if needed
+    if (isShortsPage()) {
+        await blockShortsIfNeeded();
+        return; // Don't continue if we're redirecting
+    }
+    
+    // Analyze video if on watch page
+    if (isVideoPage() && focusModeActive) {
+        console.log("[LBNG YouTube] Video page detected on load");
         showLoadingOverlay(true);
         analyzeCurrentVideo();
-      }, 200);
-    } else {
-      // Not a video page, reset title tracking
-      lastExtractedTitle = "";
     }
-  }
+})();
+
+// ==========================================
+// URL CHANGE DETECTION (SPA Navigation)
+// ==========================================
+let lastUrl = location.href;
+const urlObserver = new MutationObserver(async () => {
+    const currentUrl = location.href;
+    if (currentUrl !== lastUrl) {
+        console.log("[LBNG YouTube] URL changed:", lastUrl, "→", currentUrl);
+        lastUrl = currentUrl;
+        
+        // Check focus mode status
+        await checkFocusMode();
+        
+        // Reset state
+        analysisInProgress = false;
+        currentVideoId = null;
+        blockPending = false;
+        hideLoadingOverlay();
+        
+        // Block Shorts
+        if (isShortsPage()) {
+            await blockShortsIfNeeded();
+            return;
+        }
+        
+        // Analyze video
+        if (isVideoPage() && focusModeActive) {
+            console.log("[LBNG YouTube] New video page detected, analyzing...");
+            setTimeout(() => {
+                showLoadingOverlay(true);
+                analyzeCurrentVideo();
+            }, 200);
+        } else if (!isVideoPage()) {
+            lastExtractedTitle = "";
+        }
+    }
 });
 
 urlObserver.observe(document, { subtree: true, childList: true });
 
+// ==========================================
+// MESSAGE LISTENER
+// ==========================================
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === "updateOverlayGoal") {
-    updateOverlayGoal(message.goal);
-    sendResponse({ success: true });
-  }
-});
-
-window.addEventListener("popstate", () => {
-  console.log("[LBNG YouTube] Popstate event - checking URL");
-  setTimeout(() => {
-    if (location.href !== lastUrl) {
-      lastUrl = location.href;
-      analysisInProgress = false;
-      currentVideoId = null;
-      blockPending = false;
-      hideLoadingOverlay();
-
-      if (isVideoPage()) {
-        showLoadingOverlay(true);
-        analyzeCurrentVideo();
-      } else {
-        lastExtractedTitle = "";
-      }
+    if (message.type === 'updateOverlayGoal') {
+        updateOverlayGoal(message.goal);
+        sendResponse({ success: true });
+    } else if (message.type === 'focusModeChanged') {
+        checkFocusMode();
+        sendResponse({ success: true });
     }
-  }, 200);
 });
+
+// ==========================================
+// POPSTATE LISTENER (Back/Forward buttons)
+// ==========================================
+window.addEventListener('popstate', async () => {
+    console.log("[LBNG YouTube] Popstate event - checking URL");
+    setTimeout(async () => {
+        if (location.href !== lastUrl) {
+            lastUrl = location.href;
+            await checkFocusMode();
+            analysisInProgress = false;
+            currentVideoId = null;
+            blockPending = false;
+            hideLoadingOverlay();
+            
+            if (isShortsPage()) {
+                await blockShortsIfNeeded();
+            } else if (isVideoPage() && focusModeActive) {
+                showLoadingOverlay(true);
+                analyzeCurrentVideo();
+            } else {
+                lastExtractedTitle = "";
+            }
+        }
+    }, 200);
+});
+
+// ==========================================
+// STORAGE CHANGE LISTENER
+// ==========================================
+chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local' && (changes.aiLockdownActive || changes.aiLockdownEndTime)) {
+        console.log("[LBNG YouTube] Focus mode state changed, rechecking...");
+        checkFocusMode();
+    }
+});
+
+console.log("[LBNG YouTube] ✅ Enhanced content script initialized");

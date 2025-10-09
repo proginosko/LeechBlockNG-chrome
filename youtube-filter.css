@@ -1,0 +1,121 @@
+/* ===================================
+   LBNG YouTube Focus Mode Styles
+   Hides distractions during AI focus
+   =================================== */
+
+/* ========== HOME PAGE ========== */
+
+/* Hide entire home feed */
+ytd-browse[page-subtype="home"] #primary,
+ytd-browse[page-subtype="subscriptions"] #primary {
+    display: none !important;
+}
+
+/* Hide Shorts shelf everywhere */
+ytd-reel-shelf-renderer,
+ytd-rich-shelf-renderer[is-shorts] {
+    display: none !important;
+}
+
+/* ========== SEARCH RESULTS ========== */
+/* Keep search results visible - they're intentional */
+
+/* ========== VIDEO PAGE ========== */
+
+/* Hide sidebar recommendations */
+#related {
+    display: none !important;
+}
+
+/* Hide end screen suggestions */
+.ytp-ce-element,
+.ytp-endscreen-content {
+    display: none !important;
+}
+
+/* Hide video suggestions overlay */
+.ytp-suggestion-set {
+    display: none !important;
+}
+
+/* Hide autoplay next video */
+.ytp-autonav-endscreen-upnext-container {
+    display: none !important;
+}
+
+/* ========== SIDEBAR & RECOMMENDATIONS ========== */
+
+/* Hide "Up next" autoplay */
+#secondary ytd-compact-autoplay-renderer,
+#secondary ytd-watch-next-secondary-results-renderer {
+    display: none !important;
+}
+
+/* Hide trending/explore */
+ytd-browse[page-subtype="trending"],
+ytd-browse[page-subtype="explore"] {
+    display: none !important;
+}
+
+/* Hide Shorts tab in navigation */
+ytd-guide-entry-renderer a[title="Shorts"],
+ytd-mini-guide-entry-renderer a[title="Shorts"] {
+    display: none !important;
+}
+
+/* ========== COMMENTS ========== */
+/* Keep comments - they can be educational */
+
+/* ========== PLACEHOLDER MESSAGE ========== */
+
+/* Show helpful message on home page */
+ytd-browse[page-subtype="home"]::before {
+    content: "🎯 AI Focus Mode Active";
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    height: 60vh;
+    font-size: 32px;
+    font-weight: 600;
+    color: #606060;
+    font-family: "YouTube Sans", "Roboto", sans-serif;
+}
+
+ytd-browse[page-subtype="home"]::after {
+    content: "Use the search bar to find content relevant to your goal";
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #909090;
+    margin-top: -50vh;
+    padding-top: 60px;
+    font-family: "YouTube Sans", "Roboto", sans-serif;
+}
+
+/* ========== KEEP VISIBLE ========== */
+
+/* Ensure search bar stays visible */
+#search,
+#search-form,
+#search-icon-legacy,
+ytd-searchbox,
+#voice-search-button {
+    display: flex !important;
+    visibility: visible !important;
+}
+
+/* Keep masthead (top bar with search) */
+#masthead-container,
+ytd-masthead {
+    display: flex !important;
+    visibility: visible !important;
+}
+
+/* Keep left sidebar navigation */
+#guide-content,
+ytd-guide-renderer {
+    display: flex !important;
+    visibility: visible !important;
+}
