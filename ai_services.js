@@ -243,8 +243,6 @@ Answer:`;
  * Generate a playful roast for the blocked page
  */
 async function generatePlayfulRoast(goal, blockedTitle, blockedChannel, blockCount, apiKey) {
-  console.log("[LBNG AI] Generating roast...");
-
   const escalation = blockCount >= 5 ? "very firm" : blockCount >= 3 ? "firm" : "gentle";
   
   const prompt = `You are a witty, playful AI focus coach. A user is trying to focus on "${goal}" but just tried to watch:
@@ -286,7 +284,6 @@ Your roast (KEEP IT SHORT):`;
       const roast = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (roast) {
-          console.log("[LBNG AI] Roast generated:", roast);
           return roast.trim();
       }
 
@@ -301,8 +298,6 @@ Your roast (KEEP IT SHORT):`;
 * Generate alternative video suggestions
 */
 async function generateAlternativeVideos(goal, apiKey) {
-  console.log("[LBNG AI] Generating alternatives...");
-
   const prompt = `A user wants to focus on: "${goal}"
 
 Suggest 3 specific, real YouTube video titles or search queries that would actually help them with this goal.

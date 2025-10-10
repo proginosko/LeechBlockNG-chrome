@@ -1443,7 +1443,7 @@ function initializePage() {
 	form.addEventListener("click", (event) => {
 	  if (event.target.id === "aiSetPlanButton") {
 		event.preventDefault();
-		console.log("[LBNG AI] ✅✅✅ BUTTON CLICKED VIA DELEGATION! ✅✅✅");
+		console.log("[LBNG AI] BUTTON CLICKED VIA DELEGATION!");
 		
 		const userPlanInput = document.getElementById("aiUserPlan");
 		const durationInput = document.getElementById("aiDuration");
@@ -1465,13 +1465,6 @@ function initializePage() {
 		  durationMinutes = durationValue * 60;
 		}
   
-		console.log("[LBNG AI] User input:", { 
-		  userGoal, 
-		  durationValue, 
-		  durationUnit, 
-		  durationMinutes 
-		});
-  
 		// Validation
 		if (!userGoal) {
 		  alert("Please enter what you want to focus on (e.g., 'coding my project').");
@@ -1492,12 +1485,10 @@ function initializePage() {
 		}
   
 		if (aiPlannerStatus) {
-		  aiPlannerStatus.textContent = "🤖 Generating your focus plan...";
+		  aiPlannerStatus.textContent = "Generating your focus plan...";
 		  aiPlannerStatus.style.display = "block";
 		}
 		event.target.disabled = true;
-  
-		console.log("[LBNG AI] Sending message to background script...");
   
 		chrome.runtime.sendMessage(
 		  { 
@@ -1506,12 +1497,10 @@ function initializePage() {
 			duration: durationMinutes 
 		  },
 		  (response) => {
-			console.log("[LBNG AI] Response received:", response);
-			
 			if (chrome.runtime.lastError) {
 			  console.error("[LBNG AI] Runtime error:", chrome.runtime.lastError);
 			  if (aiPlannerStatus) {
-				aiPlannerStatus.textContent = `❌ Error: ${chrome.runtime.lastError.message}`;
+				aiPlannerStatus.textContent = `Error: ${chrome.runtime.lastError.message}`;
 			  }
 			  event.target.disabled = false;
 			  return;
@@ -1523,12 +1512,12 @@ function initializePage() {
 				  ? `${durationValue} ${durationValue === 1 ? 'hour' : 'hours'}`
 				  : `${durationMinutes} ${durationMinutes === 1 ? 'minute' : 'minutes'}`;
 				
-				aiPlannerStatus.textContent = `✅ Focus session started for ${formattedDuration}! Get to work!`;
+				aiPlannerStatus.textContent = `Focus session started for ${formattedDuration}! Get to work!`;
 			  }
 			  setTimeout(() => window.location.reload(), 2000);
 			} else {
 			  if (aiPlannerStatus) {
-				aiPlannerStatus.textContent = `❌ Error: ${
+				aiPlannerStatus.textContent = `Error: ${
 				  response ? response.error : "No response from background script"
 				}`;
 			  }
@@ -1538,8 +1527,6 @@ function initializePage() {
 		);
 	  }
 	});
-  
-	console.log("[LBNG AI] ✅ Delegated click listener attached successfully");
   
 	// Function to display current lockdown status
 	function checkStatus() {

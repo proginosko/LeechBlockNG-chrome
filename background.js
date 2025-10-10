@@ -1726,13 +1726,12 @@ function handleMessage(message, sender, sendResponse) {
 
           applyLockdown(aiBlockSet, endTime);
 
-          // ✅ INITIALIZE STATS FOR NEW SESSION
+          // INITIALIZE STATS FOR NEW SESSION
           await browser.storage.local.set({
             aiLockdownActive: true,
             aiLockdownEndTime: endTime * 1000,
             aiLockdownGoal: message.goal,
             aiBlockStats: {
-              // ✅ Reset stats
               blocked: 0,
               allowed: 0,
               startTime: Date.now(),
@@ -1753,11 +1752,6 @@ function handleMessage(message, sender, sendResponse) {
     case "analyzeYouTubeContent":
       (async () => {
         try {
-          console.log(
-            "[LBNG Background] analyzeYouTubeContent received:",
-            message.videoInfo
-          );
-
           const lockdownData = await browser.storage.local.get([
             "aiLockdownActive",
             "aiLockdownEndTime",
@@ -1766,15 +1760,10 @@ function handleMessage(message, sender, sendResponse) {
             "isAiEnabled",
           ]);
 
-          console.log("[LBNG Background] Lockdown state:", lockdownData);
-
           if (
             !lockdownData.aiLockdownActive ||
             Date.now() > lockdownData.aiLockdownEndTime
           ) {
-            console.log(
-              "[LBNG Background] No active AI lockdown, allowing content"
-            );
             sendResponse({
               shouldBlock: false,
               reason: "No active focus session",
@@ -1783,7 +1772,6 @@ function handleMessage(message, sender, sendResponse) {
           }
 
           if (!lockdownData.isAiEnabled || !lockdownData.apiKey) {
-            console.log("[LBNG Background] AI not enabled, allowing content");
             sendResponse({
               shouldBlock: false,
               reason: "AI features disabled",
@@ -1800,9 +1788,8 @@ function handleMessage(message, sender, sendResponse) {
           const cached = youtubeAnalysisCache.get(cacheKey);
 
           if (hasCompleteData && cached && Date.now() - cached.timestamp < 3600000) {
-            console.log("[LBNG Background] Using cached YouTube analysis:", cached);
             
-            // ✅ REDIRECT IF CACHED RESULT IS BLOCK
+            // REDIRECT IF CACHED RESULT IS BLOCK
             if (!cached.isAllowed) {
               const aiBlockSet = gOptions["aiBlockSet"] || 1;
               let blockURL = browser.runtime.getURL('dynamic-blocked.html');

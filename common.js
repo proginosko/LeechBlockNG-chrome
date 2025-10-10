@@ -11,12 +11,12 @@ const DEFAULT_BLOCK_URL = "blocked.html?$S&$U";
 const DELAYED_BLOCK_URL = "delayed.html?$S&$U";
 const PASSWORD_BLOCK_URL = "password.html?$S&$U";
 const DEFAULT_ICON = {
-  16: "icons/leechblock16.png",
-  32: "icons/leechblock32.png",
+  16: "images/owl.png",
+  32: "images/owl.png",
 };
 const OVERRIDE_ICON = {
-  16: "icons/leechblock16o.png",
-  32: "icons/leechblock32o.png",
+  16: "images/owl.png",
+  32: "images/owl.png",
 };
 
 const PARSE_URL =
