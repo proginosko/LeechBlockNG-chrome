@@ -2,7 +2,10 @@
     "action": {
         "browser_style": false,
         "default_icon": {
-            "16": "images/owl.png"
+            "16": "icons/owl.png",
+            "32": "icons/owl.png",
+            "48": "icons/owl.png",
+            "64": "icons/owl.png"
         },
         "default_popup": "popup.html",
         "default_title": "AI Block"
@@ -74,12 +77,12 @@
     ],
 
     "icons": {
-        "16": "images/owl.png",
-        "32": "images/owl.png",
-        "48": "images/owl.png",
-        "64": "images/owl.png",
-        "96": "images/owl.png",
-        "128": "images/owl.png"
+        "16": "icons/owl.png",
+        "32": "icons/owl.png",
+        "48": "icons/owl.png",
+        "64": "icons/owl.png",
+        "96": "icons/owl.png",
+        "128": "icons/owl.png"
     },
 
     "incognito": "split",
