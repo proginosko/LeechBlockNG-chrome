@@ -399,26 +399,18 @@ function getTimeRemaining(endTime) {
 
 // Utility: Update avatar mood
 function updateAvatarMood(mood) {
-    // Backward compatibility if emoji span exists
-    const emoji = document.querySelector(".ai-avatar .emoji");
-    if (emoji) {
-        const moods = {
-            roast: "😏",
-            disappointed: "😔",
-            proud: "😊",
-            strict: "😤",
-        };
-        emoji.textContent = moods[mood] || "🤖";
-        return;
-    }
-    // If using image avatar, optionally map mood to an image
+    // Use image avatar only - map mood to anger level images
     const img = document.querySelector(".ai-avatar .profile-icon img");
     if (!img) return;
     const moodToSrc = {
-        roast: "images/owl-reply.png",
-        disappointed: "images/owl-frustrated.png",
-        proud: "images/owl-happy.png",
-        strict: "images/owl-points.png",
+        roast: "images/anger-level/owl-angry-level-3.png",
+        disappointed: "images/anger-level/owl-angry-level-2.png",
+        proud: "images/anger-level/owl-angry-level-1.png",
+        strict: "images/anger-level/owl-angry-level-4.png",
+        angry: "images/anger-level/owl-angry-level-5.png",
+        frustrated: "images/anger-level/owl-angry-level-3.png",
+        warning: "images/anger-level/owl-angry-level-2.png",
+        calm: "images/anger-level/owl-angry-level-1.png",
     };
     if (moodToSrc[mood]) img.src = moodToSrc[mood];
 }
@@ -430,7 +422,7 @@ function setAvatarByBlockCount(blockCount) {
     // Build path based on anger level assets
     // 0 -> neutral owl.png, 1..5 -> owl-angry-level-{level}.png (capped at 5)
     const baseDir = "images/anger-level";
-    let src = `${baseDir}/owl.png`;
+    let src = "images/owl.png"; // Default neutral owl
     if (blockCount > 0) {
         const level = Math.min(Math.max(blockCount, 1), 5);
         src = `${baseDir}/owl-angry-level-${level}.png`;

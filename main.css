@@ -1,0 +1,71 @@
+/* Main CSS - Forces Inter font usage across all pages */
+
+/* Import fonts */
+@import url('fonts.css');
+
+/* Global font application */
+* {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* Ensure all text elements use Inter */
+body, html, div, span, p, h1, h2, h3, h4, h5, h6, 
+input, textarea, select, button, label, legend,
+a, li, ul, ol, table, td, th, tr,
+.ui-widget, .ui-button, .ui-dialog, .ui-tabs {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* Specific overrides for common elements */
+input[type="text"], 
+input[type="password"], 
+input[type="number"], 
+input[type="email"], 
+input[type="url"], 
+input[type="search"], 
+textarea, 
+select {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+}
+
+button, 
+.ui-button, 
+input[type="button"], 
+input[type="submit"], 
+input[type="reset"] {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* Override jQuery UI fonts */
+.ui-widget, 
+.ui-widget input, 
+.ui-widget select, 
+.ui-widget textarea, 
+.ui-widget button {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* Ensure monospace elements still work for code/timers */
+code, 
+pre, 
+.monospace, 
+#timer-countdown {
+    font-family: 'Inter', 'Courier New', monospace !important;
+}
+
+/* Font loading optimization */
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('fonts/Inter-VariableFont_opsz,wght.ttf') format('truetype-variations');
+}
+
+@font-face {
+    font-family: 'Inter';
+    font-style: italic;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('fonts/Inter-Italic-VariableFont_opsz,wght.ttf') format('truetype-variations');
+}

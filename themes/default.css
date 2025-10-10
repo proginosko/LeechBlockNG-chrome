@@ -5,6 +5,7 @@
 /* The following should replicate the Dark theme style */
 
 body {
+	font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 	background: #222;
 	color: #bbb;
 }

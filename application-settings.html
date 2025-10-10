@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, shrink-to-fit=no"
+        />
+        <title>FocusHoot Application Settings</title>
+        <link href="/main.css" rel="stylesheet" />
+        <link href="/jquery-ui/jquery-ui.min.css" rel="stylesheet" />
+        <link href="/application-settings.css" rel="stylesheet" />
+        <link href="/icons/owl.png" rel="icon" type="image/png" />
+        <link href="/icons/owl.png" rel="shortcut icon" type="image/png" />
+        <link id="themeLink" rel="stylesheet" />
+    </head>
+
+    <body>
+        <div class="ph-header">
+            <img
+                src="/images/owl.png"
+                alt="FocusHoot"
+                width="40"
+                height="40"
+                class="ph-logo"
+            />
+            <h1 class="ph-title">FocusHoot Application Settings</h1>
+        </div>
+        
+        <div id="form-container-settings">
+            <form id="settingsForm">
+                <fieldset>
+                    <legend>AI Settings</legend>
+                    <p>
+                        <input id="isAiEnabled" type="checkbox" checked />
+                        <label for="isAiEnabled">Enable AI features</label>
+                    </p>
+                    <p>
+                        <label for="apiKey">Your Gemini API Key:</label>
+                    </p>
+                    <p>
+                        <input id="apiKey" type="password" size="60" />
+                        <br />
+                        <small>Your key is stored locally and is required for the AI Planner to function.</small>
+                    </p>
+                    <p>
+                        <label for="aiBlockSet">AI will control this Block Set:</label>
+                        <input
+                            id="aiBlockSet"
+                            type="number"
+                            min="1"
+                            max="6"
+                            value="1"
+                            style="width: 4em"
+                        />
+                    </p>
+                </fieldset>
+
+                <fieldset>
+                    <legend>General Settings</legend>
+                    <p>
+                        <label>Theme:</label>
+                        <select id="theme">
+                            <option value="">Default</option>
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                            <option value="spruce">Spruce</option>
+                        </select>
+                    </p>
+                    <p>
+                        <input id="matchSubdomains" type="checkbox" />
+                        <label for="matchSubdomains">Block all subdomains (not just www)</label>
+                    </p>
+                    <p>
+                        <input id="contextMenu" type="checkbox" />
+                        <label for="contextMenu">Show context menu</label>
+                    </p>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Timer Settings</legend>
+                    <p>
+                        <input id="timerVisible" type="checkbox" />
+                        <label for="timerVisible">Show timer over page</label>
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <label>Size:</label>
+                        <select id="timerSize">
+                            <option value="0">small</option>
+                            <option value="1">medium</option>
+                            <option value="2">large</option>
+                            <option value="3">extra large</option>
+                        </select>
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <label>Location:</label>
+                        <select id="timerLocation">
+                            <option value="0">top left</option>
+                            <option value="1">top right</option>
+                            <option value="2">bottom right</option>
+                            <option value="3">bottom left</option>
+                        </select>
+                    </p>
+                    <p>
+                        <input id="timerBadge" type="checkbox" />
+                        <label for="timerBadge">Show timer as icon badge (if time left is less than 10 minutes)</label>
+                    </p>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Override Settings</legend>
+                    <p>
+                        Allow blocking to be suspended for
+                        <input
+                            id="overrideMins"
+                            type="text"
+                            size="2"
+                            title="Leave blank to specify a duration when the override is activated"
+                        />
+                        minute(s)
+                    </p>
+                    <p>
+                        <label>Select the requirement for activating the override:</label>
+                    </p>
+                    <p>
+                        <select id="overrideAccess">
+                            <option value="0">Don't require the user to enter any password or access code</option>
+                            <option value="1">Require the user to enter the access control password (see above)</option>
+                            <option value="2">Require the user to enter a random 32-character access code</option>
+                            <option value="3">Require the user to enter a random 64-character access code</option>
+                            <option value="4">Require the user to enter a random 128-character access code</option>
+                            <option value="8">Require the user to enter a predefined access code (see below)</option>
+                            <option value="9">Require the user to enter a separate override password (see below)</option>
+                        </select>
+                    </p>
+                    <p>
+                        <label>Predefined access code:</label>
+                        <input id="overrideCode" type="text" size="60" />
+                    </p>
+                    <p>
+                        <label>Override password:</label>
+                        <input id="overridePassword" type="password" size="20" />
+                    </p>
+                </fieldset>
+
+                <p style="text-align: center">
+                    <button id="saveSettings" type="button">Save Settings</button>
+                    <button id="saveSettingsClose" type="button">Save Settings &amp; Close</button>
+                </p>
+            </form>
+        </div>
+
+        <div id="alerts" style="display: none">
+            <div id="alertRetrieveError" title="FocusHoot Settings">
+                <p><strong>Error:</strong> Unable to retrieve settings from browser storage.</p>
+            </div>
+            <div id="alertSaveError" title="FocusHoot Settings">
+                <p><strong>Error:</strong> Unable to save settings to browser storage.</p>
+            </div>
+            <div id="alertSaveSuccess" title="FocusHoot Settings">
+                <p>The settings have been saved successfully.</p>
+            </div>
+        </div>
+
+        <script src="/jquery-ui/external/jquery/jquery.js"></script>
+        <script src="/jquery-ui/jquery-ui.min.js"></script>
+        <script src="/common.js"></script>
+        <script src="/application-settings.js"></script>
+    </body>
+</html>
