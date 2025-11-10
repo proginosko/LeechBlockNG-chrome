@@ -1,56 +1,148 @@
 <!DOCTYPE html>
 
 <html id="lbBlockingPage" lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=0.75, shrink-to-fit=no"
+        />
+        <title>Site Blocked</title>
+        <link
+            rel="shortcut icon"
+            href="/images/owl.png"
+            type="image/x-icon"
+        />
+        <link rel="icon" href="/images/owl.png" type="image/x-icon" />
+        <link rel="stylesheet" href="/main.css" type="text/css" />
+        <link rel="stylesheet" href="/fonts.css" type="text/css" />
+        <link rel="stylesheet" href="/style.css" type="text/css" />
+        <link rel="stylesheet" href="/blocked.css" type="text/css" />
+        <link id="themeLink" rel="stylesheet" />
+        <style id="customStyle"></style>
+        <style>
+            :root {
+                --color-neutral-bg: #f8f5f2;
+                --color-surface: #fcfaf8;
+                --color-text: #2b2a29;
+                --color-text-muted: #6b625c;
+                --color-secondary: #efe7df;
+                --color-accent: #c4672a;
+                --color-accent-2: #d07a40;
+            }
 
-	<head>
-		<meta charset="utf-8">
-		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=0.75, shrink-to-fit=no">
-		<title>Site Blocked</title>
-		<link rel="shortcut icon" href="/icons/leechblock32.ico" type="image/x-icon">
-		<link rel="icon" href="/icons/leechblock32.ico" type="image/x-icon">
-		<link rel="stylesheet" href="/fonts.css" type="text/css">
-		<link rel="stylesheet" href="/style.css" type="text/css">
-		<link id="themeLink" rel="stylesheet">
-		<style id="customStyle"></style>
-	</head>
+            body {
+                background: var(--color-neutral-bg);
+                color: var(--color-text);
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                    "Roboto", "Oxygen", "Ubuntu", "Cantarell", sans-serif;
+                padding: 24px;
+            }
 
-	<body>
+            #lbLogoDiv {
+                text-align: center;
+                margin: 12px 0 20px;
+            }
 
-		<!-- logo -->
-		<div id="lbLogoDiv">
-			<a href="https://www.proginosko.com/leechblock/"><img id="lbLogoImg" src="/images/leechblock_logo.svg" class="logo" alt="LeechBlock logo" title="LeechBlock"></a>
-		</div>
+            #lbLogoImg {
+                width: 120px;
+                height: 120px;
+            }
 
-		<!-- warning message -->
-		<div id="lbWarningMsgDiv">
-			<h1>The page you're trying to access has been blocked by <a href="https://www.proginosko.com/leechblock/">LeechBlock</a>.</h1>
-		</div>
+            .brand-name {
+                margin-top: 8px;
+                font-weight: 700;
+                color: var(--color-text);
+                letter-spacing: 0.3px;
+            }
 
-		<!-- blocked site info -->
-		<div id="lbBlockedDiv">
-			<a id="lbBlockedURLLink" target="_self"><span id="lbBlockedURL"></span></a>
-			(<span id="lbBlockedSet">Block Set</span>)
-			<p id="lbKeywordMatched" style="display: none;">Keyword matched: <span id="lbKeywordMatch" class="keyword"></span></p>
-			<p id="lbUnblockText">The page will be unblocked at: <span id="lbUnblockTime" class="time">the end of time</span></p>
-		</div>
+            #lbWarningMsgDiv,
+            #lbBlockedDiv,
+            #lbCustomMsgDiv {
+                background: var(--color-surface);
+                border-radius: 12px;
+                padding: 20px;
+                max-width: 900px;
+                margin: 12px auto;
+            }
 
-		<!-- custom message (optional) -->
-		<div id="lbCustomMsgDiv" style="display: none;">
-			<p>A message from yourself:</p>
-			<blockquote id="lbCustomMsg"></blockquote>
-		</div>
+            #lbWarningMsgDiv h1 {
+                margin: 0 0 6px 0;
+                color: var(--color-text);
+                font-size: 1.25em;
+                line-height: 1.35;
+            }
 
-		<!-- support info -->
-		<div id="lbSupportDiv" class="support">
-			LeechBlock will always be free to use, but if it has improved your life,<br>
-			please consider supporting its continued development by<br>
-			<a href="https://www.paypal.me/JamesNAnderson">making a contribution</a> or
-			<a href="https://chrome.google.com/webstore/detail/leechblock-ng/blaaajhemilngeeffpbfkdjjoefldkok">writing a review</a>.
-		</div>
+            .brand-roast {
+                margin: 6px 0 0 0;
+                color: var(--color-text-muted);
+                font-size: 0.95em;
+            }
 
-		<script src="/blocked.js"></script>
+            a {
+                color: var(--color-accent);
+            }
+            a:hover {
+                color: var(--color-accent-2);
+            }
 
-	</body>
+            #lbBlockedURLLink {
+                color: var(--color-text);
+                text-decoration: none;
+            }
+            #lbBlockedSet,
+            #lbKeywordMatched {
+                color: var(--color-text-muted);
+                font-size: 0.9em;
+            }
+            #lbUnblockText {
+                color: var(--color-text-muted);
+                font-size: 0.9em;
+            }
+        </style>
+    </head>
 
+    <body>
+        <!-- logo -->
+        <div id="lbLogoDiv">
+            <img
+                id="lbLogoImg"
+                src="/images/owl.png"
+                class="logo"
+                alt="FocusHoot logo"
+                title="FocusHoot"
+            />
+            <div class="brand-name">FocusHoot</div>
+        </div>
+
+        <!-- roast message -->
+        <div id="lbWarningMsgDiv">
+            <p id="lbRoast" class="brand-roast"></p>
+        </div>
+
+        <!-- blocked site info -->
+        <div id="lbBlockedDiv">
+            <a id="lbBlockedURLLink" target="_self"
+                ><span id="lbBlockedURL"></span
+            ></a>
+            (<span id="lbBlockedSet">Block Set</span>)
+            <p id="lbKeywordMatched" style="display: none">
+                Keyword matched:
+                <span id="lbKeywordMatch" class="keyword"></span>
+            </p>
+            <p id="lbUnblockText">
+                The page will be unblocked at:
+                <span id="lbUnblockTime" class="time">the end of time</span>
+            </p>
+        </div>
+
+        <!-- custom message (optional) -->
+        <div id="lbCustomMsgDiv" style="display: none">
+            <p>A message from yourself:</p>
+            <blockquote id="lbCustomMsg"></blockquote>
+        </div>
+
+        <script src="/blocked.js"></script>
+    </body>
 </html>

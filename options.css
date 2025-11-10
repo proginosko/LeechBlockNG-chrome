@@ -1,155 +1,190 @@
-/* LeechBlock options style */
+/* FocusHoot options style */
 
-html {
-	overflow-y: scroll;
-}
-
-@media (prefers-color-scheme: light) {
-
-	body {
-		background: #fff;
-	}
-
+:root {
+    --color-neutral-bg: #f8f5f2;
+    --color-surface: #fcfaf8;
+    --color-text: #2b2a29;
+    --color-text-muted: #6b625c;
+    --color-secondary: #efe7df;
+    --color-accent: #c4672a;
+    --color-accent-2: #d07a40;
 }
 
 @media (prefers-color-scheme: dark) {
+    :root {
+        --color-neutral-bg: #1f1d1b;
+        --color-surface: #262320;
+        --color-text: #f3f2f0;
+        --color-text-muted: #c9c3bd;
+        --color-secondary: #3a352f;
+        --color-accent: #e08946;
+        --color-accent-2: #f09a59;
+    }
+}
 
-	body {
-		background: #222;
-	}
+html {
+    overflow-y: scroll;
+}
 
+@media (prefers-color-scheme: light) {
+    body {
+        background: var(--color-neutral-bg);
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background: var(--color-neutral-bg);
+    }
 }
 
 body {
-	color: #000;
-	font-size: 14px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--color-text);
+    font-size: 14px;
 }
 
 .ui-button {
-	background: #eee;
-	color: #333;
-	border: 1px solid #888;
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
 }
 
 .ui-button:focus {
-	background: #eee;
-	border: 1px solid #888;
+    background: var(--color-surface);
+    border: none;
 }
 
 .ui-button:hover {
-	background: #ddd;
-	border: 1px solid #888;
+    background: #faeee4;
 }
 
 .ui-widget button {
-	padding: 2px 8px;
-	background: #eee;
-	color: #333;
-	border: 1px solid #888;
-	border-radius: 3px;
+    padding: 8px 12px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
 }
 
 .ui-widget button:hover:enabled {
-	background: #ddd;
+    background: #faeee4;
 }
 
 .ui-widget button:active:enabled {
-	background: #ccc;
+    background: #f4dfcd;
 }
 
 .ui-widget button:disabled {
-	background: #eee;
-	color: #666;
-	border: 1px solid #ccc;
+    background: var(--color-surface);
+    color: #9aa0a6;
+    border: none;
 }
 
-.ui-widget fieldset, .ui-widget input, .ui-widget select, .ui-widget textarea {
-	background: #fff;
-	color: #000;
-	border: 1px solid #888;
+.ui-widget fieldset,
+.ui-widget input,
+.ui-widget select,
+.ui-widget textarea {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: none;
+    border-radius: 10px;
 }
 
-.ui-widget input:disabled, .ui-widget select:disabled, .ui-widget textarea:disabled {
-	background: #eee;
-	color: #666;
-	border: 1px solid #ccc;
+.ui-widget input:disabled,
+.ui-widget select:disabled,
+.ui-widget textarea:disabled {
+    background: #f3f2f0;
+    color: #9aa0a6;
+    border: none;
 }
 
 .ui-widget hr {
-	height: 0px;
-	margin: 0px;
-	border-top: none;
-	border-left: none;
-	border-right: none;
-	border-bottom: 1px solid #888;
+    height: 0px;
+    margin: 0px;
+    border: none;
 }
 
 .ui-widget legend {
-	font-weight: bold;
+    font-weight: bold;
+    color: var(--color-text);
 }
 
 .ui-widget a {
-    color: #2ca089;
+    color: var(--color-accent);
     text-decoration: none;
 }
 
 .ui-widget a:hover {
     text-decoration: underline;
+    color: var(--color-accent-2);
 }
 
-.ui-widget th, .ui-widget td {
-	text-align: center;
-	padding: 4px 12px;
+.ui-widget th,
+.ui-widget td {
+    text-align: center;
+    padding: 4px 12px;
 }
 
 .ui-widget code {
-	font: normal 14px monospace;
+    font: normal 14px monospace;
 }
 
 .logo {
-	width: 408px;
+    width: 408px;
 }
 
 #form-container {
-	display: flex;
-	justify-content: center;
+    display: flex;
+    justify-content: center;
 }
 
 #form {
-  text-align: center;
+    text-align: center;
 }
 
 #tabs {
-	display: inline-block;
-	text-align: left;
+    display: inline-block;
+    text-align: left;
 }
 
 #paneAbout {
-	color: #2e3436;
-	text-align: center;
-	line-height: 1.5em;
+    color: var(--color-text);
+    text-align: center;
+    line-height: 1.5em;
 }
 
 #promptAccessCodeText {
-	font: normal 14px monospace;
-	user-select: none;
-	-moz-user-select: none;
+    font: normal 14px monospace;
+    user-select: none;
+    -moz-user-select: none;
 }
 
 #promptAccessCodeCanvas {
-	background: #fff;
+    background: var(--color-surface);
 }
 
 #promptAccessCodeInput {
-	font: normal 14px monospace;
+    font: normal 14px monospace;
 }
 
 #clockOffsetTime {
-	background: #def;
-	border: 1px solid #888;
-	padding: 2px 4px;
+    background: #faeee4;
+    border: none;
+    padding: 2px 4px;
+}
+
+/* Inputs slightly larger */
+.ui-widget input,
+.ui-widget select,
+.ui-widget textarea {
+    padding: 8px;
+    font-size: 14px;
 }
 
 #results {
-	font: normal 12px monospace;
+    font: normal 12px monospace;
 }

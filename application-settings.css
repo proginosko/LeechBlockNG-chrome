@@ -1,0 +1,238 @@
+/* Application Settings Styles */
+
+:root {
+    --color-neutral-bg: #f8f5f2;
+    --color-surface: #fcfaf8;
+    --color-text: #575655;
+    --color-text-muted: #6b625c;
+    --color-secondary: #efe7df;
+    --color-accent: #c4672a;
+    --color-accent-2: #d07a40;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-neutral-bg: #1f1d1b;
+        --color-surface: #262320;
+        --color-text: #f3f2f0;
+        --color-text-muted: #c9c3bd;
+        --color-secondary: #3a352f;
+        --color-accent: #e08946;
+        --color-accent-2: #f09a59;
+    }
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: var(--color-neutral-bg);
+    color: var(--color-text);
+}
+
+.ph-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--color-secondary);
+}
+
+.ph-logo {
+    margin-right: 15px;
+    border-radius: 8px;
+}
+
+.ph-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+#form-container-settings {
+    max-width: 800px;
+    margin: 0 auto;
+    background: var(--color-surface);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+fieldset {
+    border: 2px solid var(--color-secondary);
+    border-radius: 8px;
+    margin-bottom: 25px;
+    padding: 20px;
+    background-color: var(--color-neutral-bg);
+}
+
+legend {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--color-text);
+    padding: 0 10px;
+    background: var(--color-surface);
+    border-radius: 4px;
+}
+
+p {
+    margin: 15px 0;
+    line-height: 1.5;
+}
+
+label {
+    font-weight: 500;
+    color: var(--color-text);
+    display: inline-block;
+    margin-right: 10px;
+}
+
+input[type="text"], 
+input[type="password"], 
+input[type="number"],
+select, 
+textarea {
+    padding: 12px 16px;
+    border: 2px solid var(--color-secondary);
+    border-radius: 12px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+input[type="text"]:focus, 
+input[type="password"]:focus, 
+input[type="number"]:focus,
+select:focus, 
+textarea:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(196, 103, 42, 0.1);
+}
+
+input[type="checkbox"] {
+    margin-right: 8px;
+    transform: scale(1.2);
+}
+
+button {
+    background: var(--color-accent);
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 5px;
+}
+
+button:hover {
+    background: var(--color-accent-2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+small {
+    color: var(--color-text-muted);
+    font-size: 12px;
+    font-style: italic;
+}
+
+/* Alert styles */
+#alerts {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+#alerts > div {
+    background: white;
+    border: 2px solid #e74c3c;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    max-width: 300px;
+}
+
+#alertSaveSuccess {
+    border-color: #27ae60;
+}
+
+#alertSaveSuccess p {
+    color: #27ae60;
+    margin: 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    #form-container-settings {
+        padding: 20px;
+    }
+    
+    .ph-title {
+        font-size: 20px;
+    }
+    
+    fieldset {
+        padding: 15px;
+    }
+    
+    button {
+        width: 100%;
+        margin: 5px 0;
+    }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1a1a1a;
+        color: #e0e0e0;
+    }
+    
+    #form-container-settings {
+        background: #2d2d2d;
+    }
+    
+    fieldset {
+        background-color: #3a3a3a;
+        border-color: #555;
+    }
+    
+    legend {
+        background: #2d2d2d;
+        color: #e0e0e0;
+    }
+    
+    input[type="text"], 
+    input[type="password"], 
+    input[type="number"],
+    select, 
+    textarea {
+        background-color: #3a3a3a;
+        border-color: #555;
+        color: #e0e0e0;
+    }
+    
+    input[type="text"]:focus, 
+    input[type="password"]:focus, 
+    input[type="number"]:focus,
+    select:focus, 
+    textarea:focus {
+        border-color: #3498db;
+    }
+}
