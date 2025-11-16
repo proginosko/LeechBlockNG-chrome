@@ -44,6 +44,7 @@ const PER_SET_OPTIONS = {
 	passwordSetSpec: { type: "string", def: "", id: "passwordSetSpec" },
 	customMsg: { type: "string", def: "", id: "customMsg" },
 	incogMode: { type: "string", def: "0", id: "incogMode" },
+	onlyActive: { type: "boolean", def: false, id: "onlyActive" },
 	applyFilter: { type: "boolean", def: false, id: "applyFilter" },
 	filterName: { type: "string", def: "grayscale", id: "filterName" },
 	filterMute: { type: "boolean", def: false, id: "filterMute" },
@@ -288,12 +289,12 @@ function getRegExpSites(sites, matchSubdomains) {
 	}
 	return {
 		block: (blocks.length > 0)
-				? "^" + (blockFiles ? "file:|" : "") + "(https?|file):\\/+([\\w\\:]+@)?(" + blocks.join("|") + ")"
+				? "^" + (blockFiles ? "file:|" : "") + "(https?|file):\\/+([\\w:]+@)?(" + blocks.join("|") + ")"
 				: (blockFiles ? "^file:" : ""),
 		allow: (allows.length > 0)
-				? "^" + (allowFiles ? "file:|" : "") + "(https?|file):\\/+([\\w\\:]+@)?(" + allows.join("|") + ")"
+				? "^" + (allowFiles ? "file:|" : "") + "(https?|file):\\/+([\\w:]+@)?(" + allows.join("|") + ")"
 				: (allowFiles ? "^file:" : ""),
-		refer: (refers.length > 0) ? "^(https?|file):\\/+([\\w\\:]+@)?(" + refers.join("|") + ")" : "",
+		refer: (refers.length > 0) ? "^(https?|file):\\/+([\\w:]+@)?(" + refers.join("|") + ")" : "",
 		keyword: (keywords.length > 0)
 				? U_WORD_BEGIN + "(" + keywords.join("|") + ")" + U_WORD_END
 				: ""
@@ -303,10 +304,12 @@ function getRegExpSites(sites, matchSubdomains) {
 // Convert site pattern to regular expression
 //
 function patternToRegExp(pattern, matchSubdomains) {
-	let special = /[\.\|\?\:\+\^\$\(\)\[\]\{\}\\]/g;
+	let special = /[\.\|\?\+\^\$\(\)\[\]\{\}\\]/g;
 	let subdomains = matchSubdomains ? "([^/]*\\.)?" : "(www\\.)?"
 	return subdomains + pattern
 			.replace(special, "\\$&")			// fix special chars
+			.replace(/[\u0080-\uFFFF]/g,
+					encodeURIComponent)			// fix unicode chars
 			.replace(/^www\\\./, "")			// remove existing www prefix
 			.replace(/\*\\\+/g, ".+")			// convert plus-wildcards
 			.replace(/\*{2,}/g, ".{STAR}")		// convert super-wildcards
@@ -586,4 +589,10 @@ function hashCode32(str) {
 		hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
 	}
 	return hash;
+}
+
+// Create timestamp suffix for export file
+//
+function getTimestampSuffix() {
+	return new Date().toISOString().substring(0, 19).replaceAll(":", "-");
 }
