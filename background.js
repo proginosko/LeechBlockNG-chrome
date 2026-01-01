@@ -1019,16 +1019,22 @@ function updateTimer(id) {
 	let secsLeft = gTabs[id].secsLeft;
 	let showTimer = gTabs[id].showTimer;
 
+	let timerMaxHours = gOptions["timerMaxHours"];
+	let timerVisible = gOptions["timerVisible"]
+			&& showTimer
+			&& secsLeft != Infinity
+			&& (!timerMaxHours || (secsLeft < timerMaxHours * 3600));
+
 	// Send message to tab
 	let message = {
 		type: "timer",
 		size: gOptions["timerSize"],
 		location: gOptions["timerLocation"]
 	};
-	if (!gOptions["timerVisible"] || secsLeft == Infinity || !showTimer) {
-		message.text = null; // hide timer
-	} else {
+	if (timerVisible) {
 		message.text = formatTime(secsLeft); // show timer with time left
+	} else {
+		message.text = null; // hide timer
 	}
 	browser.tabs.sendMessage(id, message).catch(function (error) {});
 

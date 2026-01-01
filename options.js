@@ -330,6 +330,13 @@ function saveOptions(event) {
 		$("#alertBadOverrideLimitNum").dialog("open");
 		return false;
 	}
+	let timerMaxHours = $("#timerMaxHours").val();
+	if (!checkPosIntFormat(timerMaxHours)) {
+		$("#tabs").tabs("option", "active", gNumSets);
+		$("#timerMaxHours").focus();
+		$("#alertBadHours").dialog("open");
+		return false;
+	}
 	let warnSecs = $("#warnSecs").val();
 	if (!checkPosIntFormat(warnSecs)) {
 		$("#tabs").tabs("option", "active", gNumSets);

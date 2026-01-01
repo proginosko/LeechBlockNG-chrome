@@ -97,6 +97,7 @@ const GENERAL_OPTIONS = {
 	timerVisible: { type: "boolean", def: true, id: "timerVisible" }, // default: visible
 	timerSize: { type: "string", def: "1", id: "timerSize" }, // default: medium
 	timerLocation: { type: "string", def: "0", id: "timerLocation" }, // default: top left
+	timerMaxHours: { type: "string", def: "24", id: "timerMaxHours" }, // default: 24 hours
 	timerBadge: { type: "boolean", def: true, id: "timerBadge" }, // default: enabled
 	orm: { type: "string", def: "", id: "overrideMins" }, // default: no prespecified override
 	orln: { type: "string", def: "", id: "overrideLimitNum" }, // default: no prespecified limit number
