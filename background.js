@@ -604,32 +604,41 @@ function checkTab(id, isBeforeNav, isRepeat) {
 
 			updateRolloverTime(timedata, limitMins, limitPeriod, periodStart);
 
-			// Check day
-			let onSelectedDay = days[timedate.getDay()];
+			let day = timedate.getDay();
 
 			// Check time periods
 			let secsLeftBeforePeriod = Infinity;
-			if (onSelectedDay && times) {
+			if (times) {
 				// Get number of minutes elapsed since midnight
 				let mins = timedate.getHours() * 60 + timedate.getMinutes();
 
-				// Check each time period in turn
-				for (let mp of minPeriods) {
-					if (mins >= mp.start && mins < mp.end) {
-						secsLeftBeforePeriod = 0;
-					} else if (mins < mp.start) {
-						// Compute exact seconds before this time period starts
-						let secs = (mp.start - mins) * 60 - timedate.getSeconds();
-						if (secs < secsLeftBeforePeriod) {
-							secsLeftBeforePeriod = secs;
+				// Check today and (up to) following seven days
+				for (let i = 0; i <= 7; i++) {
+					if (days[(day + i) % 7]) {
+						let offset = (i * 1440);
+						// Check each time period in turn
+						for (let mp of minPeriods) {
+							let start = mp.start + offset;
+							let end = mp.end + offset;
+							if (mins >= start && mins < end) {
+								secsLeftBeforePeriod = 0;
+							} else if (mins < start) {
+								// Compute exact seconds before this time period starts
+								let secs = (start - mins) * 60 - timedate.getSeconds();
+								if (secs < secsLeftBeforePeriod) {
+									secsLeftBeforePeriod = secs;
+								}
+							}
 						}
 					}
+					
+					if (secsLeftBeforePeriod != Infinity) continue;
 				}
 			}
 
 			// Check time limit
 			let secsLeftBeforeLimit = Infinity;
-			if (onSelectedDay && limitMins && limitPeriod) {
+			if (days[day] && limitMins && limitPeriod) {
 				// Compute exact seconds before this time limit expires
 				let secsRollover = rollover ? timedata[5] : 0;
 				secsLeftBeforeLimit = secsRollover + (limitMins * 60);
