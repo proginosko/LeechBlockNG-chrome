@@ -483,7 +483,7 @@ function checkTab(id, isBeforeNav, isRepeat) {
 	let now = Math.floor(Date.now() / 1000) + (gClockOffset * 60);
 
 	// Check for allowed host/path (or end of allowed time)
-	let allowHost = isSameHost(gTabs[id].allowedHost, parsedURL.host);
+	let allowHost = !gTabs[id].allowedHost || isSameHost(gTabs[id].allowedHost, parsedURL.host);
 	let allowPath = !gTabs[id].allowedPath || (gTabs[id].allowedPath == parsedURL.path);
 	let allowedSet = gTabs[id].allowedSet;
 	let allowedEndTime = gTabs[id].allowedEndTime;
@@ -1462,8 +1462,9 @@ function allowBlockedPage(id, url, set, autoLoad) {
 
 	// Set parameters for allowing host
 	let delayFirst = gOptions[`delayFirst${set}`];
+	let delayFirstMode = gOptions[`delayFirstMode${set}`];
 	let delayAllowMins = gOptions[`delayAllowMins${set}`];
-	gTabs[id].allowedHost = parsedURL.host;
+	gTabs[id].allowedHost = (delayFirst && delayFirstMode == 1) ? null : parsedURL.host;
 	gTabs[id].allowedPath = delayFirst ? null : parsedURL.path;
 	gTabs[id].allowedSet = set;
 	if (delayAllowMins) {
