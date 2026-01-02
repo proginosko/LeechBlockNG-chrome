@@ -593,6 +593,7 @@ function checkTab(id, isBeforeNav, isRepeat) {
 			let applyFilter = gOptions[`applyFilter${set}`];
 			let filterName = gOptions[`filterName${set}`];
 			let filterMute = gOptions[`filterMute${set}`];
+			let filterCustom = gOptions[`filterCustom${set}`];
 			let closeTab = gOptions[`closeTab${set}`];
 			let activeBlock = gOptions[`activeBlock${set}`];
 			let titleOnly = gOptions[`titleOnly${set}`];
@@ -710,7 +711,8 @@ function checkTab(id, isBeforeNav, isRepeat) {
 						// Send message to tab
 						let message = {
 							type: "filter",
-							name: filterName
+							filterName: filterName,
+							filterCustom: filterCustom
 						};
 						browser.tabs.sendMessage(id, message).catch(
 							function (error) {}
@@ -768,7 +770,8 @@ function checkTab(id, isBeforeNav, isRepeat) {
 				// Send message to tab
 				let message = {
 					type: "filter",
-					name: null
+					filterName: null,
+					filterCustom: null
 				};
 				browser.tabs.sendMessage(id, message).catch(
 					function (error) {}

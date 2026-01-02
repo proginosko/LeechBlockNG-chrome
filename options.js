@@ -6,7 +6,7 @@ const DEFAULT_OPTIONS_FILE = "LeechBlockOptions-#.txt";
 const DEFAULT_JSON_FILE = "LeechBlockOptions-#.json";
 
 const SUB_OPTIONS = {
-	"applyFilter" : [ "filterName", "filterMute" ],
+	"applyFilter" : [ "filterName", "filterMute", "filterCustom" ],
 	"allowOverride" : [ "allowOverLock" ]
 };
 

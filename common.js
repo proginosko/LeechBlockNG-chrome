@@ -48,6 +48,7 @@ const PER_SET_OPTIONS = {
 	applyFilter: { type: "boolean", def: false, id: "applyFilter" },
 	filterName: { type: "string", def: "grayscale", id: "filterName" },
 	filterMute: { type: "boolean", def: false, id: "filterMute" },
+	filterCustom: { type: "string", def: "", id: "filterCustom" },
 	closeTab: { type: "boolean", def: false, id: "closeTab" },
 	activeBlock: { type: "boolean", def: false, id: "activeBlock" },
 	countFocus: { type: "boolean", def: true, id: "countFocus" },
