@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const TIMEDATA_LEN = 9;
 const MAX_SETS = 30;
 const ALL_DAY_TIMES = "0000-2400";
 const BLOCKED_PAGE = "blocked.html";
@@ -51,6 +52,7 @@ const PER_SET_OPTIONS = {
 	filterCustom: { type: "string", def: "", id: "filterCustom" },
 	closeTab: { type: "boolean", def: false, id: "closeTab" },
 	activeBlock: { type: "boolean", def: false, id: "activeBlock" },
+	minBlock: { type: "string", def: "", id: "minBlock" },
 	countFocus: { type: "boolean", def: true, id: "countFocus" },
 	countAudio: { type: "boolean", def: false, id: "countAudio" },
 	showKeyword: { type: "boolean", def: true, id: "showKeyword" },
@@ -185,6 +187,7 @@ function cleanOptions(options) {
 // timedata[5] = rollover time for current period (secs)
 // timedata[6] = rollover time for next period (secs)
 // timedata[7] = start time for next rollover period (secs since epoch)
+// timedata[8] = end time for minimum block (secs since epoch)
 //
 function cleanTimeData(options) {
 	let numSets = +options["numSets"];
@@ -193,9 +196,19 @@ function cleanTimeData(options) {
 	for (let set = 1; set <= numSets; set++) {
 		let timedata = options[`timedata${set}`];
 		if (!Array.isArray(timedata)) {
-			timedata = [now, 0, 0, 0, 0, 0, 0, 0];
-		} else while (timedata.length < 8) {
+			timedata = new Array(TIMEDATA_LEN);
+			timedata.fill(0);
+			timedata[0] = now;
+		} else while (timedata.length < TIMEDATA_LEN) {
 			timedata.push(0);
+		}
+		if (timedata[4] < now) {
+			// Clean lockdown end time
+			timedata[4] = 0;
+		}
+		if (timedata[8] < now) {
+			// Clean minimum block end time
+			timedata[8] = 0;
 		}
 		options[`timedata${set}`] = timedata;
 	}

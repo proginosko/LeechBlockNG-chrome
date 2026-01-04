@@ -246,6 +246,7 @@ function saveOptions(event) {
 		let limitOffset = $(`#limitOffset${set}`).val();
 		let delaySecs = $(`#delaySecs${set}`).val();
 		let delayAllowMins = $(`#delayAllowMins${set}`).val();
+		let minBlock = $(`#minBlock${set}`).val();
 		let reloadSecs = $(`#reloadSecs${set}`).val();
 		let waitSecs = $(`#waitSecs${set}`).val();
 		let blockURL = $(`#blockURL${set}`).val();
@@ -278,6 +279,12 @@ function saveOptions(event) {
 		if (!checkPosIntFormat(delayAllowMins)) {
 			$("#tabs").tabs("option", "active", (set - 1));
 			$(`#delayAllowMins${set}`).focus();
+			$("#alertBadMinutes").dialog("open");
+			return false;
+		}
+		if (!checkPosIntFormat(minBlock)) {
+			$("#tabs").tabs("option", "active", (set - 1));
+			$(`#minBlock${set}`).focus();
 			$("#alertBadMinutes").dialog("open");
 			return false;
 		}
@@ -600,8 +607,11 @@ function retrieveOptions() {
 			// Check lockdown condition
 			let lockdown = (timedata[4] > now);
 
+			// Check minimum block time condition
+			let withinMinBlock = (timedata[8] > now);
+
 			// Disable options if specified block conditions are fulfilled
-			if (lockdown
+			if (lockdown || withinMinBlock
 					|| (!conjMode && (withinTimePeriods || afterTimeLimit))
 					|| (conjMode && (withinTimePeriods && afterTimeLimit))) {
 				if (options[`prevOpts${set}`]) {

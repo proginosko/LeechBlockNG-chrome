@@ -596,6 +596,7 @@ function checkTab(id, isBeforeNav, isRepeat) {
 			let filterCustom = gOptions[`filterCustom${set}`];
 			let closeTab = gOptions[`closeTab${set}`];
 			let activeBlock = gOptions[`activeBlock${set}`];
+			let minBlock = gOptions[`minBlock${set}`];
 			let titleOnly = gOptions[`titleOnly${set}`];
 			let addHistory = gOptions[`addHistory${set}`];
 			let allowOverride = gOptions[`allowOverride${set}`];
@@ -655,12 +656,15 @@ function checkTab(id, isBeforeNav, isRepeat) {
 			// Check lockdown condition
 			let lockdown = (timedata[4] > now);
 
+			// Check minimum block time condition
+			let withinMinBlock = (timedata[8] > now);
+
 			// Check override condition
 			let override = (prevOverride || !isInternalPage) && (overrideEndTime > now)
 					&& allowOverride && (allowOverLock || !lockdown);
 
 			// Determine whether this page should now be blocked
-			let doBlock = lockdown
+			let doBlock = lockdown || withinMinBlock
 					|| (!conjMode && (withinTimePeriods || afterTimeLimit))
 					|| (conjMode && (withinTimePeriods && afterTimeLimit));
 
@@ -678,6 +682,7 @@ function checkTab(id, isBeforeNav, isRepeat) {
 						log(`pageURL: ${pageURL}`);
 						log(`referrer: ${referrer}`);
 						log(`lockdown: ${lockdown}`);
+						log(`withinMinBlock: ${withinMinBlock}`);
 						log(`withinTimePeriods: ${withinTimePeriods}`);
 						log(`afterTimeLimit: ${afterTimeLimit}`);
 						log(`blockURL: ${blockURL}`);
@@ -696,6 +701,10 @@ function checkTab(id, isBeforeNav, isRepeat) {
 						if (keyword) {
 							log(`keyword: ${keyword}`);
 						}
+					}
+					if (minBlock && !withinMinBlock) {
+						// Enforce minimum block time
+						timedata[8] = now + (minBlock * 60);
 					}
 					if (closeTab) {
 						// Close tab
@@ -957,8 +966,10 @@ function updateTimeData(id, secsOpen, secsFocus) {
 
 			// Reset time data if currently invalid
 			if (!Array.isArray(timedata)) {
-				timedata = [now, 0, 0, 0, 0, 0, 0, 0];
-			} else while (timedata.length < 8) {
+				timedata = new Array(TIMEDATA_LEN);
+				timedata.fill(0);
+				timedata[0] = now;
+			} else while (timedata.length < TIMEDATA_LEN) {
 				timedata.push(0);
 			}
 
@@ -1205,7 +1216,7 @@ function getUnblockTime(set) {
 	let days = gOptions[`days${set}`];
 
 	// Check for valid time data
-	if (!Array.isArray(timedata) || timedata.length < 8) {
+	if (!Array.isArray(timedata) || timedata.length < TIMEDATA_LEN) {
 		return null;
 	}
 
@@ -1214,12 +1225,6 @@ function getUnblockTime(set) {
 	// Check for 24/7 block
 	if (times == ALL_DAY_TIMES && allTrue(days) && !conjMode) {
 		return null;
-	}
-
-	// Check for lockdown
-	if (now < timedata[4]) {
-		// Return end time for lockdown
-		return new Date(timedata[4] * 1000);
 	}
 
 	// Get number of minutes elapsed since midnight
@@ -1254,6 +1259,8 @@ function getUnblockTime(set) {
 		}
 	}
 
+	let unblockTime = null;
+
 	let timePeriods = (times != "");
 	let timeLimit = (limitMins && limitPeriod);
 
@@ -1264,18 +1271,19 @@ function getUnblockTime(set) {
 		for (let mp of allMinPeriods) {
 			if (mins >= mp.start && mins < mp.end) {
 				// Return end time for time period
-				return new Date(
+				unblockTime = new Date(
 						timedate.getFullYear(),
 						timedate.getMonth(),
 						timedate.getDate(),
 						0, mp.end);
+				continue;
 			}
 		}
 	} else if (!timePeriods && timeLimit) {
 		// Case 2: after time limit (no time periods)
 
 		// Return end time for current time limit period
-		return new Date(timedata[2] * 1000 + limitPeriod * 1000);
+		unblockTime = new Date(timedata[2] * 1000 + limitPeriod * 1000);
 	} else if (timePeriods && timeLimit) {
 		if (conjMode) {
 			// Case 3: within time periods AND after time limit
@@ -1290,7 +1298,8 @@ function getUnblockTime(set) {
 							timedate.getDate(),
 							0, mp.end);
 					let td2 = new Date(timedata[2] * 1000 + limitPeriod * 1000);
-					return (td1 < td2) ? td1 : td2;
+					unblockTime = (td1 < td2) ? td1 : td2;
+					continue;
 				}
 			}
 		} else {
@@ -1311,20 +1320,39 @@ function getUnblockTime(set) {
 			for (let mp of allMinPeriods) {
 				if (mins >= mp.start && mins < mp.end) {
 					// Return end time for time period
-					return new Date(
+					unblockTime = new Date(
 							timedate.getFullYear(),
 							timedate.getMonth(),
 							timedate.getDate(),
 							0, mp.end);
+					continue;
 				}
 			}
 
-			// Return end time for current time limit period
-			return new Date(timedata[2] * 1000 + limitPeriod * 1000);
+			if (!unblockTime) {
+				// Return end time for current time limit period
+				unblockTime = new Date(timedata[2] * 1000 + limitPeriod * 1000);
+			}
 		}
 	}
 
-	return null;
+	// Check for lockdown
+	if (now < timedata[4]) {
+		let endTime = new Date(timedata[4] * 1000);
+		if (endTime > unblockTime) {
+			unblockTime = endTime;
+		}
+	}
+
+	// Check for minimum block time
+	if (now < timedata[8]) {
+		let endTime = new Date(timedata[8] * 1000);
+		if (endTime > unblockTime) {
+			unblockTime = endTime;
+		}
+	}
+
+	return unblockTime;
 }
 
 // Apply lockdown for specified set
