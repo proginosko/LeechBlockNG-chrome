@@ -528,9 +528,10 @@ function checkTab(id, isBeforeNav, isRepeat) {
 		let incog = gTabs[id].incog;
 		if ((incogMode == 1 && incog) || (incogMode == 2 && !incog)) continue;
 
-		// Check for blocking only active tabs
-		let onlyActive = gOptions[`onlyActive${set}`];
-		if (onlyActive && (id != gActiveTabId)) continue;
+		// Check active tab mode
+		let activeTabMode = gOptions[`activeTabMode${set}`];
+		let active = (id == gActiveTabId);
+		if ((activeTabMode == 1 && !active) || (activeTabMode == 2 && active)) continue;
 
 		// Check for wait time (if specified)
 		let waitSecs = gOptions[`waitSecs${set}`];
