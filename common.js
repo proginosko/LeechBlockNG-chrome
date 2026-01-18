@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const TIMEDATA_LEN = 9;
 const MAX_SETS = 30;
 const ALL_DAY_TIMES = "0000-2400";
 const BLOCKED_PAGE = "blocked.html";
@@ -44,17 +45,20 @@ const PER_SET_OPTIONS = {
 	passwordSetSpec: { type: "string", def: "", id: "passwordSetSpec" },
 	customMsg: { type: "string", def: "", id: "customMsg" },
 	incogMode: { type: "string", def: "0", id: "incogMode" },
-	onlyActive: { type: "boolean", def: false, id: "onlyActive" },
+	activeTabMode: { type: "string", def: "0", id: "activeTabMode" },
 	applyFilter: { type: "boolean", def: false, id: "applyFilter" },
 	filterName: { type: "string", def: "grayscale", id: "filterName" },
 	filterMute: { type: "boolean", def: false, id: "filterMute" },
+	filterCustom: { type: "string", def: "", id: "filterCustom" },
 	closeTab: { type: "boolean", def: false, id: "closeTab" },
 	activeBlock: { type: "boolean", def: false, id: "activeBlock" },
+	minBlock: { type: "string", def: "", id: "minBlock" },
 	countFocus: { type: "boolean", def: true, id: "countFocus" },
 	countAudio: { type: "boolean", def: false, id: "countAudio" },
 	showKeyword: { type: "boolean", def: true, id: "showKeyword" },
 	titleOnly: { type: "boolean", def: false, id: "titleOnly" },
 	delayFirst: { type: "boolean", def: true, id: "delayFirst" },
+	delayFirstMode: { type: "string", def: "0", id: "delayFirstMode" },
 	delaySecs: { type: "string", def: "60", id: "delaySecs" },
 	delayAllowMins: { type: "string", def: "", id: "delayAllowMins" },
 	delayAutoLoad: { type: "boolean", def: true, id: "delayAutoLoad" },
@@ -76,6 +80,7 @@ const PER_SET_OPTIONS = {
 	sitesURL: { type: "string", def: "", id: "sitesURL" },
 	regexpBlock: { type: "string", def: "", id: "regexpBlock" },
 	regexpAllow: { type: "string", def: "", id: "regexpAllow" },
+	regexpKeyword: { type: "string", def: "", id: "regexpKeyword" },
 	ignoreHash: { type: "boolean", def: true, id: "ignoreHash" },
 };
 
@@ -93,6 +98,7 @@ const GENERAL_OPTIONS = {
 	timerVisible: { type: "boolean", def: true, id: "timerVisible" }, // default: visible
 	timerSize: { type: "string", def: "1", id: "timerSize" }, // default: medium
 	timerLocation: { type: "string", def: "0", id: "timerLocation" }, // default: top left
+	timerMaxHours: { type: "string", def: "24", id: "timerMaxHours" }, // default: 24 hours
 	timerBadge: { type: "boolean", def: true, id: "timerBadge" }, // default: enabled
 	orm: { type: "string", def: "", id: "overrideMins" }, // default: no prespecified override
 	orln: { type: "string", def: "", id: "overrideLimitNum" }, // default: no prespecified limit number
@@ -179,6 +185,7 @@ function cleanOptions(options) {
 // timedata[5] = rollover time for current period (secs)
 // timedata[6] = rollover time for next period (secs)
 // timedata[7] = start time for next rollover period (secs since epoch)
+// timedata[8] = end time for minimum block (secs since epoch)
 //
 function cleanTimeData(options) {
 	let numSets = +options["numSets"];
@@ -187,9 +194,19 @@ function cleanTimeData(options) {
 	for (let set = 1; set <= numSets; set++) {
 		let timedata = options[`timedata${set}`];
 		if (!Array.isArray(timedata)) {
-			timedata = [now, 0, 0, 0, 0, 0, 0, 0];
-		} else while (timedata.length < 8) {
+			timedata = new Array(TIMEDATA_LEN);
+			timedata.fill(0);
+			timedata[0] = now;
+		} else while (timedata.length < TIMEDATA_LEN) {
 			timedata.push(0);
+		}
+		if (timedata[4] < now) {
+			// Clean lockdown end time
+			timedata[4] = 0;
+		}
+		if (timedata[8] < now) {
+			// Clean minimum block end time
+			timedata[8] = 0;
 		}
 		options[`timedata${set}`] = timedata;
 	}
@@ -241,8 +258,14 @@ function getParsedURL(url) {
 // Clean list of sites
 //
 function cleanSites(sites) {
-	sites = sites.replace(/\s+/g, " ").replace(/(^ +)|( +$)/g, ""); // remove extra whitespace
-	sites = sites.split(" ").sort().join(" "); // sort alphabetically
+	// Remove leading/trailing whitespace
+	sites = sites.replace(/(^\s+)|(\s+$)/g, "");
+
+	// Remove URL protocols and sort alphabetically
+	sites = sites.split(/\s+/);
+	sites.forEach((item, i, array) => { array[i] = item.replace(/^([+>]?)[a-z-]+:\/+/, "$1"); });
+	sites = sites.sort().join(" ");
+
 	return sites;
 }
 

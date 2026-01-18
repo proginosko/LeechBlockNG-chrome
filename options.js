@@ -8,7 +8,7 @@ const DEFAULT_OPTIONS_FILE = "LeechBlockOptions-#.txt";
 const DEFAULT_JSON_FILE = "LeechBlockOptions-#.json";
 
 const SUB_OPTIONS = {
-	"applyFilter" : [ "filterName", "filterMute" ],
+	"applyFilter" : [ "filterName", "filterMute", "filterCustom" ],
 	"allowOverride" : [ "allowOverLock" ]
 };
 
@@ -128,6 +128,12 @@ function initForm(numSets) {
 			let matchSubdomains = getElement("matchSubdomains").checked;
 			$(`#regexpAllow${set}`).val(getRegExpSites(sites, matchSubdomains).allow);
 		});
+		$(`#clearRegExpKeyword${set}`).click(function (e) { $(`#regexpKeyword${set}`).val(""); });
+		$(`#genRegExpKeyword${set}`).click(function (e) {
+			let sites = $(`#sites${set}`).val();
+			let matchSubdomains = getElement("matchSubdomains").checked;
+			$(`#regexpKeyword${set}`).val(getRegExpSites(sites, matchSubdomains).keyword);
+		});
 		$(`#cancelLockdown${set}`).click(function (e) {
 			browser.runtime.sendMessage({ type: "lockdown", set: set });
 			this.disabled = true;
@@ -242,6 +248,7 @@ function saveOptions(event) {
 		let limitOffset = $(`#limitOffset${set}`).val();
 		let delaySecs = $(`#delaySecs${set}`).val();
 		let delayAllowMins = $(`#delayAllowMins${set}`).val();
+		let minBlock = $(`#minBlock${set}`).val();
 		let reloadSecs = $(`#reloadSecs${set}`).val();
 		let waitSecs = $(`#waitSecs${set}`).val();
 		let blockURL = $(`#blockURL${set}`).val();
@@ -274,6 +281,12 @@ function saveOptions(event) {
 		if (!checkPosIntFormat(delayAllowMins)) {
 			$("#tabs").tabs("option", "active", (set - 1));
 			$(`#delayAllowMins${set}`).focus();
+			$("#alertBadMinutes").dialog("open");
+			return false;
+		}
+		if (!checkPosIntFormat(minBlock)) {
+			$("#tabs").tabs("option", "active", (set - 1));
+			$(`#minBlock${set}`).focus();
 			$("#alertBadMinutes").dialog("open");
 			return false;
 		}
@@ -324,6 +337,13 @@ function saveOptions(event) {
 		$("#tabs").tabs("option", "active", gNumSets);
 		$("#overrideLimitNum").focus();
 		$("#alertBadOverrideLimitNum").dialog("open");
+		return false;
+	}
+	let timerMaxHours = $("#timerMaxHours").val();
+	if (!checkPosIntFormat(timerMaxHours)) {
+		$("#tabs").tabs("option", "active", gNumSets);
+		$("#timerMaxHours").focus();
+		$("#alertBadHours").dialog("open");
 		return false;
 	}
 	let warnSecs = $("#warnSecs").val();
@@ -589,8 +609,11 @@ function retrieveOptions() {
 			// Check lockdown condition
 			let lockdown = (timedata[4] > now);
 
+			// Check minimum block time condition
+			let withinMinBlock = (timedata[8] > now);
+
 			// Disable options if specified block conditions are fulfilled
-			if (lockdown
+			if (lockdown || withinMinBlock
 					|| (!conjMode && (withinTimePeriods || afterTimeLimit))
 					|| (conjMode && (withinTimePeriods && afterTimeLimit))) {
 				if (options[`prevOpts${set}`]) {
@@ -1165,6 +1188,7 @@ function disableSetOptions(set, disabled) {
 		"defaultPage", "delayingPage", "blankPage",
 		"clearRegExpBlock", "genRegExpBlock",
 		"clearRegExpAllow", "genRegExpAllow",
+		"clearRegExpKeyword", "genRegExpKeyword",
 		"cancelLockdown"
 	];
 	for (let item of items) {

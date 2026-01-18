@@ -116,7 +116,7 @@ function checkKeyword(keywordRE, titleOnly) {
 
 	// Get all text from document (including title)
 	let text = document.title;
-	if (!titleOnly) {
+	if (!titleOnly && document.body) {
 		text += "\n" + document.body.innerText;
 	}
 
@@ -130,7 +130,7 @@ function checkKeyword(keywordRE, titleOnly) {
 
 // Apply filter
 //
-function applyFilter(name) {
+function applyFilter(filterName, filterCustom) {
 	let filters = {
 		"blur (1px)": "blur(1px)",
 		"blur (2px)": "blur(2px)",
@@ -143,10 +143,11 @@ function applyFilter(name) {
 		"fade (100%)": "opacity(0%)",
 		"grayscale": "grayscale(100%)",
 		"invert": "invert(100%)",
-		"sepia": "sepia(100%)"
+		"sepia": "sepia(100%)",
+		"custom": filterCustom
 	};
-	if (name && filters[name]) {
-		document.documentElement.style.filter = filters[name];
+	if (filterName && filters[filterName]) {
+		document.documentElement.style.filter = filters[filterName];
 	} else {
 		document.documentElement.style.filter = "none";
 	}
@@ -163,7 +164,7 @@ function handleMessage(message, sender, sendResponse) {
 			break;
 
 		case "filter":
-			applyFilter(message.name);
+			applyFilter(message.filterName, message.filterCustom);
 			break;
 
 		case "keyword":

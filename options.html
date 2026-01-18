@@ -196,8 +196,12 @@
 								</select>
 							</p>
 							<p class="simplifiable">
-								<input id="onlyActive1" type="checkbox">
-								<label for="onlyActive1">Block pages only in active tabs</label>
+								<label>Block pages in</label>
+								<select id="activeTabMode1">
+									<option value="0">both active and inactive tabs</option>
+									<option value="1">only active tabs</option>
+									<option value="2">only inactive tabs</option>
+								</select>
 							</p>
 							<p class="simplifiable">
 								<input id="applyFilter1" type="checkbox">
@@ -215,10 +219,17 @@
 									<option>grayscale</option>
 									<option>invert</option>
 									<option>sepia</option>
+									<option>custom</option>
 								</select>
 								&nbsp;&nbsp;&nbsp;&nbsp;
 								<input id="filterMute1" type="checkbox">
 								<label for="filterMute1">Mute tab with filter</label>
+							</p>
+							<p class="simplifiable">
+								&nbsp;&nbsp;&nbsp;&nbsp;
+								Custom filter property (CSS):
+								<input id="filterCustom1" type="text" size="25" placeholder="Example: grayscale(50%)">
+								&nbsp;&nbsp;<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/filter" target="_blank">What can I enter here?</a>
 							</p>
 							<p>
 								<input id="closeTab1" type="checkbox">
@@ -227,6 +238,9 @@
 							<p>
 								<input id="activeBlock1" type="checkbox">
 								<label for="activeBlock1">Immediately block pages on these sites once blocking conditions are met</label>
+							</p>
+							<p class="simplifiable">
+								Always block sites for at least <input id="minBlock1" type="text" size="2" title="Leave blank for no minimum block time"> minutes
 							</p>
 							<p class="simplifiable">
 								<input id="showKeyword1" type="checkbox">
@@ -238,7 +252,12 @@
 							</p>
 							<p class="simplifiable">
 								<input id="delayFirst1" type="checkbox">
-								<label for="delayFirst1">Block only first accessed page of site when delaying/password page is used</label>
+								<label for="delayFirst1">Block only first accessed page of
+								<select id="delayFirstMode1">
+									<option value="0">site</option>
+									<option value="1">block set</option>
+								</select>
+								when delaying/password page is used</label>
 							</p>
 							<p class="simplifiable">
 								Allow access to sites for only <input id="delayAllowMins1" type="text" size="2" title="Leave blank to allow indefinitely"> minutes after delaying/password page is used
@@ -353,6 +372,15 @@
 								<button id="genRegExpAllow1" type="button">Generate From Site List</button>
 							</p>
 							<p>
+								<label>Use <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions" target="_blank">regular expression</a>
+								to match <strong>keywords</strong> (overrides keywords in list of sites):</label>
+							</p>
+							<p>
+								<input id="regexpKeyword1" type="text" size="60">
+								<button id="clearRegExpKeyword1" type="button">Clear</button>
+								<button id="genRegExpKeyword1" type="button">Generate From Site List</button>
+							</p>
+							<p>
 								<input id="ignoreHash1" type="checkbox">
 								<label for="ignoreHash1">Ignore fragment (hash part) when checking URL</label>
 							</p>
@@ -427,6 +455,9 @@
 									<option value="2">bottom right</option>
 									<option value="3">bottom left</option>
 								</select>
+							</p>
+							<p>
+								Show timer only when time left is less than <input id="timerMaxHours" type="text" size="2" title="Leave blank for no limit"> hour(s)
 							</p>
 							<p>
 								<input id="timerBadge" type="checkbox">
@@ -674,6 +705,9 @@
 			</div>
 			<div id="alertBadMinutes" title="LeechBlock Options">
 				<p>Please enter the number of minutes in the correct format (as a positive whole number).</p>
+			</div>
+			<div id="alertBadHours" title="LeechBlock Options">
+				<p>Please enter the number of hours in the correct format (as a positive whole number).</p>
 			</div>
 			<div id="alertBadOverrideLimitNum" title="LeechBlock Options">
 				<p>Please enter the number of overrides in the correct format (as a positive whole number).</p>

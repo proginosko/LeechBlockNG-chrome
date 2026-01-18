@@ -1,3 +1,12 @@
+# Version 1.7.2 (04 Jan 2026)
+* Added option to specify minimum block time.
+* Added option to block only first accessed page of block set.
+* Added option to block only active/inactive tabs.
+* Added option for custom filter.
+* Added option to use regular expression for keyword blocking.
+* Added option for upper limit to timer display.
+* Bug fixes.
+
 # Version 1.7.1 (28 Sep 2025)
 * Added option to block pages only in active tabs.
 * Added option to block about:profiles (Firefox).

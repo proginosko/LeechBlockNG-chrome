@@ -75,7 +75,7 @@ function createRegExps() {
 		let referRE = gOptions[`referRE${set}`];
 		gRegExps[set].refer = referRE ? new RegExp(referRE, "i") : null;
 
-		let keywordRE = gOptions[`keywordRE${set}`];
+		let keywordRE = gOptions[`regexpKeyword${set}`] || gOptions[`keywordRE${set}`];
 		gRegExps[set].keyword = keywordRE; // Chrome workaround
 	}
 }
@@ -481,7 +481,7 @@ function checkTab(id, isBeforeNav, isRepeat) {
 	let now = Math.floor(Date.now() / 1000) + (gClockOffset * 60);
 
 	// Check for allowed host/path (or end of allowed time)
-	let allowHost = isSameHost(gTabs[id].allowedHost, parsedURL.host);
+	let allowHost = !gTabs[id].allowedHost || isSameHost(gTabs[id].allowedHost, parsedURL.host);
 	let allowPath = !gTabs[id].allowedPath || (gTabs[id].allowedPath == parsedURL.path);
 	let allowedSet = gTabs[id].allowedSet;
 	let allowedEndTime = gTabs[id].allowedEndTime;
@@ -526,9 +526,10 @@ function checkTab(id, isBeforeNav, isRepeat) {
 		let incog = gTabs[id].incog;
 		if ((incogMode == 1 && incog) || (incogMode == 2 && !incog)) continue;
 
-		// Check for blocking only active tabs
-		let onlyActive = gOptions[`onlyActive${set}`];
-		if (onlyActive && (id != gActiveTabId)) continue;
+		// Check active tab mode
+		let activeTabMode = gOptions[`activeTabMode${set}`];
+		let active = (id == gActiveTabId);
+		if ((activeTabMode == 1 && !active) || (activeTabMode == 2 && active)) continue;
 
 		// Check for wait time (if specified)
 		let waitSecs = gOptions[`waitSecs${set}`];
@@ -587,8 +588,10 @@ function checkTab(id, isBeforeNav, isRepeat) {
 			let applyFilter = gOptions[`applyFilter${set}`];
 			let filterName = gOptions[`filterName${set}`];
 			let filterMute = gOptions[`filterMute${set}`];
+			let filterCustom = gOptions[`filterCustom${set}`];
 			let closeTab = gOptions[`closeTab${set}`];
 			let activeBlock = gOptions[`activeBlock${set}`];
+			let minBlock = gOptions[`minBlock${set}`];
 			let titleOnly = gOptions[`titleOnly${set}`];
 			let addHistory = gOptions[`addHistory${set}`];
 			let allowOverride = gOptions[`allowOverride${set}`];
@@ -598,32 +601,41 @@ function checkTab(id, isBeforeNav, isRepeat) {
 
 			updateRolloverTime(timedata, limitMins, limitPeriod, periodStart);
 
-			// Check day
-			let onSelectedDay = days[timedate.getDay()];
+			let day = timedate.getDay();
 
 			// Check time periods
 			let secsLeftBeforePeriod = Infinity;
-			if (onSelectedDay && times) {
+			if (times) {
 				// Get number of minutes elapsed since midnight
 				let mins = timedate.getHours() * 60 + timedate.getMinutes();
 
-				// Check each time period in turn
-				for (let mp of minPeriods) {
-					if (mins >= mp.start && mins < mp.end) {
-						secsLeftBeforePeriod = 0;
-					} else if (mins < mp.start) {
-						// Compute exact seconds before this time period starts
-						let secs = (mp.start - mins) * 60 - timedate.getSeconds();
-						if (secs < secsLeftBeforePeriod) {
-							secsLeftBeforePeriod = secs;
+				// Check today and (up to) following seven days
+				for (let i = 0; i <= 7; i++) {
+					if (days[(day + i) % 7]) {
+						let offset = (i * 1440);
+						// Check each time period in turn
+						for (let mp of minPeriods) {
+							let start = mp.start + offset;
+							let end = mp.end + offset;
+							if (mins >= start && mins < end) {
+								secsLeftBeforePeriod = 0;
+							} else if (mins < start) {
+								// Compute exact seconds before this time period starts
+								let secs = (start - mins) * 60 - timedate.getSeconds();
+								if (secs < secsLeftBeforePeriod) {
+									secsLeftBeforePeriod = secs;
+								}
+							}
 						}
 					}
+					
+					if (secsLeftBeforePeriod != Infinity) continue;
 				}
 			}
 
 			// Check time limit
 			let secsLeftBeforeLimit = Infinity;
-			if (onSelectedDay && limitMins && limitPeriod) {
+			if (days[day] && limitMins && limitPeriod) {
 				// Compute exact seconds before this time limit expires
 				let secsRollover = rollover ? timedata[5] : 0;
 				secsLeftBeforeLimit = secsRollover + (limitMins * 60);
@@ -639,12 +651,15 @@ function checkTab(id, isBeforeNav, isRepeat) {
 			// Check lockdown condition
 			let lockdown = (timedata[4] > now);
 
+			// Check minimum block time condition
+			let withinMinBlock = (timedata[8] > now);
+
 			// Check override condition
 			let override = (prevOverride || !isInternalPage) && (overrideEndTime > now)
 					&& allowOverride && (allowOverLock || !lockdown);
 
 			// Determine whether this page should now be blocked
-			let doBlock = lockdown
+			let doBlock = lockdown || withinMinBlock
 					|| (!conjMode && (withinTimePeriods || afterTimeLimit))
 					|| (conjMode && (withinTimePeriods && afterTimeLimit));
 
@@ -662,6 +677,7 @@ function checkTab(id, isBeforeNav, isRepeat) {
 						log(`pageURL: ${pageURL}`);
 						log(`referrer: ${referrer}`);
 						log(`lockdown: ${lockdown}`);
+						log(`withinMinBlock: ${withinMinBlock}`);
 						log(`withinTimePeriods: ${withinTimePeriods}`);
 						log(`afterTimeLimit: ${afterTimeLimit}`);
 						log(`blockURL: ${blockURL}`);
@@ -681,6 +697,10 @@ function checkTab(id, isBeforeNav, isRepeat) {
 							log(`keyword: ${keyword}`);
 						}
 					}
+					if (minBlock && !withinMinBlock) {
+						// Enforce minimum block time
+						timedata[8] = now + (minBlock * 60);
+					}
 					if (closeTab) {
 						// Close tab
 						browser.tabs.remove(id);
@@ -695,7 +715,8 @@ function checkTab(id, isBeforeNav, isRepeat) {
 						// Send message to tab
 						let message = {
 							type: "filter",
-							name: filterName
+							filterName: filterName,
+							filterCustom: filterCustom
 						};
 						browser.tabs.sendMessage(id, message).catch(
 							function (error) {}
@@ -754,7 +775,8 @@ function checkTab(id, isBeforeNav, isRepeat) {
 				// Send message to tab
 				let message = {
 					type: "filter",
-					name: null
+					filterName: null,
+					filterCustom: null
 				};
 				browser.tabs.sendMessage(id, message).catch(
 					function (error) {}
@@ -883,7 +905,6 @@ function updateTimeData(id, secsOpen, secsFocus) {
 
 	// Get parsed URL for this page
 	let parsedURL = getParsedURL(url);
-	let pageURL = parsedURL.page;
 
 	// Get current time in seconds
 	let now = Math.floor(Date.now() / 1000) + (gClockOffset * 60);
@@ -909,6 +930,14 @@ function updateTimeData(id, secsOpen, secsFocus) {
 		// Get option for treating referrers as allow-conditions
 		let allowRefers = gOptions[`allowRefers${set}`];
 
+		// Get URL of page (possibly with hash part)
+		let pageURL = parsedURL.page;
+		if (parsedURL.hash != null) {
+			if (/^!/.test(parsedURL.hash) || !gOptions[`ignoreHash${set}`]) {
+				pageURL += "#" + parsedURL.hash;
+			}
+		}
+
 		// Test URL against block/allow regular expressions
 		if (testURL(pageURL, referrer, blockRE, allowRE, referRE, allowRefers)) {
 			// Get options for this set
@@ -933,8 +962,10 @@ function updateTimeData(id, secsOpen, secsFocus) {
 
 			// Reset time data if currently invalid
 			if (!Array.isArray(timedata)) {
-				timedata = [now, 0, 0, 0, 0, 0, 0, 0];
-			} else while (timedata.length < 8) {
+				timedata = new Array(TIMEDATA_LEN);
+				timedata.fill(0);
+				timedata[0] = now;
+			} else while (timedata.length < TIMEDATA_LEN) {
 				timedata.push(0);
 			}
 
@@ -998,16 +1029,22 @@ function updateTimer(id) {
 	let secsLeft = gTabs[id].secsLeft;
 	let showTimer = gTabs[id].showTimer;
 
+	let timerMaxHours = gOptions["timerMaxHours"];
+	let timerVisible = gOptions["timerVisible"]
+			&& showTimer
+			&& secsLeft != Infinity
+			&& (!timerMaxHours || (secsLeft < timerMaxHours * 3600));
+
 	// Send message to tab
 	let message = {
 		type: "timer",
 		size: gOptions["timerSize"],
 		location: gOptions["timerLocation"]
 	};
-	if (!gOptions["timerVisible"] || secsLeft == Infinity || !showTimer) {
-		message.text = null; // hide timer
-	} else {
+	if (timerVisible) {
 		message.text = formatTime(secsLeft); // show timer with time left
+	} else {
+		message.text = null; // hide timer
 	}
 	browser.tabs.sendMessage(id, message).catch(function (error) {});
 
@@ -1175,7 +1212,7 @@ function getUnblockTime(set) {
 	let days = gOptions[`days${set}`];
 
 	// Check for valid time data
-	if (!Array.isArray(timedata) || timedata.length < 8) {
+	if (!Array.isArray(timedata) || timedata.length < TIMEDATA_LEN) {
 		return null;
 	}
 
@@ -1184,12 +1221,6 @@ function getUnblockTime(set) {
 	// Check for 24/7 block
 	if (times == ALL_DAY_TIMES && allTrue(days) && !conjMode) {
 		return null;
-	}
-
-	// Check for lockdown
-	if (now < timedata[4]) {
-		// Return end time for lockdown
-		return new Date(timedata[4] * 1000);
 	}
 
 	// Get number of minutes elapsed since midnight
@@ -1224,6 +1255,8 @@ function getUnblockTime(set) {
 		}
 	}
 
+	let unblockTime = null;
+
 	let timePeriods = (times != "");
 	let timeLimit = (limitMins && limitPeriod);
 
@@ -1234,18 +1267,19 @@ function getUnblockTime(set) {
 		for (let mp of allMinPeriods) {
 			if (mins >= mp.start && mins < mp.end) {
 				// Return end time for time period
-				return new Date(
+				unblockTime = new Date(
 						timedate.getFullYear(),
 						timedate.getMonth(),
 						timedate.getDate(),
 						0, mp.end);
+				continue;
 			}
 		}
 	} else if (!timePeriods && timeLimit) {
 		// Case 2: after time limit (no time periods)
 
 		// Return end time for current time limit period
-		return new Date(timedata[2] * 1000 + limitPeriod * 1000);
+		unblockTime = new Date(timedata[2] * 1000 + limitPeriod * 1000);
 	} else if (timePeriods && timeLimit) {
 		if (conjMode) {
 			// Case 3: within time periods AND after time limit
@@ -1260,7 +1294,8 @@ function getUnblockTime(set) {
 							timedate.getDate(),
 							0, mp.end);
 					let td2 = new Date(timedata[2] * 1000 + limitPeriod * 1000);
-					return (td1 < td2) ? td1 : td2;
+					unblockTime = (td1 < td2) ? td1 : td2;
+					continue;
 				}
 			}
 		} else {
@@ -1281,20 +1316,39 @@ function getUnblockTime(set) {
 			for (let mp of allMinPeriods) {
 				if (mins >= mp.start && mins < mp.end) {
 					// Return end time for time period
-					return new Date(
+					unblockTime = new Date(
 							timedate.getFullYear(),
 							timedate.getMonth(),
 							timedate.getDate(),
 							0, mp.end);
+					continue;
 				}
 			}
 
-			// Return end time for current time limit period
-			return new Date(timedata[2] * 1000 + limitPeriod * 1000);
+			if (!unblockTime) {
+				// Return end time for current time limit period
+				unblockTime = new Date(timedata[2] * 1000 + limitPeriod * 1000);
+			}
 		}
 	}
 
-	return null;
+	// Check for lockdown
+	if (now < timedata[4]) {
+		let endTime = new Date(timedata[4] * 1000);
+		if (endTime > unblockTime) {
+			unblockTime = endTime;
+		}
+	}
+
+	// Check for minimum block time
+	if (now < timedata[8]) {
+		let endTime = new Date(timedata[8] * 1000);
+		if (endTime > unblockTime) {
+			unblockTime = endTime;
+		}
+	}
+
+	return unblockTime;
 }
 
 // Apply lockdown for specified set
@@ -1450,8 +1504,9 @@ function allowBlockedPage(id, url, set, autoLoad) {
 
 	// Set parameters for allowing host
 	let delayFirst = gOptions[`delayFirst${set}`];
+	let delayFirstMode = gOptions[`delayFirstMode${set}`];
 	let delayAllowMins = gOptions[`delayAllowMins${set}`];
-	gTabs[id].allowedHost = parsedURL.host;
+	gTabs[id].allowedHost = (delayFirst && delayFirstMode == 1) ? null : parsedURL.host;
 	gTabs[id].allowedPath = delayFirst ? null : parsedURL.path;
 	gTabs[id].allowedSet = set;
 	if (delayAllowMins) {
