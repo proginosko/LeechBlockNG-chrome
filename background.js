@@ -100,10 +100,37 @@ function isSameHost(host1, host2) {
 			|| (host2 == "www." + host1);
 }
 
+// Get the registrable domain for a host (e.g. au.linkedin.com -> linkedin.com)
+//
+function getBaseDomain(host) {
+	if (!host) {
+		return "";
+	}
+	if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) {
+		return host; // IP address
+	}
+	let labels = host.replace(/^www\./, "").split(".");
+	if (labels.length <= 2) {
+		return labels.join(".");
+	}
+	let secondLast = labels[labels.length - 2];
+	let last = labels[labels.length - 1];
+	if (last.length == 2 && ["ac", "co", "com", "edu", "gov", "net", "org"].includes(secondLast)) {
+		return labels.slice(-3).join(".");
+	}
+	return labels.slice(-2).join(".");
+}
+
+// Check whether two host names belong to the same site
+//
+function isSameSite(host1, host2) {
+	return getBaseDomain(host1) == getBaseDomain(host2);
+}
+
 // Check whether a grant covers the given parsed URL
 //
 function grantCovers(grant, parsedURL) {
-	return (!grant.host || isSameHost(grant.host, parsedURL.host))
+	return (!grant.host || isSameSite(grant.host, parsedURL.host))
 			&& (!grant.path || grant.path == parsedURL.path);
 }
 
