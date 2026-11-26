@@ -105,6 +105,7 @@ const GENERAL_OPTIONS = {
 	orm: { type: "string", def: "", id: "overrideMins" }, // default: no prespecified override
 	orln: { type: "string", def: "", id: "overrideLimitNum" }, // default: no prespecified limit number
 	orlp: { type: "string", def: "", id: "overrideLimitPeriod" }, // default: no prespecified limit period
+	orcd: { type: "string", def: "", id: "overrideCooldownMins" }, // default: no cooldown
 	ora: { type: "string", def: "0", id: "overrideAccess" }, // default: no password or code
 	orcode: { type: "string", def: "", id: "overrideCode" }, // default: blank
 	orp: { type: "string", def: "", id: "overridePassword" }, // default: blank
@@ -112,6 +113,7 @@ const GENERAL_OPTIONS = {
 	orlps: { type: "number", def: 0, id: null }, // default: no override limit period start time
 	orlc: { type: "number", def: 0, id: null }, // default: no override limit count
 	oret: { type: "number", def: 0, id: null }, // default: no override end time
+	orcs: { type: "number", def: 0, id: null }, // default: no override cooldown start time
 	warnSecs: { type: "string", def: "", id: "warnSecs" }, // default: no warning
 	warnImmediate: { type: "boolean", def: true, id: "warnImmediate" }, // default: warn only for immediate block
 	contextMenu: { type: "boolean", def: true, id: "contextMenu" }, // default: enabled
@@ -490,6 +492,21 @@ function getTimePeriodStart(now, limitPeriod, limitOffset) {
 	}
 
 	return 0;
+}
+
+// Get end time of override cooldown (zero if no cooldown applies)
+//
+// The cooldown starts when the last override ends (or is canceled), so no
+// new override can be activated during an override or for the specified
+// number of minutes afterwards.
+//
+function getOverrideCooldownEnd(options) {
+	let cooldownMins = +options["orcd"];
+	let cooldownStart = options["orcs"];
+	if (!cooldownMins || !cooldownStart) {
+		return 0;
+	}
+	return cooldownStart + (cooldownMins * 60);
 }
 
 // Update rollover time (if new time limit period has been entered)
