@@ -339,6 +339,13 @@ function saveOptions(event) {
 		$("#alertBadOverrideLimitNum").dialog("open");
 		return false;
 	}
+	let overrideCooldownMins = $("#overrideCooldownMins").val();
+	if (!checkPosIntFormat(overrideCooldownMins)) {
+		$("#tabs").tabs("option", "active", gNumSets);
+		$("#overrideCooldownMins").focus();
+		$("#alertBadMinutes").dialog("open");
+		return false;
+	}
 	let timerMaxHours = $("#timerMaxHours").val();
 	if (!checkPosIntFormat(timerMaxHours)) {
 		$("#tabs").tabs("option", "active", gNumSets);

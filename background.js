@@ -1404,24 +1404,39 @@ function cancelLockdown(set) {
 	saveTimeData();
 }
 
-// Apply override
+// Apply override (returns cooldown end time if override was refused because
+// of cooldown, zero otherwise)
 //
 function applyOverride(endTime) {
 	//log("applyOverride: " + endTime);
 
 	if (!gGotOptions) {
-		return;
+		return 0;
 	}
 
+	// Get current time in seconds
+	let now = Math.floor(Date.now() / 1000) + (gClockOffset * 60);
+
 	let options = {};
+
+	if (endTime) {
+		// Refuse override during cooldown
+		let cooldownEnd = getOverrideCooldownEnd(gOptions);
+		if (now < cooldownEnd) {
+			return cooldownEnd;
+		}
+
+		// Cooldown starts when this override ends
+		options["orcs"] = gOptions["orcs"] = endTime;
+	} else if (gOptions["oret"] > now) {
+		// Active override canceled, so cooldown starts now
+		options["orcs"] = gOptions["orcs"] = now;
+	}
 
 	// Set override end time
 	options["oret"] = gOptions["oret"] = endTime;
 
 	if (endTime) {
-		// Get current time in seconds
-		let now = Math.floor(Date.now() / 1000) + (gClockOffset * 60);
-
 		// Update override limit count (if specified)
 		let orln = gOptions["orln"];
 		let orlp = gOptions["orlp"];
@@ -1451,6 +1466,8 @@ function applyOverride(endTime) {
 	);
 
 	updateIcon();
+
+	return 0;
 }
 
 // Reset rollover time for set applicable to active tab
@@ -1829,8 +1846,8 @@ function handleMessage(message, sender, sendResponse) {
 			break;
 
 		case "override":
-			// Override requested
-			applyOverride(message.endTime);
+			// Override requested (refused during cooldown)
+			sendResponse({ cooldownEnd: applyOverride(message.endTime) });
 			break;
 
 		case "password":

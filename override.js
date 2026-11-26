@@ -23,6 +23,7 @@ var gOverrideMins;
 var gOverrideLimit = false;
 var gOverrideLimitPeriod;
 var gOverrideLimitLeft;
+var gOverrideCooldownMins;
 var gOverrideSetNames = [];
 var gClockTimeOpts;
 
@@ -72,6 +73,17 @@ function initializePage() {
 
 		gOverrideConfirm = options["orc"];
 		gOverrideMins = options["orm"];
+		gOverrideCooldownMins = options["orcd"];
+
+		// Get current time in seconds
+		let now = Math.floor(Date.now() / 1000) + (gClockOffset * 60);
+
+		// Check override cooldown (if specified)
+		let cooldownEnd = getOverrideCooldownEnd(options);
+		if (now < cooldownEnd) {
+			showCooldownAlert(cooldownEnd);
+			return;
+		}
 
 		// Check override limit (if specified)
 		let orln = options["orln"];
@@ -82,7 +94,6 @@ function initializePage() {
 			gOverrideLimit = true;
 			gOverrideLimitPeriod = LIMIT_PERIOD[orlp];
 			gOverrideLimitLeft = Math.max(0, orln - orlc);
-			let now = Math.floor(Date.now() / 1000) + (gClockOffset * 60);
 			let periodStart = getTimePeriodStart(now, orlp);
 			if (orlps == periodStart && gOverrideLimitLeft == 0) {
 				$("#alertLimitNum").html(orln);
@@ -114,6 +125,15 @@ function initializePage() {
 		warn("Cannot get options: " + error);
 		$("#alertRetrieveError").dialog("open");
 	}
+}
+
+// Show alert that override is not available during cooldown
+//
+function showCooldownAlert(cooldownEnd) {
+	let endTime = new Date(cooldownEnd * 1000);
+	$("#alertCooldownEndTime").text(endTime.toLocaleTimeString(undefined, gClockTimeOpts));
+	$("#alertCooldownMins").text(gOverrideCooldownMins);
+	$("#alertCooldown").dialog("open");
 }
 
 // Close page
@@ -284,26 +304,43 @@ function activateOverride() {
 		type: "override",
 		endTime: endTime
 	};
-	browser.runtime.sendMessage(message);
+	browser.runtime.sendMessage(message).then(onResponse, onError);
 
-	if (gOverrideConfirm) {
-		// Show confirmation dialog
-		endTime = new Date(endTime * 1000);
-		$("#alertOverrideEndTime").html(endTime.toLocaleTimeString(undefined, gClockTimeOpts));
-		if (gOverrideSetNames.length > 0) {
-			$("#alertOverrideNoSets").hide();
-			$("#alertOverrideSets").show();
-			$("#alertOverrideSetList").html("<ul><li>" + gOverrideSetNames.join("</li><li>") + "</li></ul>");
+	function onResponse(response) {
+		if (response && response.cooldownEnd) {
+			// Override refused during cooldown
+			showCooldownAlert(response.cooldownEnd);
+			return;
 		}
-		if (gOverrideLimit) {
-			$("#alertOverrideLimit").show();
-			$("#alertLimitLeft").html(gOverrideLimitLeft - 1);
-			$("#alertLimitPeriod").html(gOverrideLimitPeriod);
+
+		if (gOverrideConfirm) {
+			// Show confirmation dialog
+			endTime = new Date(endTime * 1000);
+			$("#alertOverrideEndTime").html(endTime.toLocaleTimeString(undefined, gClockTimeOpts));
+			if (gOverrideSetNames.length > 0) {
+				$("#alertOverrideNoSets").hide();
+				$("#alertOverrideSets").show();
+				$("#alertOverrideSetList").html("<ul><li>" + gOverrideSetNames.join("</li><li>") + "</li></ul>");
+			}
+			if (gOverrideLimit) {
+				$("#alertOverrideLimit").show();
+				$("#alertLimitLeft").html(gOverrideLimitLeft - 1);
+				$("#alertLimitPeriod").html(gOverrideLimitPeriod);
+			}
+			if (+gOverrideCooldownMins) {
+				$("#alertOverrideCooldown").show();
+				$("#alertOverrideCooldownMins").text(gOverrideCooldownMins);
+			}
+			$("#alertOverrideActivated").dialog("open");
+		} else {
+			// Close page immediately (no confirmation dialog)
+			closePage();
 		}
-		$("#alertOverrideActivated").dialog("open");
-	} else {
-		// Close page immediately (no confirmation dialog)
-		closePage();
+	}
+
+	function onError(error) {
+		warn("Cannot request override: " + error);
+		onResponse();
 	}
 }
 
@@ -366,6 +403,9 @@ $("div[id^='alert']").dialog({
 	}
 });
 $("#alertLimitReached").dialog({
+	close: function (event, ui) { closePage(); }
+});
+$("#alertCooldown").dialog({
 	close: function (event, ui) { closePage(); }
 });
 $("#alertOverrideActivated").dialog({
